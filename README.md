@@ -1,0 +1,230 @@
+# Motion: Multi-Modal Transit Routing Engine
+
+Motion is a high-performance, multi-modal transit routing and departure calculation engine for the Victorian Public Transport (PTV / Transport for Victoria) network. It supports backward timetable scheduling from a desired arrival time, spatial graph precomputation, directional A* heuristics, and live GTFS-Realtime (GTFS-R) disruption handling (including automated rail replacement bus injection vs alternative train line detour routing).
+
+---
+
+## Architecture & Data Pipeline
+
+```mermaid
+graph TD
+    A[Transport for Victoria GTFS Schedule Zip] -->|Extract into ./gtfs/| B[GTFS Feeds 1..11 / google_transit.zip]
+    B -->|gtfs_db_builder.py| C[(SQLite: gtfs_schedule.db)]
+    C -->|precompute_graph.py| D[Precomputed Transit & Spatial Transfer Edges]
+    D --> E[Directional Routing Engine]
+    F[Live PTV GTFS-R Alerts & Trip Updates] --> E
+    E --> G[Recommended Departure Time & Turn-by-Turn Itinerary]
+```
+
+---
+
+## 1. Prerequisites & Environment Setup
+
+### 1.1 Conda Environment
+Create and activate the conda environment using the provided [`environment.yml`](file:///Users/lucidmach/Motion/environment.yml):
+
+```bash
+conda env create -f environment.yml
+conda activate motion
+```
+
+If the environment already exists, update it via:
+```bash
+conda env update -f environment.yml --prune
+```
+
+### 1.2 PTV API Key Configuration (GTFS-Realtime)
+Create a `.env` file in the project root to enable live GTFS-Realtime disruption queries:
+
+```bash
+echo "PTVOpenDataAPIKey=YOUR_PTV_API_KEY" > .env
+```
+
+---
+
+## 2. Downloading GTFS Schedule Data
+
+The static schedule timetable data is provided by the Victorian Department of Transport and Planning via DataVic:
+
+🔗 **Download Page**: [Transport for Victoria GTFS Schedule Dataset](https://opendata.transport.vic.gov.au/dataset/gtfs-schedule)
+
+### 2.1 Download Steps
+1. Navigate to the [GTFS Schedule Dataset](https://opendata.transport.vic.gov.au/dataset/gtfs-schedule) page on the DataVic Open Data Portal.
+2. Download the latest GTFS Schedule release archive (usually named `gtfs.zip` or full package).
+3. Extract the contents into the `gtfs/` directory in the repository root.
+
+### 2.2 Feed Directory Layout
+After extraction, your `gtfs/` directory should follow this structure:
+
+```
+gtfs/
+├── 1/   # Regional Train (V/Line Train)
+│   └── google_transit.zip
+├── 2/   # Metropolitan Train (Metro Trains Melbourne)
+│   └── google_transit.zip
+├── 3/   # Metropolitan Tram (Yarra Trams)
+│   └── google_transit.zip
+├── 4/   # Metropolitan Bus
+│   └── google_transit.zip
+├── 5/   # Regional Bus
+│   └── google_transit.zip
+├── 6/   # Regional Coach
+│   └── google_transit.zip
+├── 10/  # Interstate
+│   └── google_transit.zip
+└── 11/  # SkyBus
+    └── google_transit.zip
+```
+
+> **Note**: Both `gtfs/` and `gtfs_schedule.db` are gitignored to avoid committing massive binaries.
+
+---
+
+## 3. Building `gtfs_schedule.db`
+
+The database builder parses the GTFS feeds, normalizes timestamps into seconds past midnight (`arrival_time_secs`, `departure_time_secs`), and creates optimized B-tree indexes.
+
+### 3.1 Build Full Production Database
+To ingest all available GTFS transit modes:
+
+```bash
+python gtfs_db_builder/gtfs_db_builder.py ./gtfs/*/google_transit.zip
+```
+
+Or specify individual feeds explicitly:
+```bash
+python gtfs_db_builder/gtfs_db_builder.py \
+  ./gtfs/1/google_transit.zip \
+  ./gtfs/2/google_transit.zip \
+  ./gtfs/3/google_transit.zip \
+  ./gtfs/4/google_transit.zip \
+  ./gtfs/5/google_transit.zip \
+  ./gtfs/6/google_transit.zip \
+  ./gtfs/10/google_transit.zip \
+  ./gtfs/11/google_transit.zip
+```
+
+### 3.2 Quick / Minimal Build (Metro Train & Tram Only)
+For faster local iteration and testing:
+```bash
+python gtfs_db_builder/gtfs_db_builder.py ./gtfs/2/google_transit.zip ./gtfs/3/google_transit.zip
+```
+
+### 3.3 Mock Dataset (Offline / Testing Mode)
+If no GTFS zip files are supplied, the builder synthesizes a mock multi-modal network for development:
+```bash
+python gtfs_db_builder/gtfs_db_builder.py
+```
+
+---
+
+## 4. Precomputing Transit & Transfer Spatial Graphs
+
+After populating `gtfs_schedule.db`, precompute the transit route connection edges and KDTree spatial walking transfer pairs (within 500m) to enable sub-second routing:
+
+```bash
+python precompute_graph/precompute_graph.py
+```
+
+This populates two tables in `gtfs_schedule.db`:
+- `transit_network_edges`: Average transit travel durations between consecutive stops.
+- `transfer_edges`: Walking transfer connections between nearby stops computed via KDTree on a unit sphere.
+
+---
+
+## 5. Usage & Querying Routes
+
+Use [`testPTVOpenData/testPTVOpenData.py`](file:///Users/lucidmach/Motion/testPTVOpenData/testPTVOpenData.py) to calculate recommended departures and itineraries:
+
+### 5.1 Query with Target Arrival Time & Safety Buffer
+```bash
+python testPTVOpenData/testPTVOpenData.py \
+  --start "Richmond" \
+  --destination "Footscray" \
+  --arrival-time "2026-08-20 09:15" \
+  --buffer 10
+```
+
+### 5.2 Query with Unix Epoch Arrival Timestamp
+```bash
+python testPTVOpenData/testPTVOpenData.py \
+  --start "Richmond" \
+  --destination "Footscray" \
+  --arrival-timestamp 1787219700 \
+  --buffer 10
+```
+
+### 5.3 Simulate Disruption with Replacement Bus Preference
+```bash
+python testPTVOpenData/testPTVOpenData.py \
+  --start "Richmond" \
+  --destination "Footscray" \
+  --arrival-time "09:15" \
+  --disrupt-route "Sandringham"
+```
+
+### 5.4 Simulate Disruption with Rail Detour (No Replacement Bus)
+```bash
+python testPTVOpenData/testPTVOpenData.py \
+  --start "Richmond" \
+  --destination "Footscray" \
+  --arrival-time "09:15" \
+  --disrupt-route "Sandringham" \
+  --no-replacement-bus
+```
+
+### 5.5 Offline Query (Skip Live GTFS-R API Calls)
+```bash
+python testPTVOpenData/testPTVOpenData.py \
+  --start "Alan Finkel Building" \
+  --destination "The Spot Building" \
+  --arrival-time "10:00" \
+  --no-live-alerts
+```
+
+---
+
+## 6. Running the Test Suite
+
+Run the full end-to-end and unit test suite via [`run_tests.sh`](file:///Users/lucidmach/Motion/run_tests.sh):
+
+```bash
+./run_tests.sh
+```
+
+This verifies:
+1. Python dependencies (`sqlite3`, `networkx`, `geopy`, `osmnx`, `scipy`).
+2. GTFS SQLite database tables and edge counts.
+3. Directional routing unit tests ([`directional_routing/test_directional_routing.py`](file:///Users/lucidmach/Motion/directional_routing/test_directional_routing.py)).
+4. Geometry, bearing calculations, and arrival timestamp parsing.
+5. End-to-end multi-modal routing scenarios with live disruptions and detours.
+
+---
+
+## 7. Project Structure
+
+```
+.
+├── directional_routing/        # Spatial graph traversal & directional A* engine
+│   ├── directional_routing.py
+│   ├── directional_routing.spec.md
+│   └── test_directional_routing.py
+├── gtfs/                       # Raw GTFS schedule archives (gitignored)
+│   ├── 1..11/google_transit.zip
+├── gtfs_db_builder/            # Relational SQLite ingestion pipeline
+│   ├── gtfs_db_builder.py
+│   └── gtfs_db_builder.spec.md
+├── precompute_graph/           # KDTree spatial & transit edge precomputation
+│   ├── precompute_graph.py
+│   └── precompute_graph.spec.md
+├── routing_engine/             # Multi-criteria Dijkstra / timetable router
+│   ├── routing_engine.py
+│   └── routing_engine.spec.md
+├── testPTVOpenData/            # GTFS-Realtime API client & orchestrator
+│   ├── testPTVOpenData.py
+│   └── testPTVOpenData.spec.md
+├── environment.yml             # Conda environment definition
+├── gtfs_schedule.db            # SQLite database (gitignored)
+├── run_tests.sh                # End-to-end test runner script
+└── README.md                   # Project documentation
+```

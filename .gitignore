@@ -3,3 +3,5 @@
 
 /gtfs_schedule.db
 /gtfs
+
+.env
