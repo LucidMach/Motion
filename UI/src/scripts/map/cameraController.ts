@@ -37,4 +37,14 @@ export class CameraController {
     window.dispatchEvent(new CustomEvent('motion:3d-state', { detail: { is3D: enable3D } }));
     return enable3D;
   }
+
+  syncPitchState(): void {
+    const map = this.getMap();
+    if (!map) return;
+    const is3D = map.getPitch() > 5;
+    if (is3D !== this.is3DActive) {
+      this.is3DActive = is3D;
+      window.dispatchEvent(new CustomEvent('motion:3d-state', { detail: { is3D } }));
+    }
+  }
 }

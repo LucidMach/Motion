@@ -53,11 +53,19 @@ export class MotionMapController {
       this.map = createMotionMap(containerId, {
         onReady: () => {
           this.updateRegionInFocus();
+          this.camera.syncPitchState();
           dispatchStatus({ state: 'ready', message: 'GPS Accuracy: ±15m' });
         },
         onStyleLoad: () => this.updateRegionInFocus(),
-        onMove: () => this.scheduleRegionUpdate(),
-        onMoveEnd: () => this.updateRegionInFocus()
+        onMove: () => {
+          this.scheduleRegionUpdate();
+          this.camera.syncPitchState();
+        },
+        onMoveEnd: () => {
+          this.updateRegionInFocus();
+          this.camera.syncPitchState();
+        },
+        onPitch: () => this.camera.syncPitchState()
       });
       this.markerManager = new UserMarkerManager(this.map, () => this.flyToUser());
 

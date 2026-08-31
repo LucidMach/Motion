@@ -8,6 +8,7 @@ export interface MapLifecycleHooks {
   onStyleLoad: () => void;
   onMove: () => void;
   onMoveEnd: () => void;
+  onPitch?: () => void;
 }
 
 function configureDefault3DAtmosphere(map: mapboxgl.Map): void {
@@ -24,6 +25,44 @@ function configureDefault3DAtmosphere(map: mapboxgl.Map): void {
   }
 }
 
+export function configureOrbitControls(map: mapboxgl.Map): void {
+  // Disable default BoxZoomHandler so Shift + Left Click drag orbits instead of rubber-band zooming
+  if (map.boxZoom && map.boxZoom.isEnabled()) {
+    map.boxZoom.disable();
+  }
+
+  const dragRotate = (map as any).dragRotate;
+  if (dragRotate) {
+    dragRotate.enable();
+    dragRotate.enablePitch();
+    dragRotate.enableRotation();
+
+    // Mapbox mouse rotate/pitch handlers determine which button activates orbit/rotation/pitch
+    // We allow:
+    // - Shift + Left Mouse Button (orbit view)
+    // - Ctrl + Left Mouse Button (standard Mapbox modifier)
+    // - Right Mouse Button (standard secondary button orbit)
+    const isOrbitButton = (e: MouseEvent, button: number): boolean => {
+      return (button === 0 && (e.shiftKey || e.ctrlKey)) || button === 2;
+    };
+
+    if (dragRotate._mouseRotate) {
+      dragRotate._mouseRotate._correctButton = isOrbitButton;
+    }
+    if (dragRotate._mousePitch) {
+      dragRotate._mousePitch._correctButton = isOrbitButton;
+    }
+  }
+
+  // Ensure DragPanHandler only handles normal Left Button drag without Shift or Ctrl
+  const dragPan = (map as any).dragPan;
+  if (dragPan && dragPan._mousePan) {
+    dragPan._mousePan._correctButton = (e: MouseEvent, button: number): boolean => {
+      return button === 0 && !e.shiftKey && !e.ctrlKey;
+    };
+  }
+}
+
 // Builds the Mapbox GL map, wires its lifecycle events, and guards against the
 // zero-dimension canvas glitch that shows up while the layout is still settling.
 export function createMotionMap(containerId: string, hooks: MapLifecycleHooks): mapboxgl.Map {
@@ -35,25 +74,33 @@ export function createMotionMap(containerId: string, hooks: MapLifecycleHooks): 
     pitch: 58,
     bearing: -17.6,
     antialias: true,
-    attributionControl: false
+    attributionControl: false,
+    boxZoom: false
   });
+
+  configureOrbitControls(map);
 
   map.addControl(new MotionNavigationControl(), 'bottom-right');
 
   map.on('load', () => {
     map.resize();
     configureDefault3DAtmosphere(map);
+    configureOrbitControls(map);
     hooks.onReady();
   });
 
   map.on('style.load', () => {
     map.resize();
     configureDefault3DAtmosphere(map);
+    configureOrbitControls(map);
     hooks.onStyleLoad();
   });
 
   map.on('move', hooks.onMove);
   map.on('moveend', hooks.onMoveEnd);
+  if (hooks.onPitch) {
+    map.on('pitch', hooks.onPitch);
+  }
 
   setTimeout(() => map.resize(), 250);
   setTimeout(() => map.resize(), 1000);
