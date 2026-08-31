@@ -8,11 +8,26 @@
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview"
   },
   "dependencies": {
+    "@astrojs/react": "^4.4.2",
+    "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.4.1",
-    "mapbox-gl": "^3.10.0"
+    "mapbox-gl": "^3.10.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@types/mapbox-gl": "^3.4.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
     "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "^6.4.1"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   }
 }

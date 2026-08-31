@@ -2,8 +2,8 @@
 // index.astro - Motion 3D Transit & Geolocation Frontend
 import '../styles/global.css';
 import MapboxMap from '../components/MapboxMap.astro';
-import HeaderHUD from '../components/HeaderHUD.astro';
-import TokenModal from '../components/TokenModal.astro';
+import HeaderHUD from '../components/HeaderHUD/HeaderHUD';
+import TokenModal from '../components/TokenModal/TokenModal';
 
 const pageTitle = "Motion • 3D Victorian Transit & Live Geolocation";
 const pageDescription = "High-performance 3D transit routing and live GPS geolocation navigator with Mapbox 3D Engine.";
@@ -33,25 +33,15 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
     <title>{pageTitle}</title>
   </head>
   <body>
-    <main id="app-container">
+    <main id="app-container" class="relative h-screen w-screen overflow-hidden bg-deep">
       <!-- 3D Mapbox Map Engine -->
       <MapboxMap initialToken={import.meta.env.PUBLIC_MAPBOX_TOKEN} />
 
       <!-- Top Navigation and Region Status HUD -->
-      <HeaderHUD />
+      <HeaderHUD client:load />
 
       <!-- Token Configuration Modal (Triggers on missing token) -->
-      <TokenModal />
+      <TokenModal client:load />
     </main>
-
-    <style>
-      #app-container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        background-color: var(--bg-deep);
-      }
-    </style>
   </body>
 </html>

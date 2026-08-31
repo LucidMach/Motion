@@ -7,10 +7,10 @@ interface Props {
 const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || '' } = Astro.props;
 ---
 
-<div id="map" data-token={initialToken}></div>
+<div id="map" class="absolute inset-0 z-[1] h-screen w-screen" data-token={initialToken}></div>
 
 <script>
-  import { MotionMapController } from '../scripts/mapController';
+  import { MotionMapController } from '../scripts/map';
 
   let mapController: MotionMapController | null = null;
 
@@ -39,24 +39,6 @@ const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || '' } = Astro.props
       const is3D = (e as CustomEvent<{ is3D: boolean }>).detail?.is3D;
       if (typeof is3D === 'boolean') {
         mapController?.setPerspective(is3D);
-      }
-    });
-
-    window.addEventListener('motion:cmd:reset-north', () => {
-      mapController?.resetBearing();
-    });
-
-    window.addEventListener('motion:cmd:light-preset', (e: Event) => {
-      const preset = (e as CustomEvent<{ preset: 'night' | 'dusk' | 'dawn' | 'day' }>).detail?.preset;
-      if (preset) {
-        mapController?.setLightPreset(preset);
-      }
-    });
-
-    window.addEventListener('motion:cmd:fly-hub', (e: Event) => {
-      const hub = (e as CustomEvent<{ hub: any }>).detail?.hub;
-      if (hub) {
-        mapController?.flyToHub(hub);
       }
     });
 
