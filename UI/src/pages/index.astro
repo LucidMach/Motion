@@ -8,7 +8,7 @@ import TelemetryPanel from '../components/TelemetryPanel.astro';
 import TokenModal from '../components/TokenModal.astro';
 
 const pageTitle = "Motion • 3D Victorian Transit & Live Geolocation";
-const pageDescription = "High-performance 3D transit routing and live GPS geolocation navigator with Mapbox Moonlight theme.";
+const pageDescription = "High-performance 3D transit routing and live GPS geolocation navigator with Mapbox 3D Engine.";
 ---
 
 <!DOCTYPE html>
@@ -36,7 +36,7 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
   </head>
   <body>
     <main id="app-container">
-      <!-- 3D Moonlight Map Engine -->
+      <!-- 3D Mapbox Map Engine -->
       <MapboxMap initialToken={import.meta.env.PUBLIC_MAPBOX_TOKEN} />
 
       <!-- Floating Glassmorphic Overlays -->

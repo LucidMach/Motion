@@ -72,7 +72,7 @@ export class MotionMapController {
   private watchId: number | null = null;
   private lastLocation: LocationTelemetry | null = null;
   private is3DActive: boolean = true;
-  private currentLightPreset: string = 'night';
+  private currentLightPreset: string = 'day';
   private token: string = '';
 
   constructor() {}
@@ -125,14 +125,14 @@ export class MotionMapController {
       this.map.on('load', () => {
         console.log('[MotionMap] Map load event fired.');
         this.map?.resize();
-        this.configureMoonlightAtmosphere();
-        this.dispatchStatus({ state: 'ready', message: 'Moonlight 3D Engine Active' });
+        this.configureDefault3DAtmosphere();
+        this.dispatchStatus({ state: 'ready', message: 'Mapbox 3D Engine Active' });
       });
 
       this.map.on('style.load', () => {
         console.log('[MotionMap] Map style.load event fired.');
         this.map?.resize();
-        this.configureMoonlightAtmosphere();
+        this.configureDefault3DAtmosphere();
       });
 
       // Periodic resize to prevent zero-dimension canvas issues
@@ -168,78 +168,20 @@ export class MotionMapController {
     this.init('map', trimmed);
   }
 
-  private configureMoonlightAtmosphere(): void {
+  private configureDefault3DAtmosphere(): void {
     if (!this.map) return;
 
     try {
       const mapAny = this.map as any;
-      // Configure Standard Style lighting preset to "night" (Moonlight aesthetic)
+      // Configure Standard Style lighting preset to default "day"
       if (typeof mapAny.setConfigProperty === 'function') {
         mapAny.setConfigProperty('basemap', 'lightPreset', this.currentLightPreset);
         mapAny.setConfigProperty('basemap', 'show3dObjects', true);
         mapAny.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
         mapAny.setConfigProperty('basemap', 'showTransitLabels', true);
       }
-
-      // Add 3D building extrusions fallback layer for custom/classic styles
-      if (!this.map.getLayer('3d-buildings') && this.map.getSource('composite')) {
-        const layers = this.map.getStyle()?.layers;
-        const labelLayerId = layers?.find(
-          (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
-        )?.id;
-
-        this.map.addLayer(
-          {
-            id: '3d-buildings',
-            source: 'composite',
-            'source-layer': 'building',
-            filter: ['==', 'extrude', 'true'],
-            type: 'fill-extrusion',
-            minzoom: 13,
-            paint: {
-              'fill-extrusion-color': [
-                'interpolate',
-                ['linear'],
-                ['get', 'height'],
-                0, '#0f172a',
-                50, '#1e293b',
-                120, '#334155',
-                250, '#1e1b4b'
-              ],
-              'fill-extrusion-height': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                13, 0,
-                14.5, ['get', 'height']
-              ],
-              'fill-extrusion-base': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                13, 0,
-                14.5, ['get', 'min_height']
-              ],
-              'fill-extrusion-opacity': 0.85
-            }
-          },
-          labelLayerId
-        );
-      }
-
-      // Set moonlight atmospheric fog
-      if (typeof mapAny.setFog === 'function') {
-        mapAny.setFog({
-          range: [0.5, 10],
-          color: '#070a13',
-          'horizon-blend': 0.15,
-          'high-color': '#0f172a',
-          'space-color': '#030712',
-          'star-intensity': 0.85
-        });
-      }
     } catch (e) {
-      console.warn('[MotionMap] Atmosphere configuration note:', e);
+      console.warn('[MotionMap] Style configuration note:', e);
     }
   }
 

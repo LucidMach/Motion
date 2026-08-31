@@ -34,14 +34,14 @@ conda env update -f environment.yml --prune
 ```
 
 ### 1.2 PTV & Mapbox Key Configuration
-Create a `.env` file in the project root to configure live GTFS-Realtime queries and the Mapbox 3D Moonlight map:
+Create a `.env` file in the project root to configure live GTFS-Realtime queries and the Mapbox 3D map:
 
 ```bash
 PTVOpenDataAPIKey=YOUR_PTV_API_KEY
 PUBLIC_MAPBOX_TOKEN=pk.your_mapbox_token_here
 ```
 
-### 1.3 Web UI (Astro + Mapbox 3D Moonlight)
+### 1.3 Web UI (Astro + Mapbox 3D)
 The user interface is located in the [`UI/`](file:///Users/lucidmach/Motion/UI) directory, built with **Astro** and managed via **pnpm**:
 
 ```bash

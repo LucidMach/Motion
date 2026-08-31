@@ -31,33 +31,6 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
     <span id="label-3d" class="btn-text">3D Active</span>
   </button>
 
-  <!-- Lighting Preset / Moonlight Selector -->
-  <div class="preset-dropdown-wrap">
-    <button id="btn-lighting-menu" class="btn-control" title="Moonlight Lighting Theme">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-      </svg>
-      <span class="btn-text" id="label-theme">Moonlight</span>
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="chevron">
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </button>
-    <div class="theme-dropdown-menu glass-panel" id="theme-menu">
-      <button class="theme-option active" data-preset="night">
-        <span class="theme-dot night"></span>
-        <span>Moonlight (Night)</span>
-      </button>
-      <button class="theme-option" data-preset="dusk">
-        <span class="theme-dot dusk"></span>
-        <span>Twilight (Dusk)</span>
-      </button>
-      <button class="theme-option" data-preset="dawn">
-        <span class="theme-dot dawn"></span>
-        <span>Aurora (Dawn)</span>
-      </button>
-    </div>
-  </div>
-
   <div class="control-divider"></div>
 
   <!-- Transit Hub Presets -->
@@ -243,25 +216,6 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
     background: rgba(56, 189, 248, 0.12);
   }
 
-  .theme-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .theme-dot.night {
-    background: #0f172a;
-    border: 1.5px solid #38bdf8;
-    box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
-  }
-  .theme-dot.dusk {
-    background: #4c1d95;
-    border: 1.5px solid #a855f7;
-  }
-  .theme-dot.dawn {
-    background: #b45309;
-    border: 1.5px solid #fbbf24;
-  }
-
   .hub-icon {
     font-size: 1.1rem;
   }
@@ -317,10 +271,6 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
   const label3D = document.getElementById('label-3d');
   const resetNorthBtn = document.getElementById('btn-reset-north');
 
-  const lightingBtn = document.getElementById('btn-lighting-menu');
-  const themeMenu = document.getElementById('theme-menu');
-  const themeWrap = lightingBtn?.parentElement;
-
   const hubsBtn = document.getElementById('btn-hubs-menu');
   const hubsMenu = document.getElementById('hubs-menu');
   const hubsWrap = hubsBtn?.parentElement;
@@ -350,44 +300,16 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
     }
   });
 
-  // Dropdown toggles
-  lightingBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hubsMenu?.classList.remove('open');
-    hubsWrap?.classList.remove('active-dropdown');
-    themeMenu?.classList.toggle('open');
-    themeWrap?.classList.toggle('active-dropdown');
-  });
-
+  // Transit Hubs Dropdown toggle
   hubsBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    themeMenu?.classList.remove('open');
-    themeWrap?.classList.remove('active-dropdown');
     hubsMenu?.classList.toggle('open');
     hubsWrap?.classList.toggle('active-dropdown');
   });
 
   document.addEventListener('click', () => {
-    themeMenu?.classList.remove('open');
-    themeWrap?.classList.remove('active-dropdown');
     hubsMenu?.classList.remove('open');
     hubsWrap?.classList.remove('active-dropdown');
-  });
-
-  // Theme option clicks
-  themeMenu?.querySelectorAll('.theme-option').forEach((opt) => {
-    opt.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const preset = (opt as HTMLElement).dataset.preset;
-      themeMenu.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
-      opt.classList.add('active');
-      const labelTheme = document.getElementById('label-theme');
-      if (labelTheme) labelTheme.textContent = opt.querySelector('span:last-child')?.textContent || 'Moonlight';
-
-      window.dispatchEvent(new CustomEvent('motion:cmd:light-preset', { detail: { preset } }));
-      themeMenu.classList.remove('open');
-      themeWrap?.classList.remove('active-dropdown');
-    });
   });
 
   // Transit Hub clicks
@@ -396,7 +318,7 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
       e.stopPropagation();
       const hub = (opt as HTMLElement).dataset.hub;
       window.dispatchEvent(new CustomEvent('motion:cmd:fly-hub', { detail: { hub } }));
-      hubsMenu.classList.remove('open');
+      hubsMenu?.classList.remove('open');
       hubsWrap?.classList.remove('active-dropdown');
     });
   });
