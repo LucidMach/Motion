@@ -726,12 +726,12 @@ export class MotionNavigationControl implements mapboxgl.IControl {
 
     // 1. Zoom In Button (+)
     this.btnZoomIn = document.createElement('button');
-    this.btnZoomIn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-zoom-in';
+    this.btnZoomIn.className = 'motion-ctrl-btn motion-zoom-in';
     this.btnZoomIn.type = 'button';
-    this.btnZoomIn.title = 'Zoom in';
-    this.btnZoomIn.setAttribute('aria-label', 'Zoom in');
+    this.btnZoomIn.title = 'Zoom In';
+    this.btnZoomIn.setAttribute('aria-label', 'Zoom In');
     this.btnZoomIn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="motion-ctrl-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
         <line x1="5" y1="12" x2="19" y2="12"></line>
       </svg>
@@ -743,12 +743,12 @@ export class MotionNavigationControl implements mapboxgl.IControl {
 
     // 2. Zoom Out Button (-)
     this.btnZoomOut = document.createElement('button');
-    this.btnZoomOut.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-zoom-out';
+    this.btnZoomOut.className = 'motion-ctrl-btn motion-zoom-out';
     this.btnZoomOut.type = 'button';
-    this.btnZoomOut.title = 'Zoom out';
-    this.btnZoomOut.setAttribute('aria-label', 'Zoom out');
+    this.btnZoomOut.title = 'Zoom Out';
+    this.btnZoomOut.setAttribute('aria-label', 'Zoom Out');
     this.btnZoomOut.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="motion-ctrl-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="5" y1="12" x2="19" y2="12"></line>
       </svg>
     `;
@@ -759,7 +759,7 @@ export class MotionNavigationControl implements mapboxgl.IControl {
 
     // 3. 2D / 3D Perspective Toggle Button (Cube for 3D, Square for 2D)
     this.btnPerspective = document.createElement('button');
-    this.btnPerspective.className = 'mapboxgl-ctrl-camera is-3d';
+    this.btnPerspective.className = 'motion-ctrl-btn motion-camera-toggle is-3d';
     this.btnPerspective.type = 'button';
     this.renderPerspectiveButton();
     this.btnPerspective.onclick = (e) => {
@@ -787,11 +787,11 @@ export class MotionNavigationControl implements mapboxgl.IControl {
   private renderPerspectiveButton() {
     if (!this.btnPerspective) return;
     if (this.is3D) {
-      this.btnPerspective.className = 'mapboxgl-ctrl-camera is-3d';
+      this.btnPerspective.className = 'motion-ctrl-btn motion-camera-toggle is-3d';
       this.btnPerspective.title = 'Switch to 2D Planar View (Currently 3D)';
       this.btnPerspective.setAttribute('aria-label', 'Switch to 2D Planar View');
       this.btnPerspective.innerHTML = `
-        <svg class="cam-nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="motion-ctrl-icon cam-nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
           <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
           <line x1="12" y1="22.08" x2="12" y2="12"></line>
@@ -799,11 +799,11 @@ export class MotionNavigationControl implements mapboxgl.IControl {
         <span class="cam-btn-label">3D</span>
       `;
     } else {
-      this.btnPerspective.className = 'mapboxgl-ctrl-camera is-2d';
+      this.btnPerspective.className = 'motion-ctrl-btn motion-camera-toggle is-2d';
       this.btnPerspective.title = 'Switch to 3D Oblique Perspective (Currently 2D)';
       this.btnPerspective.setAttribute('aria-label', 'Switch to 3D Oblique Perspective');
       this.btnPerspective.innerHTML = `
-        <svg class="cam-nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="motion-ctrl-icon cam-nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3.5" y="3.5" width="17" height="17" rx="3.5"></rect>
         </svg>
         <span class="cam-btn-label">2D</span>

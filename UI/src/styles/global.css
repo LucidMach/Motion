@@ -211,73 +211,98 @@ html, body {
   }
 }
 
-/* Custom Mapbox GL Control overrides */
+/* Custom Mapbox GL Control overrides & Unified Navigation Dock */
+.mapboxgl-ctrl-group.motion-navigation-dock,
 .mapboxgl-ctrl-group {
   background: var(--bg-surface-elevated) !important;
   backdrop-filter: var(--blur-glass) !important;
+  -webkit-backdrop-filter: var(--blur-glass) !important;
   border: 1px solid var(--border-subtle) !important;
   border-radius: var(--radius-md) !important;
   overflow: hidden;
   box-shadow: var(--shadow-glass) !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-.mapboxgl-ctrl-group button {
+/* Base button styles applied to ALL dock buttons */
+.mapboxgl-ctrl-group button,
+.motion-ctrl-btn {
   background-color: transparent !important;
+  border: none !important;
   border-bottom: 1px solid var(--border-subtle) !important;
-  width: 36px !important;
-  height: 36px !important;
+  width: 38px !important;
+  height: 38px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: var(--transition-smooth);
+  color: var(--text-secondary) !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease !important;
+  user-select: none !important;
+  padding: 0 !important;
+  outline: none !important;
 }
 
-.mapboxgl-ctrl-group button:last-child {
+.mapboxgl-ctrl-group button:last-child,
+.motion-ctrl-btn:last-child {
   border-bottom: none !important;
 }
 
-.mapboxgl-ctrl-group button:hover {
+/* Consistent Hover Interaction */
+.mapboxgl-ctrl-group button:hover,
+.motion-ctrl-btn:hover {
   background-color: var(--bg-surface-hover) !important;
+  color: var(--text-primary) !important;
 }
 
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera {
-  height: 44px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 1px !important;
-  padding: 3px 0 !important;
-  color: var(--text-secondary);
+/* Consistent Active / Click Press Interaction */
+.mapboxgl-ctrl-group button:active,
+.motion-ctrl-btn:active {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  transform: scale(0.92) !important;
 }
 
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera:hover {
+/* Consistent SVG Icon Hover Animation for all buttons */
+.motion-ctrl-icon {
+  color: inherit;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+  pointer-events: none;
+}
+
+.motion-ctrl-btn:hover .motion-ctrl-icon {
+  transform: scale(1.15);
   color: var(--text-primary);
 }
 
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera.is-3d {
+/* 2D / 3D Perspective Button Variations */
+.motion-ctrl-btn.motion-camera-toggle {
+  height: 44px !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+  padding: 2px 0 !important;
+}
+
+.motion-ctrl-btn.motion-camera-toggle.is-3d {
   color: var(--accent-cyan) !important;
   background: rgba(56, 189, 248, 0.08) !important;
 }
 
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera.is-3d .cam-nav-icon {
+.motion-ctrl-btn.motion-camera-toggle.is-3d .cam-nav-icon {
   filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+  color: var(--accent-cyan) !important;
 }
 
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera.is-3d .cam-btn-label {
+.motion-ctrl-btn.motion-camera-toggle.is-3d .cam-btn-label {
   color: var(--accent-cyan);
 }
 
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera.is-2d {
+.motion-ctrl-btn.motion-camera-toggle.is-2d {
   color: var(--text-secondary) !important;
 }
 
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera.is-2d .cam-btn-label {
+.motion-ctrl-btn.motion-camera-toggle.is-2d .cam-btn-label {
   color: var(--text-muted);
-}
-
-.cam-nav-icon {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .cam-btn-label {
@@ -287,10 +312,7 @@ html, body {
   letter-spacing: 0.06em;
   line-height: 1;
   user-select: none;
-}
-
-.mapboxgl-ctrl-group button.mapboxgl-ctrl-camera:hover .cam-nav-icon {
-  transform: scale(1.12);
+  pointer-events: none;
 }
 
 .mapboxgl-ctrl-icon {
