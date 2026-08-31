@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Settings Icon Button**: Removed redundant gear icon from the navigation header HUD. (The token modal continues to open automatically when a valid Mapbox token is missing).
 - **Secondary Control Dock**: Removed the floating action bar below the navbar (`MapControls.astro`).
 - **Live Sensors Panel**: Removed the bottom-left floating telemetry card (`TelemetryPanel.astro`).
+- **Bottom-Left Info Button**: Removed the compact Mapbox Attribution (`i` icon) button from the bottom-left corner for a clean viewport.
 
 ---
 

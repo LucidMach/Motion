@@ -341,11 +341,6 @@ export class MotionMapController {
       // Add unified navigation controls (Zoom in, Zoom out, and 2D/3D camera toggle button)
       this.map.addControl(new MotionNavigationControl(), 'bottom-right');
 
-      this.map.addControl(
-        new mapboxgl.AttributionControl({ compact: true }),
-        'bottom-left'
-      );
-
       this.map.on('load', () => {
         console.log('[MotionMap] Map load event fired.');
         this.map?.resize();
