@@ -1,0 +1,10 @@
+{
+  "name": "motion",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --dir UI dev",
+    "build": "pnpm --dir UI build",
+    "preview": "pnpm --dir UI preview"
+  }
+}

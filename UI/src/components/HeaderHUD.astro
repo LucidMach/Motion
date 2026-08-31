@@ -1,0 +1,174 @@
+---
+// HeaderHUD.astro - Top Navigation and Live Status HUD
+---
+
+<header class="header-hud glass-panel">
+  <div class="brand-group">
+    <div class="brand-icon-wrapper">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 19 21 12 17 5 21 12 2" />
+      </svg>
+      <div class="brand-glow"></div>
+    </div>
+    <div class="brand-text">
+      <h1 class="brand-title">MOTION</h1>
+      <span class="brand-subtitle">Victorian Transit • 3D Moonlight</span>
+    </div>
+  </div>
+
+  <div class="status-group">
+    <div class="status-pill glass-panel" id="gps-status-pill">
+      <span class="pulse-dot cyan" id="status-dot"></span>
+      <span class="status-text" id="status-label">Initializing Engine...</span>
+    </div>
+
+    <button id="btn-token-config" class="btn-icon glass-panel" title="Mapbox Token Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    </button>
+  </div>
+</header>
+
+<style>
+  .header-hud {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    height: 64px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-icon-wrapper {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2));
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-cyan);
+  }
+
+  .brand-icon {
+    width: 22px;
+    height: 22px;
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
+    animation: float-slight 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes float-slight {
+    0% { transform: translateY(0px) rotate(0deg); }
+    100% { transform: translateY(-2px) rotate(2deg); }
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .brand-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    background: linear-gradient(90deg, #ffffff 0%, #38bdf8 60%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-subtitle {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .status-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+  }
+
+  .btn-icon:hover {
+    color: var(--text-accent);
+    border-color: var(--border-glow);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 640px) {
+    .header-hud {
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      padding: 0 14px;
+      height: 56px;
+    }
+    .brand-subtitle {
+      display: none;
+    }
+    .status-pill {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+    }
+  }
+</style>
+
+<script>
+  window.addEventListener('motion:status', (event: Event) => {
+    const { state, message } = (event as CustomEvent<{ state: string; message: string }>).detail || {};
+    const labelEl = document.getElementById('status-label');
+    const dotEl = document.getElementById('status-dot');
+
+    if (labelEl) labelEl.textContent = message || 'Active';
+    
+    if (dotEl) {
+      dotEl.className = 'pulse-dot';
+      if (state === 'gps_active' || state === 'ready') {
+        dotEl.classList.add('cyan');
+      } else if (state === 'gps_acquiring' || state === 'needs_token') {
+        dotEl.classList.add('amber');
+      }
+    }
+  });
+</script>

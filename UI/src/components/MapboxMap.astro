@@ -1,0 +1,73 @@
+---
+// MapboxMap.astro - 3D Mapbox Container & Controller Coordinator
+interface Props {
+  initialToken?: string;
+}
+
+const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || '' } = Astro.props;
+---
+
+<div id="map" data-token={initialToken}></div>
+
+<script>
+  import { MotionMapController } from '../scripts/mapController';
+
+  let mapController: MotionMapController | null = null;
+
+  function initMotionMap() {
+    if (mapController) return;
+
+    const mapEl = document.getElementById('map');
+    const token = mapEl?.getAttribute('data-token') ||
+                  (import.meta.env.PUBLIC_MAPBOX_TOKEN as string) ||
+                  localStorage.getItem('motion_mapbox_token') || '';
+
+    mapController = new MotionMapController();
+    mapController.init('map', token);
+
+    // Wire up command events
+    window.addEventListener('motion:cmd:fly-user', () => {
+      mapController?.flyToUser();
+    });
+
+    window.addEventListener('motion:cmd:toggle-3d', () => {
+      const is3D = mapController?.toggle3D();
+      window.dispatchEvent(new CustomEvent('motion:3d-state', { detail: { is3D } }));
+    });
+
+    window.addEventListener('motion:cmd:reset-north', () => {
+      mapController?.resetBearing();
+    });
+
+    window.addEventListener('motion:cmd:light-preset', (e: Event) => {
+      const preset = (e as CustomEvent<{ preset: 'night' | 'dusk' | 'dawn' | 'day' }>).detail?.preset;
+      if (preset) {
+        mapController?.setLightPreset(preset);
+      }
+    });
+
+    window.addEventListener('motion:cmd:fly-hub', (e: Event) => {
+      const hub = (e as CustomEvent<{ hub: any }>).detail?.hub;
+      if (hub) {
+        mapController?.flyToHub(hub);
+      }
+    });
+
+    window.addEventListener('motion:cmd:update-token', (e: Event) => {
+      const tokenVal = (e as CustomEvent<{ token: string }>).detail?.token;
+      if (tokenVal) {
+        mapController?.updateToken(tokenVal);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMotionMap);
+  } else {
+    initMotionMap();
+  }
+
+  window.addEventListener('beforeunload', () => {
+    mapController?.destroy();
+  });
+</script>

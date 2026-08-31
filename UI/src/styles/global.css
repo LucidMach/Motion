@@ -1,0 +1,316 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Color Palette - Moonlight Theme */
+  --bg-deep: #05070d;
+  --bg-surface: rgba(10, 15, 29, 0.78);
+  --bg-surface-elevated: rgba(16, 24, 46, 0.85);
+  --bg-surface-hover: rgba(28, 41, 75, 0.9);
+  
+  --border-subtle: rgba(148, 163, 184, 0.12);
+  --border-glow: rgba(56, 189, 248, 0.35);
+  --border-active: rgba(99, 102, 241, 0.5);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-accent: #38bdf8;
+  
+  --accent-cyan: #38bdf8;
+  --accent-indigo: #6366f1;
+  --accent-blue: #3b82f6;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+
+  /* Shadows & Glows */
+  --glow-cyan: 0 0 25px rgba(56, 189, 248, 0.25);
+  --glow-indigo: 0 0 30px rgba(99, 102, 241, 0.2);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.25);
+
+  /* Typography */
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* UI Tokens */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --blur-glass: blur(16px);
+  --transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Map Container */
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+/* Glassmorphism Panel Base */
+.glass-panel {
+  background: var(--bg-surface);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  transition: var(--transition-smooth);
+}
+
+.glass-panel:hover {
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+/* Glowing Indicator Dots */
+.pulse-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent-emerald);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent-emerald);
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 1.5px solid var(--accent-emerald);
+  border-radius: 50%;
+  animation: ripple 2s infinite ease-out;
+}
+
+.pulse-dot.cyan {
+  background-color: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+.pulse-dot.cyan::after {
+  border-color: var(--accent-cyan);
+}
+
+.pulse-dot.amber {
+  background-color: var(--accent-amber);
+  box-shadow: 0 0 10px var(--accent-amber);
+}
+.pulse-dot.amber::after {
+  border-color: var(--accent-amber);
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* 3D User Location Marker Styling */
+.user-location-marker-wrapper {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.user-marker-radar {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(56, 189, 248, 0.05) 60%, transparent 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.7);
+  animation: radar-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.user-marker-radar-secondary {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  animation: radar-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation-delay: 0.8s;
+}
+
+.user-marker-core {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+  border: 2.5px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.9), 0 0 6px rgba(255, 255, 255, 0.8);
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.user-marker-heading {
+  position: absolute;
+  top: -10px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid #38bdf8;
+  filter: drop-shadow(0 0 4px #38bdf8);
+  z-index: 3;
+  transform-origin: center 20px;
+  display: none;
+}
+
+.user-location-marker-wrapper:hover .user-marker-core {
+  transform: scale(1.25);
+}
+
+@keyframes radar-ping {
+  0% {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Custom Mapbox GL Control overrides */
+.mapboxgl-ctrl-group {
+  background: var(--bg-surface-elevated) !important;
+  backdrop-filter: var(--blur-glass) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-glass) !important;
+}
+
+.mapboxgl-ctrl-group button {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: var(--transition-smooth);
+}
+
+.mapboxgl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+.mapboxgl-ctrl-icon {
+  filter: invert(1) opacity(0.85);
+}
+
+.mapboxgl-ctrl-attrib {
+  background: rgba(5, 7, 13, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  color: var(--text-muted) !important;
+  font-size: 10px !important;
+  border-radius: var(--radius-sm) 0 0 0 !important;
+}
+
+.mapboxgl-ctrl-attrib a {
+  color: var(--text-secondary) !important;
+  text-decoration: none;
+}
+
+.mapboxgl-ctrl-attrib a:hover {
+  color: var(--text-accent) !important;
+}
+
+.mapboxgl-compact {
+  border-radius: var(--radius-sm) !important;
+}
+
+.mapboxgl-popup-content {
+  background: var(--bg-surface-elevated) !important;
+  backdrop-filter: var(--blur-glass) !important;
+  border: 1px solid var(--border-glow) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-glass), 0 0 20px rgba(56, 189, 248, 0.2) !important;
+  padding: 12px 16px !important;
+  color: var(--text-primary) !important;
+}
+
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: var(--bg-surface-elevated) !important;
+}
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+  border-bottom-color: var(--bg-surface-elevated) !important;
+}
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: var(--bg-surface-elevated) !important;
+}
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: var(--bg-surface-elevated) !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: var(--text-muted) !important;
+  padding: 4px 8px !important;
+  font-size: 14px !important;
+}
+
+.mapboxgl-popup-close-button:hover {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 15, 29, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}

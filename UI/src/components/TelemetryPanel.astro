@@ -1,0 +1,284 @@
+---
+// TelemetryPanel.astro - Live Location & GPS Sensor Metrics HUD
+---
+
+<aside class="telemetry-panel glass-panel" aria-label="Location Telemetry">
+  <div class="telemetry-header">
+    <div class="telemetry-title-group">
+      <span class="telemetry-badge">LIVE SENSORS</span>
+      <span class="telemetry-source" id="telemetry-source-label">GPS Active</span>
+    </div>
+    <button id="btn-copy-coords" class="btn-copy" title="Copy Coordinates to Clipboard">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span id="copy-text">Copy</span>
+    </button>
+  </div>
+
+  <div class="coords-display">
+    <div class="coord-item">
+      <span class="coord-label">LAT</span>
+      <span class="coord-value" id="val-lat">-37.8180° S</span>
+    </div>
+    <div class="coord-item">
+      <span class="coord-label">LNG</span>
+      <span class="coord-value" id="val-lng">144.9671° E</span>
+    </div>
+  </div>
+
+  <div class="telemetry-grid">
+    <div class="grid-card">
+      <span class="grid-card-label">ACCURACY</span>
+      <div class="grid-card-value-wrap">
+        <span class="grid-card-value" id="val-accuracy">±12</span>
+        <span class="grid-card-unit">m</span>
+      </div>
+    </div>
+
+    <div class="grid-card">
+      <span class="grid-card-label">ALTITUDE</span>
+      <div class="grid-card-value-wrap">
+        <span class="grid-card-value" id="val-altitude">35</span>
+        <span class="grid-card-unit">m</span>
+      </div>
+    </div>
+
+    <div class="grid-card">
+      <span class="grid-card-label">HEADING</span>
+      <div class="grid-card-value-wrap">
+        <span class="grid-card-value" id="val-heading">--</span>
+        <span class="grid-card-unit">°</span>
+      </div>
+    </div>
+
+    <div class="grid-card">
+      <span class="grid-card-label">VELOCITY</span>
+      <div class="grid-card-value-wrap">
+        <span class="grid-card-value" id="val-speed">0</span>
+        <span class="grid-card-unit">km/h</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="transit-context-footer">
+    <span class="transit-dot"></span>
+    <span class="transit-text">Victoria PTV Multi-Modal Transit Region</span>
+  </div>
+</aside>
+
+<style>
+  .telemetry-panel {
+    position: absolute;
+    bottom: 24px;
+    left: 20px;
+    width: 320px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .telemetry-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 10px;
+  }
+
+  .telemetry-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .telemetry-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent-cyan);
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .telemetry-source {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .btn-copy {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+  }
+
+  .btn-copy:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glow);
+    background: var(--bg-surface-hover);
+  }
+
+  .coords-display {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(5, 7, 13, 0.6);
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .coord-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .coord-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .coord-value {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .grid-card {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-subtle);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .grid-card-label {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .grid-card-value-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+  }
+
+  .grid-card-value {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .grid-card-unit {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .transit-context-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    padding-top: 4px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .transit-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-indigo);
+    box-shadow: 0 0 6px var(--accent-indigo);
+  }
+
+  @media (max-width: 640px) {
+    .telemetry-panel {
+      bottom: 84px;
+      left: 12px;
+      right: 12px;
+      width: auto;
+      padding: 12px;
+      gap: 10px;
+    }
+    .transit-context-footer {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import type { LocationTelemetry } from '../scripts/mapController';
+
+  let currentLat = -37.8180;
+  let currentLng = 144.9671;
+
+  window.addEventListener('motion:location', (event: Event) => {
+    const loc = (event as CustomEvent<LocationTelemetry>).detail;
+    if (!loc) return;
+
+    currentLat = loc.latitude;
+    currentLng = loc.longitude;
+
+    const latEl = document.getElementById('val-lat');
+    const lngEl = document.getElementById('val-lng');
+    const accEl = document.getElementById('val-accuracy');
+    const altEl = document.getElementById('val-altitude');
+    const headEl = document.getElementById('val-heading');
+    const speedEl = document.getElementById('val-speed');
+    const sourceEl = document.getElementById('telemetry-source-label');
+
+    if (latEl) latEl.textContent = `${Math.abs(loc.latitude).toFixed(4)}° ${loc.latitude >= 0 ? 'N' : 'S'}`;
+    if (lngEl) lngEl.textContent = `${Math.abs(loc.longitude).toFixed(4)}° ${loc.longitude >= 0 ? 'E' : 'W'}`;
+    if (accEl) accEl.textContent = `±${loc.accuracy}`;
+    if (altEl) altEl.textContent = loc.altitude !== null ? `${loc.altitude}` : '--';
+    if (headEl) headEl.textContent = loc.heading !== null ? `${loc.heading}` : '--';
+    if (speedEl) speedEl.textContent = loc.speed !== null ? `${loc.speed}` : '0';
+    if (sourceEl) sourceEl.textContent = loc.source === 'gps' ? 'GPS Active' : 'Melbourne CBD';
+  });
+
+  const copyBtn = document.getElementById('btn-copy-coords');
+  const copyText = document.getElementById('copy-text');
+
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(`${currentLat.toFixed(6)}, ${currentLng.toFixed(6)}`);
+      if (copyText) copyText.textContent = 'Copied!';
+      setTimeout(() => {
+        if (copyText) copyText.textContent = 'Copy';
+      }, 2000);
+    } catch (e) {
+      console.error('Clipboard copy failed:', e);
+    }
+  });
+</script>

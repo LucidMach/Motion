@@ -1,0 +1,403 @@
+---
+// MapControls.astro - Interactive 3D Controls and Transit Quick-Navigation
+import { TRANSIT_HUBS } from '../scripts/mapController';
+---
+
+<div class="map-controls-dock glass-panel" aria-label="Map Navigation Controls">
+  <!-- Locate User Button (Primary Action) -->
+  <button id="btn-locate-me" class="btn-control primary-locate" title="Fly to My Location">
+    <div class="locate-icon-wrap">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+        <line x1="12" y1="2" x2="12" y2="5"></line>
+        <line x1="12" y1="19" x2="12" y2="22"></line>
+        <line x1="2" y1="12" x2="5" y2="12"></line>
+        <line x1="19" y1="12" x2="22" y2="12"></line>
+      </svg>
+    </div>
+    <span class="btn-text">My Location</span>
+  </button>
+
+  <div class="control-divider"></div>
+
+  <!-- 3D / 2D Perspective Toggle -->
+  <button id="btn-toggle-3d" class="btn-control active" title="Toggle 3D / 2D Perspective">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+      <polyline points="2 17 12 22 22 17"></polyline>
+      <polyline points="2 12 12 17 22 12"></polyline>
+    </svg>
+    <span id="label-3d" class="btn-text">3D Active</span>
+  </button>
+
+  <!-- Lighting Preset / Moonlight Selector -->
+  <div class="preset-dropdown-wrap">
+    <button id="btn-lighting-menu" class="btn-control" title="Moonlight Lighting Theme">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+      <span class="btn-text" id="label-theme">Moonlight</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="chevron">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+    <div class="theme-dropdown-menu glass-panel" id="theme-menu">
+      <button class="theme-option active" data-preset="night">
+        <span class="theme-dot night"></span>
+        <span>Moonlight (Night)</span>
+      </button>
+      <button class="theme-option" data-preset="dusk">
+        <span class="theme-dot dusk"></span>
+        <span>Twilight (Dusk)</span>
+      </button>
+      <button class="theme-option" data-preset="dawn">
+        <span class="theme-dot dawn"></span>
+        <span>Aurora (Dawn)</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="control-divider"></div>
+
+  <!-- Transit Hub Presets -->
+  <div class="preset-dropdown-wrap">
+    <button id="btn-hubs-menu" class="btn-control" title="Victorian Transit Hubs">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+      <span class="btn-text">Transit Hubs</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="chevron">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+    <div class="theme-dropdown-menu glass-panel" id="hubs-menu">
+      {Object.entries(TRANSIT_HUBS).map(([key, hub]) => (
+        <button class="theme-option" data-hub={key}>
+          <span class="hub-icon">🚉</span>
+          <div class="hub-desc">
+            <span class="hub-name">{hub.name}</span>
+            <span class="hub-sub">{hub.description}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <!-- Reset Bearing / North -->
+  <button id="btn-reset-north" class="btn-icon-control" title="Align North & Reset Tilt">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+    </svg>
+  </button>
+</div>
+
+<style>
+  .map-controls-dock {
+    position: absolute;
+    top: 96px;
+    right: 20px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .btn-control {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    user-select: none;
+  }
+
+  .btn-control:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface-hover);
+    border-color: var(--border-subtle);
+  }
+
+  .btn-control.active {
+    color: var(--accent-cyan);
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.3);
+  }
+
+  .primary-locate {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99, 102, 241, 0.25));
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+  }
+
+  .primary-locate:hover {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(99, 102, 241, 0.4));
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .locate-icon-wrap {
+    display: flex;
+    align-items: center;
+    color: var(--accent-cyan);
+  }
+
+  .btn-icon-control {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+  }
+
+  .btn-icon-control:hover {
+    color: var(--accent-cyan);
+    background: var(--bg-surface-hover);
+    border-color: var(--border-subtle);
+  }
+
+  .control-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-subtle);
+    margin: 0 2px;
+  }
+
+  .preset-dropdown-wrap {
+    position: relative;
+  }
+
+  .theme-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    background: var(--bg-surface-elevated);
+    backdrop-filter: var(--blur-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: var(--shadow-glass);
+    z-index: 20;
+  }
+
+  .theme-dropdown-menu.open {
+    display: flex;
+    animation: fadeInScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeInScale {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .theme-option {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: var(--transition-smooth);
+    width: 100%;
+  }
+
+  .theme-option:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+  }
+
+  .theme-option.active {
+    color: var(--accent-cyan);
+    background: rgba(56, 189, 248, 0.12);
+  }
+
+  .theme-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .theme-dot.night {
+    background: #0f172a;
+    border: 1.5px solid #38bdf8;
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
+  }
+  .theme-dot.dusk {
+    background: #4c1d95;
+    border: 1.5px solid #a855f7;
+  }
+  .theme-dot.dawn {
+    background: #b45309;
+    border: 1.5px solid #fbbf24;
+  }
+
+  .hub-icon {
+    font-size: 1.1rem;
+  }
+
+  .hub-desc {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .hub-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+  }
+
+  .hub-sub {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .chevron {
+    transition: transform 0.2s ease;
+  }
+
+  .preset-dropdown-wrap.active-dropdown .chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (max-width: 768px) {
+    .map-controls-dock {
+      top: 80px;
+      right: 12px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .btn-text {
+      display: none;
+    }
+    .btn-control {
+      padding: 8px;
+    }
+    .control-divider {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // Handlers for Map Controls
+  const locateBtn = document.getElementById('btn-locate-me');
+  const toggle3DBtn = document.getElementById('btn-toggle-3d');
+  const label3D = document.getElementById('label-3d');
+  const resetNorthBtn = document.getElementById('btn-reset-north');
+
+  const lightingBtn = document.getElementById('btn-lighting-menu');
+  const themeMenu = document.getElementById('theme-menu');
+  const themeWrap = lightingBtn?.parentElement;
+
+  const hubsBtn = document.getElementById('btn-hubs-menu');
+  const hubsMenu = document.getElementById('hubs-menu');
+  const hubsWrap = hubsBtn?.parentElement;
+
+  locateBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('motion:cmd:fly-user'));
+  });
+
+  toggle3DBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('motion:cmd:toggle-3d'));
+  });
+
+  resetNorthBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('motion:cmd:reset-north'));
+  });
+
+  window.addEventListener('motion:3d-state', (e: Event) => {
+    const is3D = (e as CustomEvent<{ is3D: boolean }>).detail?.is3D;
+    if (toggle3DBtn && label3D) {
+      if (is3D) {
+        toggle3DBtn.classList.add('active');
+        label3D.textContent = '3D Active';
+      } else {
+        toggle3DBtn.classList.remove('active');
+        label3D.textContent = '2D Nadir';
+      }
+    }
+  });
+
+  // Dropdown toggles
+  lightingBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hubsMenu?.classList.remove('open');
+    hubsWrap?.classList.remove('active-dropdown');
+    themeMenu?.classList.toggle('open');
+    themeWrap?.classList.toggle('active-dropdown');
+  });
+
+  hubsBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    themeMenu?.classList.remove('open');
+    themeWrap?.classList.remove('active-dropdown');
+    hubsMenu?.classList.toggle('open');
+    hubsWrap?.classList.toggle('active-dropdown');
+  });
+
+  document.addEventListener('click', () => {
+    themeMenu?.classList.remove('open');
+    themeWrap?.classList.remove('active-dropdown');
+    hubsMenu?.classList.remove('open');
+    hubsWrap?.classList.remove('active-dropdown');
+  });
+
+  // Theme option clicks
+  themeMenu?.querySelectorAll('.theme-option').forEach((opt) => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const preset = (opt as HTMLElement).dataset.preset;
+      themeMenu.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      const labelTheme = document.getElementById('label-theme');
+      if (labelTheme) labelTheme.textContent = opt.querySelector('span:last-child')?.textContent || 'Moonlight';
+
+      window.dispatchEvent(new CustomEvent('motion:cmd:light-preset', { detail: { preset } }));
+      themeMenu.classList.remove('open');
+      themeWrap?.classList.remove('active-dropdown');
+    });
+  });
+
+  // Transit Hub clicks
+  hubsMenu?.querySelectorAll('.theme-option').forEach((opt) => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hub = (opt as HTMLElement).dataset.hub;
+      window.dispatchEvent(new CustomEvent('motion:cmd:fly-hub', { detail: { hub } }));
+      hubsMenu.classList.remove('open');
+      hubsWrap?.classList.remove('active-dropdown');
+    });
+  });
+</script>
