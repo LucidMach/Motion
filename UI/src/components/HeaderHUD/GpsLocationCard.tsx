@@ -10,7 +10,7 @@ export default function GpsLocationCard({ locationName, accuracyText, onRecenter
       onClick={onRecenter}
       title="Click to fly to your current location"
       aria-label="Recenter to my location"
-      className="group flex select-none items-center gap-2.5 rounded-full border border-subtle bg-surface-elevated py-1.5 pl-4 pr-1.5 outline-none transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-glow hover:bg-surface-hover hover:shadow-[0_0_20px_rgba(56,189,248,0.25)] active:translate-y-0 active:scale-[0.97] max-[768px]:gap-2 max-[768px]:py-1 max-[768px]:pl-3"
+      className="group flex select-none items-center gap-3 rounded-full border border-subtle bg-surface-elevated py-2 pl-4.5 pr-2 outline-none transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-glow hover:bg-surface-hover hover:shadow-[0_0_20px_rgba(56,189,248,0.25)] active:translate-y-0 active:scale-[0.97] max-[768px]:gap-2.5 max-[768px]:py-1.5 max-[768px]:pl-3.5 max-[768px]:pr-1.5"
     >
       <div className="flex flex-col items-end gap-px text-right">
         <span className="whitespace-nowrap font-sans text-[0.82rem] font-bold leading-[1.15] tracking-[0.01em] text-primary transition-colors group-hover:text-white max-[768px]:text-[0.76rem]">

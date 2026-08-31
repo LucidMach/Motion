@@ -2,7 +2,7 @@ import mapboxgl from 'mapbox-gl';
 
 function popupHtml(latitude: number, longitude: number, accuracy: number, withCoords: boolean): string {
   const coordsLine = withCoords
-    ? `<div class="my-[3px] font-mono text-[11px] text-primary">${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°</div>`
+    ? `<div class="my-0.75 font-mono text-[11px] text-primary">${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°</div>`
     : '';
   return `
     <div class="font-sans text-[13px] leading-[1.4]">

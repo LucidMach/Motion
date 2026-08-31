@@ -7,7 +7,7 @@ export default function BrandGroup({ regionLabel, regionUpdated }: BrandGroupPro
   return (
     <div className="flex select-none items-center gap-3.5">
       <div
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent-cyan/40 bg-linear-to-br from-accent-cyan/20 to-accent-indigo/20 text-accent-cyan"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent-cyan/40 bg-linear-to-br from-accent-cyan/20 to-accent-indigo/20 text-accent-cyan"
         title="Motion Transit 3D Engine"
       >
         <svg
