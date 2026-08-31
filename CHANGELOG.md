@@ -12,14 +12,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 #### Added
 - **Dynamic Spatial Region Detector**: The top header subtitle under the `MOTION` brand now dynamically detects and displays the active geographic region or transit corridor in focus (e.g., `Melbourne CBD • Victoria`, `Southbank • Arts Precinct`, `Richmond • Transit Interchange`, `Box Hill • Eastern Transit Hub`, `Clayton • Monash Innovation Hub`, `Geelong • Regional Transit Corridor`, etc.) with zero-latency spatial bounding box and centroid proximity matching.
-- **Header 2D / 3D Segmented Toggle Switch**: Placed directly inside the top navigation HUD alongside the GPS status control, featuring glassmorphic active pill states and synchronization with map pitch transitions.
-- **Interactive GPS Recenter Action**: The GPS accuracy status pill now functions as an interactive recenter button (`#btn-gps-recenter`) that smoothly flies the 3D camera to the user's live coordinates on click with hover animations.
+- **Integrated 2D / 3D Camera Movement Button**: Integrated the 2D / 3D camera movement toggle directly into the bottom-right zoom control button panel (`MotionNavigationControl`), featuring an isometric wireframe cube icon for 3D oblique perspective and a square icon for 2D planar overhead view, perfectly sized and styled matching the zoom buttons.
+- **Interactive GPS Recenter Action**: The GPS accuracy status pill now functions as an interactive recenter button (`#btn-gps-recenter`) in the top navigation header that smoothly flies the 3D camera to the user's live coordinates on click with hover animations.
 - **Explicit Perspective Command**: Added `motion:cmd:set-3d` event handling for unambiguous 2D nadir vs 3D oblique perspective switching.
 - **Component Specification Documentation**: Created [`UI/COMPONENTS_SPEC.md`](file:///Users/lucidmach/Motion/UI/COMPONENTS_SPEC.md) documenting all UI components, state machines, and event bus contracts.
 
 #### Changed
 - **Renamed GPS Indicator**: Updated status text from `"GPS Locked"` to `"GPS Accuracy: ±Xm"` (and `"GPS Accuracy: Acquiring..."` / `"GPS Accuracy: Melbourne CBD (Approx)"` during fallback states).
-- **Consolidated Navigation HUD**: Unified header controls into a single streamlined top bar, giving the 3D map canvas maximum unobstructed screen real estate.
+- **Streamlined Navigation HUD**: Kept the top navbar dedicated exclusively to branding, dynamic region detection, and GPS recentering.
 
 #### Removed
 - **Settings Icon Button**: Removed redundant gear icon from the navigation header HUD. (The token modal continues to open automatically when a valid Mapbox token is missing).

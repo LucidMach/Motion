@@ -1,5 +1,5 @@
 ---
-// HeaderHUD.astro - Top Navigation and Live Status HUD with 2D/3D Toggle & GPS Recenter
+// HeaderHUD.astro - Top Navigation and Live Status HUD with Dynamic Region & GPS Recenter
 ---
 
 <header class="header-hud glass-panel" aria-label="Navigation & Region Status Bar">
@@ -17,9 +17,8 @@
     </div>
   </div>
 
-  <!-- Primary Header Controls: GPS Accuracy Recenter + 2D/3D Perspective Switch -->
+  <!-- Header Right Actions: GPS Accuracy & Recenter Button -->
   <div class="header-actions">
-    <!-- GPS Accuracy & Recenter Button -->
     <button
       id="btn-gps-recenter"
       class="gps-action-pill glass-panel"
@@ -39,29 +38,6 @@
         <line x1="19" y1="12" x2="22" y2="12"></line>
       </svg>
     </button>
-
-    <!-- 2D / 3D Perspective Segmented Switch -->
-    <div class="perspective-switcher glass-panel" role="group" aria-label="Perspective View Mode">
-      <button
-        id="btn-switch-2d"
-        class="switch-tab"
-        data-view="2d"
-        title="Switch to 2D Nadir Overhead View"
-        aria-pressed="false"
-      >
-        2D
-      </button>
-      <button
-        id="btn-switch-3d"
-        class="switch-tab active"
-        data-view="3d"
-        title="Switch to 3D Oblique Perspective"
-        aria-pressed="true"
-      >
-        3D
-      </button>
-      <div class="switch-glow-indicator" id="switch-indicator"></div>
-    </div>
   </div>
 </header>
 
@@ -146,7 +122,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 380px;
+    max-width: 420px;
     transition: color 0.3s ease, opacity 0.3s ease;
   }
 
@@ -212,46 +188,6 @@
     transform: scale(1.15);
   }
 
-  /* 2D / 3D Segmented Switch */
-  .perspective-switcher {
-    position: relative;
-    display: flex;
-    align-items: center;
-    background: rgba(10, 15, 29, 0.85);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-full);
-    padding: 3px;
-    gap: 2px;
-  }
-
-  .switch-tab {
-    position: relative;
-    z-index: 2;
-    background: transparent;
-    border: none;
-    padding: 6px 14px;
-    border-radius: var(--radius-full);
-    font-family: var(--font-display);
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: color 0.2s ease;
-    user-select: none;
-  }
-
-  .switch-tab:hover {
-    color: var(--text-primary);
-  }
-
-  .switch-tab.active {
-    color: #ffffff;
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.3) 0%, rgba(99, 102, 241, 0.35) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.5);
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
-  }
-
   @media (max-width: 768px) {
     .header-hud {
       top: 12px;
@@ -262,23 +198,18 @@
     }
 
     .brand-subtitle {
-      max-width: 170px;
+      max-width: 190px;
       font-size: 0.68rem;
     }
 
     .gps-action-pill {
-      padding: 6px 10px;
-      font-size: 0.74rem;
+      padding: 6px 12px;
+      font-size: 0.76rem;
       gap: 6px;
     }
 
     .recenter-hint-icon {
       display: none;
-    }
-
-    .switch-tab {
-      padding: 5px 10px;
-      font-size: 0.72rem;
     }
   }
 
@@ -326,41 +257,6 @@
       regionLabel.textContent = regionName;
       regionLabel.classList.add('updated');
       setTimeout(() => regionLabel.classList.remove('updated'), 600);
-    }
-  });
-
-  // 2D / 3D Perspective Switcher
-  const btn2D = document.getElementById('btn-switch-2d');
-  const btn3D = document.getElementById('btn-switch-3d');
-
-  function updatePerspectiveUI(is3D: boolean) {
-    if (is3D) {
-      btn3D?.classList.add('active');
-      btn3D?.setAttribute('aria-pressed', 'true');
-      btn2D?.classList.remove('active');
-      btn2D?.setAttribute('aria-pressed', 'false');
-    } else {
-      btn2D?.classList.add('active');
-      btn2D?.setAttribute('aria-pressed', 'true');
-      btn3D?.classList.remove('active');
-      btn3D?.setAttribute('aria-pressed', 'false');
-    }
-  }
-
-  btn2D?.addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('motion:cmd:set-3d', { detail: { is3D: false } }));
-    updatePerspectiveUI(false);
-  });
-
-  btn3D?.addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('motion:cmd:set-3d', { detail: { is3D: true } }));
-    updatePerspectiveUI(true);
-  });
-
-  window.addEventListener('motion:3d-state', (event: Event) => {
-    const is3D = (event as CustomEvent<{ is3D: boolean }>).detail?.is3D;
-    if (typeof is3D === 'boolean') {
-      updatePerspectiveUI(is3D);
     }
   });
 </script>

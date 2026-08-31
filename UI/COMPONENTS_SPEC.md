@@ -15,15 +15,16 @@ graph TD
     App --> Modal[TokenModal.astro - Token Setup Modal]
     
     Map --> Controller[mapController.ts - MotionMapController]
+    Controller --> NavDock[MotionNavigationControl - Integrated Zoom & 2D/3D Toggle Dock]
     Controller --> Geolocation[Navigator Geolocation API]
     Controller --> RegionEngine[Spatial Region Resolver]
     Controller --> EventBus[Window CustomEvent Bus]
     
     EventBus -.->|motion:status| HUD
     EventBus -.->|motion:region-change| HUD
-    EventBus -.->|motion:3d-state| HUD
+    EventBus -.->|motion:3d-state| NavDock
     HUD -.->|motion:cmd:fly-user| Controller
-    HUD -.->|motion:cmd:set-3d| Controller
+    NavDock -.->|motion:cmd:toggle-3d| Controller
     Modal -.->|motion:cmd:update-token| Controller
 ```
 
@@ -118,7 +119,7 @@ interface LocationTelemetry {
 ## 4. Component Reference
 
 ### 4.1 `HeaderHUD.astro`
-The top navigation bar positioned at `top: 20px`. Houses branding, dynamic spatial region detection, and primary navigation actions.
+The top navigation bar positioned at `top: 20px`. Houses branding, dynamic spatial region detection, and primary GPS recenter action.
 
 #### DOM Structure
 - **`.brand-group`**:
@@ -126,18 +127,34 @@ The top navigation bar positioned at `top: 20px`. Houses branding, dynamic spati
   - Brand Title: `MOTION` (gradient display text).
   - Dynamic Region Subtitle: `<span id="region-focus-label">` listening to `motion:region-change`.
 - **`.header-actions`**:
-  - **GPS Recenter Button** (`#btn-gps-recenter`): Displays pulsating status dot and `"GPS Accuracy: ±Xm"`. Dispatches `motion:cmd:fly-user` on click.
-  - **2D / 3D Segmented Switch** (`.perspective-switcher`): Houses `#btn-switch-2d` and `#btn-switch-3d` tabs. Emits `motion:cmd:set-3d` and listens to `motion:3d-state`.
+  - **GPS Recenter Button** (`#btn-gps-recenter`): Displays pulsating status dot, `"GPS Accuracy: ±Xm"`, and recenter crosshairs icon. Dispatches `motion:cmd:fly-user` on click.
 
 #### Styling & Accessibility
 - Semi-transparent glassmorphic container with `backdrop-filter: blur(16px)`.
 - `aria-label="Navigation & Region Status Bar"` for screen readers.
-- `aria-pressed="true|false"` on 2D/3D switch tabs.
 - Smooth CSS text-change transition when the active region changes.
 
 ---
 
-### 4.2 `MapboxMap.astro`
+### 4.2 `MotionNavigationControl` (`mapController.ts`)
+Unified bottom-right navigation control dock containing Zoom In (`+`), Zoom Out (`-`), and the 2D / 3D Perspective Toggle Button inside a single seamless `.mapboxgl-ctrl-group`.
+
+#### DOM Structure & Sizing
+- **`.mapboxgl-ctrl-group.motion-navigation-dock`**: Single vertical glassmorphic container (`36px` wide, `108px` high).
+  - **Zoom In Button** (`.mapboxgl-ctrl-zoom-in`): `36px x 36px` button triggering map zoom-in.
+  - **Zoom Out Button** (`.mapboxgl-ctrl-zoom-out`): `36px x 36px` button triggering map zoom-out.
+  - **2D / 3D Toggle Button** (`.mapboxgl-ctrl-camera`): `36px x 36px` button with:
+    - Isometric wireframe cube icon (`icon-cube`) in 3D perspective mode.
+    - Planar square icon (`icon-square`) in 2D nadir mode.
+
+#### Behavior & Interactions
+- Clicking the camera button emits `motion:cmd:toggle-3d`.
+- Listens to `motion:3d-state` to dynamically switch state classes (`.is-3d` / `.is-2d`), SVG icons, and accessibility tooltips.
+- Accessible ARIA attributes (`aria-label="Switch to 2D Planar View"` / `"Switch to 3D Oblique Perspective"`).
+
+---
+
+### 4.3 `MapboxMap.astro`
 The 3D Mapbox GL JS container and lifecycle coordinator.
 
 #### Props
