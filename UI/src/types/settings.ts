@@ -1,4 +1,4 @@
-export type ThemePresetId = 'cyberpunk' | 'spring' | 'summer' | 'autumn' | 'winter' | 'monochrome' | 'matrix' | 'obsidian' | 'tron';
+export type ThemePresetId = 'cyberpunk' | 'spring' | 'summer' | 'autumn' | 'winter' | 'monochrome' | 'matrix' | 'tron';
 export type MapLightPreset = 'dawn' | 'day' | 'dusk' | 'night';
 export type MapStyleId = 'standard' | 'monochrome' | 'satellite' | 'dark' | 'light' | 'navigation' | 'outdoors';
 export type OrbitModifier = 'shift' | 'ctrl' | 'alt' | 'none' | 'rightOnly';

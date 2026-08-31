@@ -131,22 +131,6 @@ export const SEASON_MAP_PALETTES: Record<ThemePresetId, MapSeasonPalette> = {
     roads: '#0f172a',
     transit: '#10b981'
   },
-  obsidian: {
-    fog: {
-      color: 'rgb(4, 8, 14)',
-      highColor: 'rgb(6, 16, 12)',
-      horizonBlend: 0.06,
-      spaceColor: 'rgb(2, 4, 8)',
-      starIntensity: 0.9
-    },
-    grass: '#061710',
-    forest: '#04100b',
-    water: '#020617',
-    buildingExtrusion: '#0b1612',
-    buildingOpacity: 0.95,
-    roads: '#0f172a',
-    transit: '#10b981'
-  },
   tron: {
     fog: {
       color: 'rgb(8, 12, 18)',
