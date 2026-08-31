@@ -72,7 +72,8 @@ export class MotionMapController {
   private watchId: number | null = null;
   private lastLocation: LocationTelemetry | null = null;
   private is3DActive: boolean = true;
-  private currentLightPreset: string = 'night';
+  private currentLightPreset: 'night' | 'dusk' | 'dawn' | 'day' = 'night';
+  private currentTheme: 'monochrome' | 'faded' | 'default' = 'monochrome';
   private token: string = '';
 
   constructor() {}
@@ -93,10 +94,10 @@ export class MotionMapController {
     mapboxgl.accessToken = this.token;
 
     try {
-      console.log('[MotionMap] Initializing Mapbox GL JS 3D map...');
+      console.log('[MotionMap] Initializing Mapbox GL JS 3D Moonlight map...');
       
-      // 2. Initialize Mapbox 3D Map
-      this.map = new mapboxgl.Map({
+      // 2. Initialize Mapbox 3D Map with Moonlight settings
+      const mapOptions: any = {
         container: containerId,
         style: 'mapbox://styles/mapbox/standard',
         center: TRANSIT_HUBS.flinders.coords,
@@ -104,8 +105,19 @@ export class MotionMapController {
         pitch: 58,
         bearing: -17.6,
         antialias: true,
-        attributionControl: false
-      });
+        attributionControl: false,
+        config: {
+          basemap: {
+            theme: this.currentTheme,
+            lightPreset: this.currentLightPreset,
+            show3dObjects: true,
+            showPointOfInterestLabels: true,
+            showTransitLabels: true
+          }
+        }
+      };
+
+      this.map = new mapboxgl.Map(mapOptions);
 
       // Add navigation controls
       this.map.addControl(
@@ -173,8 +185,9 @@ export class MotionMapController {
 
     try {
       const mapAny = this.map as any;
-      // Configure Standard Style lighting preset to "night" (Moonlight aesthetic)
+      // Configure Standard Style lighting & monochrome theme (Moonlight aesthetic)
       if (typeof mapAny.setConfigProperty === 'function') {
+        mapAny.setConfigProperty('basemap', 'theme', this.currentTheme);
         mapAny.setConfigProperty('basemap', 'lightPreset', this.currentLightPreset);
         mapAny.setConfigProperty('basemap', 'show3dObjects', true);
         mapAny.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
@@ -201,10 +214,10 @@ export class MotionMapController {
                 'interpolate',
                 ['linear'],
                 ['get', 'height'],
-                0, '#0f172a',
-                50, '#1e293b',
-                120, '#334155',
-                250, '#1e1b4b'
+                0, '#0a0e17',
+                40, '#131b29',
+                100, '#1f2b3e',
+                220, '#33435c'
               ],
               'fill-extrusion-height': [
                 'interpolate',
@@ -220,22 +233,22 @@ export class MotionMapController {
                 13, 0,
                 14.5, ['get', 'min_height']
               ],
-              'fill-extrusion-opacity': 0.85
+              'fill-extrusion-opacity': 0.88
             }
           },
           labelLayerId
         );
       }
 
-      // Set moonlight atmospheric fog
+      // Set moonlight atmospheric fog with deep cosmic background & luminous horizon
       if (typeof mapAny.setFog === 'function') {
         mapAny.setFog({
           range: [0.5, 10],
-          color: '#070a13',
-          'horizon-blend': 0.15,
-          'high-color': '#0f172a',
-          'space-color': '#030712',
-          'star-intensity': 0.85
+          color: '#06080d',
+          'horizon-blend': 0.12,
+          'high-color': '#0e1422',
+          'space-color': '#020408',
+          'star-intensity': 0.95
         });
       }
     } catch (e) {
@@ -456,11 +469,23 @@ export class MotionMapController {
     this.currentLightPreset = preset;
     if (!this.map) return;
     try {
-      if (this.map.setConfigProperty) {
-        this.map.setConfigProperty('basemap', 'lightPreset', preset);
+      if ((this.map as any).setConfigProperty) {
+        (this.map as any).setConfigProperty('basemap', 'lightPreset', preset);
       }
     } catch (err) {
       console.warn('[MotionMap] Failed to set light preset:', err);
+    }
+  }
+
+  public setTheme(theme: 'monochrome' | 'faded' | 'default'): void {
+    this.currentTheme = theme;
+    if (!this.map) return;
+    try {
+      if ((this.map as any).setConfigProperty) {
+        (this.map as any).setConfigProperty('basemap', 'theme', theme);
+      }
+    } catch (err) {
+      console.warn('[MotionMap] Failed to set theme:', err);
     }
   }
 

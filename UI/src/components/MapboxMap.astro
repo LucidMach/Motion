@@ -46,6 +46,13 @@ const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || '' } = Astro.props
       }
     });
 
+    window.addEventListener('motion:cmd:set-theme', (e: Event) => {
+      const theme = (e as CustomEvent<{ theme: 'monochrome' | 'faded' | 'default' }>).detail?.theme;
+      if (theme) {
+        mapController?.setTheme(theme);
+      }
+    });
+
     window.addEventListener('motion:cmd:fly-hub', (e: Event) => {
       const hub = (e as CustomEvent<{ hub: any }>).detail?.hub;
       if (hub) {

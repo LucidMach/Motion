@@ -43,17 +43,25 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
       </svg>
     </button>
     <div class="theme-dropdown-menu glass-panel" id="theme-menu">
-      <button class="theme-option active" data-preset="night">
-        <span class="theme-dot night"></span>
-        <span>Moonlight (Night)</span>
+      <button class="theme-option active" data-preset="night" data-theme="monochrome">
+        <span class="theme-dot moonlight"></span>
+        <span>Moonlight (Mono)</span>
       </button>
-      <button class="theme-option" data-preset="dusk">
+      <button class="theme-option" data-preset="night" data-theme="faded">
+        <span class="theme-dot faded"></span>
+        <span>Moonlight (Faded)</span>
+      </button>
+      <button class="theme-option" data-preset="dusk" data-theme="monochrome">
         <span class="theme-dot dusk"></span>
         <span>Twilight (Dusk)</span>
       </button>
-      <button class="theme-option" data-preset="dawn">
+      <button class="theme-option" data-preset="dawn" data-theme="monochrome">
         <span class="theme-dot dawn"></span>
         <span>Aurora (Dawn)</span>
+      </button>
+      <button class="theme-option" data-preset="day" data-theme="default">
+        <span class="theme-dot day"></span>
+        <span>Day Mode</span>
       </button>
     </div>
   </div>
@@ -248,18 +256,27 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
     height: 10px;
     border-radius: 50%;
   }
-  .theme-dot.night {
+  .theme-dot.moonlight {
     background: #0f172a;
     border: 1.5px solid #38bdf8;
-    box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  }
+  .theme-dot.faded {
+    background: #1e293b;
+    border: 1.5px solid #94a3b8;
+    box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
   }
   .theme-dot.dusk {
-    background: #4c1d95;
-    border: 1.5px solid #a855f7;
+    background: #3b0764;
+    border: 1.5px solid #c084fc;
   }
   .theme-dot.dawn {
-    background: #b45309;
-    border: 1.5px solid #fbbf24;
+    background: #78350f;
+    border: 1.5px solid #fde047;
+  }
+  .theme-dot.day {
+    background: #f8fafc;
+    border: 1.5px solid #38bdf8;
   }
 
   .hub-icon {
@@ -379,12 +396,18 @@ import { TRANSIT_HUBS } from '../scripts/mapController';
     opt.addEventListener('click', (e) => {
       e.stopPropagation();
       const preset = (opt as HTMLElement).dataset.preset;
+      const theme = (opt as HTMLElement).dataset.theme;
       themeMenu.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
       opt.classList.add('active');
       const labelTheme = document.getElementById('label-theme');
       if (labelTheme) labelTheme.textContent = opt.querySelector('span:last-child')?.textContent || 'Moonlight';
 
-      window.dispatchEvent(new CustomEvent('motion:cmd:light-preset', { detail: { preset } }));
+      if (theme) {
+        window.dispatchEvent(new CustomEvent('motion:cmd:set-theme', { detail: { theme } }));
+      }
+      if (preset) {
+        window.dispatchEvent(new CustomEvent('motion:cmd:light-preset', { detail: { preset } }));
+      }
       themeMenu.classList.remove('open');
       themeWrap?.classList.remove('active-dropdown');
     });
