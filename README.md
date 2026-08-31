@@ -238,6 +238,11 @@ This verifies:
 ├── testPTVOpenData/            # GTFS-Realtime API client & orchestrator
 │   ├── testPTVOpenData.py
 │   └── testPTVOpenData.spec.md
+├── UI/                         # Astro 5 + Mapbox 3D Geolocation Frontend
+│   ├── src/components/         # HeaderHUD, MapboxMap, TokenModal
+│   ├── src/scripts/            # MotionMapController & Spatial Region Resolver
+│   └── COMPONENTS_SPEC.md      # UI Component Specification Sheet
+├── CHANGELOG.md                # Project version history & UI changelog
 ├── environment.yml             # Conda environment definition
 ├── gtfs_schedule.db            # SQLite database (gitignored)
 ├── run_tests.sh                # End-to-end test runner script

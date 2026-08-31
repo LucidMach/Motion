@@ -65,6 +65,235 @@ export const TRANSIT_HUBS: Record<string, PresetLocation> = {
   }
 };
 
+export interface RegionZone {
+  name: string;
+  subRegion?: string;
+  bounds?: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
+  center?: [number, number]; // [lng, lat]
+  radiusKm?: number;
+}
+
+export const VICTORIAN_REGIONS: RegionZone[] = [
+  {
+    name: 'Flinders St • Melbourne CBD',
+    bounds: [144.960, -37.821, 144.975, -37.815],
+    center: [144.9671, -37.8180],
+    radiusKm: 0.6
+  },
+  {
+    name: 'Melbourne Central • City Loop',
+    bounds: [144.957, -37.814, 144.969, -37.807],
+    center: [144.9625, -37.8100],
+    radiusKm: 0.6
+  },
+  {
+    name: 'Southern Cross • Regional Terminal',
+    bounds: [144.947, -37.822, 144.957, -37.814],
+    center: [144.9525, -37.8185],
+    radiusKm: 0.6
+  },
+  {
+    name: 'Melbourne CBD • Victoria',
+    bounds: [144.946, -37.825, 144.978, -37.804],
+    center: [144.9631, -37.8136],
+    radiusKm: 1.5
+  },
+  {
+    name: 'Southbank • Arts Precinct',
+    bounds: [144.955, -37.834, 144.978, -37.820],
+    center: [144.967, -37.826],
+    radiusKm: 1.0
+  },
+  {
+    name: 'Docklands • Victoria Harbour',
+    bounds: [144.930, -37.826, 144.950, -37.809],
+    center: [144.941, -37.817],
+    radiusKm: 1.2
+  },
+  {
+    name: 'Carlton • University Precinct',
+    bounds: [144.954, -37.806, 144.976, -37.791],
+    center: [144.963, -37.799],
+    radiusKm: 1.1
+  },
+  {
+    name: 'Parkville • Biomedical & Health Hub',
+    bounds: [144.938, -37.802, 144.962, -37.778],
+    center: [144.950, -37.790],
+    radiusKm: 1.4
+  },
+  {
+    name: 'East Melbourne • Olympic & MCG',
+    bounds: [144.976, -37.826, 144.993, -37.810],
+    center: [144.983, -37.819],
+    radiusKm: 1.0
+  },
+  {
+    name: 'Richmond • Transit Interchange',
+    bounds: [144.984, -37.836, 145.018, -37.814],
+    center: [144.998, -37.824],
+    radiusKm: 1.5
+  },
+  {
+    name: 'South Yarra • Chapel Street',
+    bounds: [144.979, -37.856, 145.016, -37.832],
+    center: [144.993, -37.842],
+    radiusKm: 1.4
+  },
+  {
+    name: 'St Kilda • Port Phillip Foreshore',
+    bounds: [144.963, -37.878, 145.002, -37.854],
+    center: [144.979, -37.866],
+    radiusKm: 1.5
+  },
+  {
+    name: 'Fitzroy & Collingwood • Inner North',
+    bounds: [144.973, -37.810, 145.002, -37.791],
+    center: [144.985, -37.801],
+    radiusKm: 1.2
+  },
+  {
+    name: 'Footscray • Western Transit Hub',
+    bounds: [144.882, -37.813, 144.926, -37.785],
+    center: [144.900, -37.801],
+    radiusKm: 1.8
+  },
+  {
+    name: 'North Melbourne • Arden Corridor',
+    bounds: [144.923, -37.806, 144.952, -37.783],
+    center: [144.938, -37.795],
+    radiusKm: 1.3
+  },
+  {
+    name: 'Box Hill • Eastern Transit Hub',
+    bounds: [145.108, -37.832, 145.142, -37.808],
+    center: [145.1228, -37.8193],
+    radiusKm: 1.6
+  },
+  {
+    name: 'Clayton • Monash Innovation Hub',
+    bounds: [145.114, -37.932, 145.158, -37.902],
+    center: [145.1332, -37.9150],
+    radiusKm: 1.8
+  },
+  {
+    name: 'Ringwood • Maroondah Interchange',
+    bounds: [145.210, -37.828, 145.252, -37.802],
+    center: [145.230, -37.815],
+    radiusKm: 1.8
+  },
+  {
+    name: 'Dandenong • South-East Transit Hub',
+    bounds: [145.195, -37.998, 145.242, -37.968],
+    center: [145.215, -37.985],
+    radiusKm: 2.0
+  },
+  {
+    name: 'Frankston • Mornington Gateway',
+    bounds: [145.105, -38.162, 145.152, -38.125],
+    center: [145.124, -38.143],
+    radiusKm: 2.2
+  },
+  {
+    name: 'Geelong • Regional Transit Corridor',
+    bounds: [144.330, -38.175, 144.390, -38.125],
+    center: [144.358, -38.148],
+    radiusKm: 3.5
+  },
+  {
+    name: 'Ballarat • Goldfields Regional Hub',
+    bounds: [143.825, -37.585, 143.895, -37.535],
+    center: [143.858, -37.561],
+    radiusKm: 3.5
+  },
+  {
+    name: 'Bendigo • Loddon Campaspe Hub',
+    bounds: [144.245, -37.785, 144.315, -36.735],
+    center: [144.278, -36.758],
+    radiusKm: 3.5
+  },
+  {
+    name: 'Melbourne Airport • SkyBus Terminal',
+    bounds: [144.825, -37.690, 144.875, -37.650],
+    center: [144.843, -37.671],
+    radiusKm: 2.2
+  }
+];
+
+function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export function resolveRegionInFocus(lng: number, lat: number, zoom: number): string {
+  // If zoomed out significantly:
+  if (zoom < 9.0) {
+    if (lat >= -39.2 && lat <= -34.0 && lng >= 140.9 && lng <= 150.0) {
+      return 'Victoria • Regional Transit Network';
+    }
+    return 'Victorian Transit • 3D Navigator';
+  }
+
+  if (zoom < 11.8) {
+    // Greater Melbourne Bounding Box
+    if (lat >= -38.3 && lat <= -37.5 && lng >= 144.6 && lng <= 145.5) {
+      return 'Greater Melbourne • Transit Network';
+    }
+    if (lat >= -38.25 && lat <= -38.05 && lng >= 144.25 && lng <= 144.55) {
+      return 'Geelong & Bellarine • Regional Network';
+    }
+    if (lat >= -37.7 && lat <= -37.4 && lng >= 143.7 && lng <= 144.0) {
+      return 'Ballarat & Goldfields • Regional Network';
+    }
+    if (lat >= -36.9 && lat <= -36.6 && lng >= 144.15 && lng <= 144.45) {
+      return 'Bendigo & Loddon • Regional Network';
+    }
+    return 'Victoria • Multi-Modal Transit';
+  }
+
+  // 1. Check exact bounding box matches (higher precision)
+  for (const region of VICTORIAN_REGIONS) {
+    if (region.bounds) {
+      const [minLng, minLat, maxLng, maxLat] = region.bounds;
+      if (lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat) {
+        return region.name;
+      }
+    }
+  }
+
+  // 2. Nearest centroid match within threshold radius
+  let nearestRegion: RegionZone | null = null;
+  let minDistance = Infinity;
+
+  for (const region of VICTORIAN_REGIONS) {
+    if (region.center) {
+      const dist = calculateDistanceKm(lat, lng, region.center[1], region.center[0]);
+      const maxAllowed = region.radiusKm || 2.5;
+      if (dist <= maxAllowed && dist < minDistance) {
+        minDistance = dist;
+        nearestRegion = region;
+      }
+    }
+  }
+
+  if (nearestRegion) {
+    return nearestRegion.name;
+  }
+
+  // Fallback within Melbourne Metro
+  if (lat >= -38.05 && lat <= -37.65 && lng >= 144.80 && lng <= 145.25) {
+    return 'Melbourne Metropolitan Transit Area';
+  }
+
+  return 'Victorian Transit Network';
+}
+
 export class MotionMapController {
   private map: mapboxgl.Map | null = null;
   private userMarker: mapboxgl.Marker | null = null;
@@ -74,6 +303,8 @@ export class MotionMapController {
   private is3DActive: boolean = true;
   private currentLightPreset: string = 'day';
   private token: string = '';
+  private currentRegion: string = '';
+  private regionDebounceTimer: any = null;
 
   constructor() {}
 
@@ -107,7 +338,7 @@ export class MotionMapController {
         attributionControl: false
       });
 
-      // Add navigation controls
+      // Add navigation controls (compass and zoom)
       this.map.addControl(
         new mapboxgl.NavigationControl({
           visualizePitch: true,
@@ -126,13 +357,24 @@ export class MotionMapController {
         console.log('[MotionMap] Map load event fired.');
         this.map?.resize();
         this.configureDefault3DAtmosphere();
-        this.dispatchStatus({ state: 'ready', message: 'Mapbox 3D Engine Active' });
+        this.updateRegionInFocus();
+        this.dispatchStatus({ state: 'ready', message: 'GPS Accuracy: ±15m' });
       });
 
       this.map.on('style.load', () => {
         console.log('[MotionMap] Map style.load event fired.');
         this.map?.resize();
         this.configureDefault3DAtmosphere();
+        this.updateRegionInFocus();
+      });
+
+      // Listen to map movement to dynamically compute region in focus
+      this.map.on('move', () => {
+        this.scheduleRegionUpdate();
+      });
+
+      this.map.on('moveend', () => {
+        this.updateRegionInFocus();
       });
 
       // Periodic resize to prevent zero-dimension canvas issues
@@ -153,6 +395,25 @@ export class MotionMapController {
     } catch (err: any) {
       console.error('[MotionMap] Initialization error:', err);
       this.dispatchStatus({ state: 'error', message: err?.message || 'Failed to initialize map' });
+    }
+  }
+
+  private scheduleRegionUpdate(): void {
+    if (this.regionDebounceTimer) return;
+    this.regionDebounceTimer = setTimeout(() => {
+      this.regionDebounceTimer = null;
+      this.updateRegionInFocus();
+    }, 150);
+  }
+
+  public updateRegionInFocus(): void {
+    if (!this.map) return;
+    const center = this.map.getCenter();
+    const zoom = this.map.getZoom();
+    const region = resolveRegionInFocus(center.lng, center.lat, zoom);
+    if (region !== this.currentRegion) {
+      this.currentRegion = region;
+      this.dispatchRegion(region);
     }
   }
 
@@ -187,12 +448,12 @@ export class MotionMapController {
 
   public startLocationTracking(): void {
     if (!navigator.geolocation) {
-      this.dispatchStatus({ state: 'gps_unsupported', message: 'Geolocation Not Supported' });
+      this.dispatchStatus({ state: 'gps_unsupported', message: 'GPS Accuracy: Unavailable' });
       this.emitDefaultLocation();
       return;
     }
 
-    this.dispatchStatus({ state: 'gps_acquiring', message: 'Acquiring GPS Signal...' });
+    this.dispatchStatus({ state: 'gps_acquiring', message: 'GPS Accuracy: Acquiring...' });
 
     // One-time quick fetch
     navigator.geolocation.getCurrentPosition(
@@ -230,7 +491,7 @@ export class MotionMapController {
 
     this.renderUserMarker([longitude, latitude], this.lastLocation.heading);
     this.dispatchLocation(this.lastLocation);
-    this.dispatchStatus({ state: 'gps_active', message: `GPS Locked (±${this.lastLocation.accuracy}m)` });
+    this.dispatchStatus({ state: 'gps_active', message: `GPS Accuracy: ±${this.lastLocation.accuracy}m` });
 
     // On first fix, smoothly fly into user's location
     if (isFirstFix && this.map) {
@@ -243,7 +504,7 @@ export class MotionMapController {
     if (!this.lastLocation) {
       this.emitDefaultLocation();
     }
-    const message = err.code === 1 ? 'GPS Permission Denied' : 'GPS Signal Weak (Using Melbourne CBD)';
+    const message = err.code === 1 ? 'GPS Accuracy: Permission Denied' : 'GPS Accuracy: Melbourne CBD (Approx)';
     this.dispatchStatus({ state: 'gps_fallback', message });
   }
 
@@ -299,7 +560,7 @@ export class MotionMapController {
       }).setHTML(`
         <div style="font-family: var(--font-sans); font-size: 13px; line-height: 1.4;">
           <strong style="color: var(--accent-cyan); display: block; margin-bottom: 2px;">📍 Current Location</strong>
-          <span style="color: var(--text-secondary); font-size: 11px;">GPS Live Lock</span>
+          <span style="color: var(--text-secondary); font-size: 11px;">GPS Accuracy: ±${this.lastLocation?.accuracy ?? 15}m</span>
         </div>
       `);
 
@@ -325,7 +586,7 @@ export class MotionMapController {
             <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary); margin: 3px 0;">
               ${this.lastLocation.latitude.toFixed(4)}°, ${this.lastLocation.longitude.toFixed(4)}°
             </div>
-            <span style="color: var(--text-secondary); font-size: 11px;">Accuracy: ±${this.lastLocation.accuracy}m</span>
+            <span style="color: var(--text-secondary); font-size: 11px;">GPS Accuracy: ±${this.lastLocation.accuracy}m</span>
           </div>
         `);
       }
@@ -360,7 +621,7 @@ export class MotionMapController {
     this.map.flyTo({
       center: hub.coords,
       zoom: hub.zoom,
-      pitch: hub.pitch,
+      pitch: this.is3DActive ? hub.pitch : 0,
       bearing: hub.bearing,
       essential: true,
       duration: 2500,
@@ -382,14 +643,22 @@ export class MotionMapController {
   }
 
   public toggle3D(): boolean {
-    if (!this.map) return this.is3DActive;
-    this.is3DActive = !this.is3DActive;
+    return this.setPerspective(!this.is3DActive);
+  }
+
+  public setPerspective(enable3D: boolean): boolean {
+    if (!this.map) return enable3D;
+    this.is3DActive = enable3D;
 
     this.map.easeTo({
       pitch: this.is3DActive ? 62 : 0,
       bearing: this.is3DActive ? -20 : 0,
       duration: 1200
     });
+
+    window.dispatchEvent(
+      new CustomEvent('motion:3d-state', { detail: { is3D: this.is3DActive } })
+    );
 
     return this.is3DActive;
   }
@@ -423,10 +692,20 @@ export class MotionMapController {
     );
   }
 
+  private dispatchRegion(regionName: string): void {
+    window.dispatchEvent(
+      new CustomEvent('motion:region-change', { detail: { regionName } })
+    );
+  }
+
   public destroy(): void {
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
+    }
+    if (this.regionDebounceTimer) {
+      clearTimeout(this.regionDebounceTimer);
+      this.regionDebounceTimer = null;
     }
     if (this.userMarker) {
       this.userMarker.remove();

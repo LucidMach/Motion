@@ -35,6 +35,13 @@ const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || '' } = Astro.props
       window.dispatchEvent(new CustomEvent('motion:3d-state', { detail: { is3D } }));
     });
 
+    window.addEventListener('motion:cmd:set-3d', (e: Event) => {
+      const is3D = (e as CustomEvent<{ is3D: boolean }>).detail?.is3D;
+      if (typeof is3D === 'boolean') {
+        mapController?.setPerspective(is3D);
+      }
+    });
+
     window.addEventListener('motion:cmd:reset-north', () => {
       mapController?.resetBearing();
     });

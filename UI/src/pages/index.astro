@@ -3,8 +3,6 @@
 import '../styles/global.css';
 import MapboxMap from '../components/MapboxMap.astro';
 import HeaderHUD from '../components/HeaderHUD.astro';
-import MapControls from '../components/MapControls.astro';
-import TelemetryPanel from '../components/TelemetryPanel.astro';
 import TokenModal from '../components/TokenModal.astro';
 
 const pageTitle = "Motion • 3D Victorian Transit & Live Geolocation";
@@ -39,10 +37,10 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
       <!-- 3D Mapbox Map Engine -->
       <MapboxMap initialToken={import.meta.env.PUBLIC_MAPBOX_TOKEN} />
 
-      <!-- Floating Glassmorphic Overlays -->
+      <!-- Top Navigation and Region Status HUD -->
       <HeaderHUD />
-      <MapControls />
-      <TelemetryPanel />
+
+      <!-- Token Configuration Modal (Triggers on missing token) -->
       <TokenModal />
     </main>
 

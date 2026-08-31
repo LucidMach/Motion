@@ -281,6 +281,7 @@
 
   configBtn?.addEventListener('click', openModal);
   closeBtn?.addEventListener('click', closeModal);
+  window.addEventListener('motion:cmd:open-token-modal', openModal);
 
   modal?.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();

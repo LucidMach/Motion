@@ -1,10 +1,11 @@
 ---
-// HeaderHUD.astro - Top Navigation and Live Status HUD
+// HeaderHUD.astro - Top Navigation and Live Status HUD with 2D/3D Toggle & GPS Recenter
 ---
 
-<header class="header-hud glass-panel">
+<header class="header-hud glass-panel" aria-label="Navigation & Region Status Bar">
+  <!-- Brand and Dynamic Region Focus -->
   <div class="brand-group">
-    <div class="brand-icon-wrapper">
+    <div class="brand-icon-wrapper" title="Motion Transit 3D Engine">
       <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="12 2 19 21 12 17 5 21 12 2" />
       </svg>
@@ -12,22 +13,55 @@
     </div>
     <div class="brand-text">
       <h1 class="brand-title">MOTION</h1>
-      <span class="brand-subtitle">Victorian Transit • 3D Navigator</span>
+      <span class="brand-subtitle" id="region-focus-label">Melbourne CBD • Victoria</span>
     </div>
   </div>
 
-  <div class="status-group">
-    <div class="status-pill glass-panel" id="gps-status-pill">
-      <span class="pulse-dot cyan" id="status-dot"></span>
-      <span class="status-text" id="status-label">Initializing Engine...</span>
-    </div>
-
-    <button id="btn-token-config" class="btn-icon glass-panel" title="Mapbox Token Settings" aria-label="Settings">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  <!-- Primary Header Controls: GPS Accuracy Recenter + 2D/3D Perspective Switch -->
+  <div class="header-actions">
+    <!-- GPS Accuracy & Recenter Button -->
+    <button
+      id="btn-gps-recenter"
+      class="gps-action-pill glass-panel"
+      title="Recenter camera to my GPS location"
+      aria-label="GPS Accuracy and Recenter"
+    >
+      <span class="gps-dot-wrap">
+        <span class="pulse-dot cyan" id="status-dot"></span>
+      </span>
+      <span class="gps-action-text" id="status-label">GPS Accuracy: ±15m</span>
+      <svg class="recenter-hint-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+        <line x1="12" y1="2" x2="12" y2="5"></line>
+        <line x1="12" y1="19" x2="12" y2="22"></line>
+        <line x1="2" y1="12" x2="5" y2="12"></line>
+        <line x1="19" y1="12" x2="22" y2="12"></line>
       </svg>
     </button>
+
+    <!-- 2D / 3D Perspective Segmented Switch -->
+    <div class="perspective-switcher glass-panel" role="group" aria-label="Perspective View Mode">
+      <button
+        id="btn-switch-2d"
+        class="switch-tab"
+        data-view="2d"
+        title="Switch to 2D Nadir Overhead View"
+        aria-pressed="false"
+      >
+        2D
+      </button>
+      <button
+        id="btn-switch-3d"
+        class="switch-tab active"
+        data-view="3d"
+        title="Switch to 3D Oblique Perspective"
+        aria-pressed="true"
+      >
+        3D
+      </button>
+      <div class="switch-glow-indicator" id="switch-indicator"></div>
+    </div>
   </div>
 </header>
 
@@ -44,12 +78,19 @@
     justify-content: space-between;
     z-index: 10;
     pointer-events: auto;
+    background: var(--bg-surface);
+    backdrop-filter: var(--blur-glass);
+    -webkit-backdrop-filter: var(--blur-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-glass);
   }
 
   .brand-group {
     display: flex;
     align-items: center;
     gap: 14px;
+    user-select: none;
   }
 
   .brand-icon-wrapper {
@@ -63,6 +104,7 @@
     align-items: center;
     justify-content: center;
     color: var(--accent-cyan);
+    flex-shrink: 0;
   }
 
   .brand-icon {
@@ -80,6 +122,8 @@
   .brand-text {
     display: flex;
     flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
   }
 
   .brand-title {
@@ -90,85 +134,233 @@
     background: linear-gradient(90deg, #ffffff 0%, #38bdf8 60%, #818cf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    line-height: 1.1;
   }
 
   .brand-subtitle {
-    font-size: 0.72rem;
-    font-weight: 500;
+    font-size: 0.74rem;
+    font-weight: 600;
     color: var(--text-secondary);
     letter-spacing: 0.04em;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 380px;
+    transition: color 0.3s ease, opacity 0.3s ease;
   }
 
-  .status-group {
+  .brand-subtitle.updated {
+    color: var(--accent-cyan);
+  }
+
+  .header-actions {
     display: flex;
     align-items: center;
     gap: 12px;
   }
 
-  .status-pill {
+  /* GPS Accuracy & Recenter Button */
+  .gps-action-pill {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 14px;
+    padding: 8px 16px;
     border-radius: var(--radius-full);
     font-size: 0.82rem;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-primary);
-  }
-
-  .btn-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    cursor: pointer;
+    background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
-    background: var(--bg-surface);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    user-select: none;
   }
 
-  .btn-icon:hover {
-    color: var(--text-accent);
+  .gps-action-pill:hover {
+    background: var(--bg-surface-hover);
     border-color: var(--border-glow);
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
     transform: translateY(-1px);
   }
 
-  @media (max-width: 640px) {
+  .gps-action-pill:active {
+    transform: translateY(0px) scale(0.98);
+  }
+
+  .gps-dot-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gps-action-text {
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .recenter-hint-icon {
+    color: var(--accent-cyan);
+    opacity: 0.7;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .gps-action-pill:hover .recenter-hint-icon {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  /* 2D / 3D Segmented Switch */
+  .perspective-switcher {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(10, 15, 29, 0.85);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .switch-tab {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+  }
+
+  .switch-tab:hover {
+    color: var(--text-primary);
+  }
+
+  .switch-tab.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.3) 0%, rgba(99, 102, 241, 0.35) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+  }
+
+  @media (max-width: 768px) {
     .header-hud {
       top: 12px;
       left: 12px;
       right: 12px;
-      padding: 0 14px;
-      height: 56px;
+      padding: 0 12px;
+      height: 58px;
     }
+
     .brand-subtitle {
+      max-width: 170px;
+      font-size: 0.68rem;
+    }
+
+    .gps-action-pill {
+      padding: 6px 10px;
+      font-size: 0.74rem;
+      gap: 6px;
+    }
+
+    .recenter-hint-icon {
       display: none;
     }
-    .status-pill {
-      font-size: 0.75rem;
-      padding: 6px 10px;
+
+    .switch-tab {
+      padding: 5px 10px;
+      font-size: 0.72rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .brand-subtitle {
+      display: none;
     }
   }
 </style>
 
 <script>
+  // Dynamic GPS Status & Recenter Handler
+  const gpsPill = document.getElementById('btn-gps-recenter');
+  const statusLabel = document.getElementById('status-label');
+  const statusDot = document.getElementById('status-dot');
+  const regionLabel = document.getElementById('region-focus-label');
+
+  // Recenter on click
+  gpsPill?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('motion:cmd:fly-user'));
+  });
+
+  // Listen to status updates
   window.addEventListener('motion:status', (event: Event) => {
     const { state, message } = (event as CustomEvent<{ state: string; message: string }>).detail || {};
-    const labelEl = document.getElementById('status-label');
-    const dotEl = document.getElementById('status-dot');
-
-    if (labelEl) labelEl.textContent = message || 'Active';
     
-    if (dotEl) {
-      dotEl.className = 'pulse-dot';
+    if (statusLabel && message) {
+      statusLabel.textContent = message;
+    }
+    
+    if (statusDot) {
+      statusDot.className = 'pulse-dot';
       if (state === 'gps_active' || state === 'ready') {
-        dotEl.classList.add('cyan');
-      } else if (state === 'gps_acquiring' || state === 'needs_token') {
-        dotEl.classList.add('amber');
+        statusDot.classList.add('cyan');
+      } else if (state === 'gps_acquiring' || state === 'needs_token' || state === 'gps_fallback') {
+        statusDot.classList.add('amber');
       }
+    }
+  });
+
+  // Listen to spatial region-in-focus changes
+  window.addEventListener('motion:region-change', (event: Event) => {
+    const regionName = (event as CustomEvent<{ regionName: string }>).detail?.regionName;
+    if (regionLabel && regionName) {
+      regionLabel.textContent = regionName;
+      regionLabel.classList.add('updated');
+      setTimeout(() => regionLabel.classList.remove('updated'), 600);
+    }
+  });
+
+  // 2D / 3D Perspective Switcher
+  const btn2D = document.getElementById('btn-switch-2d');
+  const btn3D = document.getElementById('btn-switch-3d');
+
+  function updatePerspectiveUI(is3D: boolean) {
+    if (is3D) {
+      btn3D?.classList.add('active');
+      btn3D?.setAttribute('aria-pressed', 'true');
+      btn2D?.classList.remove('active');
+      btn2D?.setAttribute('aria-pressed', 'false');
+    } else {
+      btn2D?.classList.add('active');
+      btn2D?.setAttribute('aria-pressed', 'true');
+      btn3D?.classList.remove('active');
+      btn3D?.setAttribute('aria-pressed', 'false');
+    }
+  }
+
+  btn2D?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('motion:cmd:set-3d', { detail: { is3D: false } }));
+    updatePerspectiveUI(false);
+  });
+
+  btn3D?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('motion:cmd:set-3d', { detail: { is3D: true } }));
+    updatePerspectiveUI(true);
+  });
+
+  window.addEventListener('motion:3d-state', (event: Event) => {
+    const is3D = (event as CustomEvent<{ is3D: boolean }>).detail?.is3D;
+    if (typeof is3D === 'boolean') {
+      updatePerspectiveUI(is3D);
     }
   });
 </script>
