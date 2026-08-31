@@ -22,6 +22,24 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
     subtleBorder: 'rgba(56, 189, 248, 0.15)',
     defaultLightPreset: 'day'
   },
+  monochrome: {
+    id: 'monochrome',
+    label: 'Mapbox Monochrome',
+    seasonBadge: 'Stealth',
+    subtitle: 'High-contrast architectural monochrome with titanium slate HUD & crisp 3D geometry',
+    primaryColor: '#f1f5f9',
+    secondaryColor: '#94a3b8',
+    deepBg: '#090b10',
+    surfaceBg: 'rgba(15, 20, 28, 0.86)',
+    surfaceElevated: 'rgba(24, 30, 42, 0.92)',
+    surfaceHover: 'rgba(38, 46, 62, 0.95)',
+    glowColor: 'rgba(241, 245, 249, 0.35)',
+    accentCyan: '#f1f5f9',
+    accentIndigo: '#94a3b8',
+    brandGradient: 'linear-gradient(90deg, #ffffff 0%, #e2e8f0 45%, #94a3b8 100%)',
+    subtleBorder: 'rgba(241, 245, 249, 0.2)',
+    defaultLightPreset: 'day'
+  },
   spring: {
     id: 'spring',
     label: 'Spring Blossom',
@@ -94,11 +112,11 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
     subtleBorder: 'rgba(103, 232, 249, 0.18)',
     defaultLightPreset: 'day'
   },
-  obsidian: {
-    id: 'obsidian',
-    label: 'Obsidian Stealth',
-    seasonBadge: 'Stealth',
-    subtitle: 'Deep pitch black stealth canvas with matrix emerald & mint telemetry',
+  matrix: {
+    id: 'matrix',
+    label: 'Matrix',
+    seasonBadge: 'Matrix',
+    subtitle: 'Deep pitch black digital canvas with matrix emerald & mint telemetry',
     primaryColor: '#10b981',
     secondaryColor: '#14b8a6',
     deepBg: '#020408',
@@ -110,11 +128,37 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
     accentIndigo: '#14b8a6',
     brandGradient: 'linear-gradient(90deg, #ffffff 0%, #10b981 55%, #14b8a6 100%)',
     subtleBorder: 'rgba(16, 185, 129, 0.15)',
-    defaultLightPreset: 'day'
+    defaultLightPreset: 'night'
+  },
+  tron: {
+    id: 'tron',
+    label: 'Tron',
+    seasonBadge: 'The Grid',
+    subtitle: 'Mapbox Monochrome night basemap with laser cyan circuit grid & photon orange telemetry',
+    primaryColor: '#00f3ff',
+    secondaryColor: '#ff7700',
+    deepBg: '#05070c',
+    surfaceBg: 'rgba(8, 12, 20, 0.88)',
+    surfaceElevated: 'rgba(14, 20, 32, 0.92)',
+    surfaceHover: 'rgba(22, 32, 48, 0.96)',
+    glowColor: 'rgba(0, 243, 255, 0.5)',
+    accentCyan: '#00f3ff',
+    accentIndigo: '#ff7700',
+    brandGradient: 'linear-gradient(90deg, #ffffff 0%, #00f3ff 50%, #ff7700 100%)',
+    subtleBorder: 'rgba(0, 243, 255, 0.25)',
+    defaultLightPreset: 'night'
   }
 };
 
 export const MAPBOX_STYLES: Record<MapStyleId, MapStyleOption> = {
+  monochrome: {
+    id: 'monochrome',
+    label: 'Mapbox Monochrome 3D',
+    tagline: 'Sleek architectural stealth styling with 3D buildings, dynamic lighting & landmarks',
+    url: 'mapbox://styles/mapbox/standard',
+    badge: 'Stealth 3D',
+    is3DSupported: true
+  },
   standard: {
     id: 'standard',
     label: 'Mapbox Standard 3D',
@@ -174,8 +218,9 @@ export function getThemeSettings(): ThemeSettings {
       return DEFAULT_THEME_SETTINGS;
     }
     const parsed = JSON.parse(raw);
+    const resolvedPresetId = parsed.presetId === 'obsidian' ? 'matrix' : parsed.presetId;
     return {
-      presetId: parsed.presetId && THEME_PRESETS[parsed.presetId as ThemePresetId] ? parsed.presetId : DEFAULT_THEME_SETTINGS.presetId,
+      presetId: resolvedPresetId && THEME_PRESETS[resolvedPresetId as ThemePresetId] ? resolvedPresetId : DEFAULT_THEME_SETTINGS.presetId,
       lightPreset: parsed.lightPreset || DEFAULT_THEME_SETTINGS.lightPreset,
       mapStyle: parsed.mapStyle && MAPBOX_STYLES[parsed.mapStyle as MapStyleId] ? parsed.mapStyle : DEFAULT_THEME_SETTINGS.mapStyle,
       glassIntensity: parsed.glassIntensity || DEFAULT_THEME_SETTINGS.glassIntensity,

@@ -35,6 +35,22 @@ export const SEASON_MAP_PALETTES: Record<ThemePresetId, MapSeasonPalette> = {
     roads: '#1e293b',
     transit: '#38bdf8'
   },
+  monochrome: {
+    fog: {
+      color: 'rgb(240, 243, 246)',
+      highColor: 'rgb(215, 222, 230)',
+      horizonBlend: 0.12,
+      spaceColor: 'rgb(15, 20, 26)',
+      starIntensity: 0.3
+    },
+    grass: '#cbd5e1',
+    forest: '#94a3b8',
+    water: '#475569',
+    buildingExtrusion: '#64748b',
+    buildingOpacity: 0.95,
+    roads: '#f1f5f9',
+    transit: '#0f172a'
+  },
   spring: {
     fog: {
       color: 'rgb(205, 240, 220)',
@@ -99,6 +115,22 @@ export const SEASON_MAP_PALETTES: Record<ThemePresetId, MapSeasonPalette> = {
     roads: '#f8fafc',
     transit: '#a855f7'
   },
+  matrix: {
+    fog: {
+      color: 'rgb(4, 8, 14)',
+      highColor: 'rgb(6, 16, 12)',
+      horizonBlend: 0.06,
+      spaceColor: 'rgb(2, 4, 8)',
+      starIntensity: 0.9
+    },
+    grass: '#061710',
+    forest: '#04100b',
+    water: '#020617',
+    buildingExtrusion: '#0b1612',
+    buildingOpacity: 0.95,
+    roads: '#0f172a',
+    transit: '#10b981'
+  },
   obsidian: {
     fog: {
       color: 'rgb(4, 8, 14)',
@@ -114,6 +146,22 @@ export const SEASON_MAP_PALETTES: Record<ThemePresetId, MapSeasonPalette> = {
     buildingOpacity: 0.95,
     roads: '#0f172a',
     transit: '#10b981'
+  },
+  tron: {
+    fog: {
+      color: 'rgb(8, 12, 18)',
+      highColor: 'rgb(14, 20, 30)',
+      horizonBlend: 0.05,
+      spaceColor: 'rgb(2, 4, 8)',
+      starIntensity: 0.9
+    },
+    grass: '#0d1117',
+    forest: '#090d14',
+    water: '#111827',
+    buildingExtrusion: '#1e2638',
+    buildingOpacity: 0.95,
+    roads: '#242f45',
+    transit: '#00f3ff'
   }
 };
 

@@ -1,6 +1,6 @@
-export type ThemePresetId = 'cyberpunk' | 'spring' | 'summer' | 'autumn' | 'winter' | 'obsidian';
+export type ThemePresetId = 'cyberpunk' | 'spring' | 'summer' | 'autumn' | 'winter' | 'monochrome' | 'matrix' | 'obsidian' | 'tron';
 export type MapLightPreset = 'dawn' | 'day' | 'dusk' | 'night';
-export type MapStyleId = 'standard' | 'satellite' | 'dark' | 'light' | 'navigation' | 'outdoors';
+export type MapStyleId = 'standard' | 'monochrome' | 'satellite' | 'dark' | 'light' | 'navigation' | 'outdoors';
 export type OrbitModifier = 'shift' | 'ctrl' | 'alt' | 'none' | 'rightOnly';
 
 export interface ThemePreset {
@@ -52,9 +52,9 @@ export interface GestureSettings {
 }
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
-  presetId: 'cyberpunk',
+  presetId: 'monochrome',
   lightPreset: 'day',
-  mapStyle: 'standard',
+  mapStyle: 'monochrome',
   glassIntensity: 'standard',
   showGlow: true
 };

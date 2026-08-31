@@ -21,18 +21,31 @@ export default function BrandGroup({ regionLabel, regionUpdated }: BrandGroupPro
         className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent-cyan/40 bg-linear-to-br from-accent-cyan/20 to-accent-indigo/20 text-accent-cyan transition-all duration-300 shadow-[0_0_12px_var(--color-glow)]"
         title="Motion Transit 3D Engine"
       >
-        <svg
-          className="h-5.5 w-5.5 animate-float-slight"
-          style={{ filter: 'drop-shadow(0 0 6px var(--color-accent-cyan))' }}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polygon points="12 2 19 21 12 17 5 21 12 2" />
-        </svg>
+        {typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'tron' ? (
+          <svg
+            className="h-6 w-6 animate-float-slight"
+            style={{ filter: 'drop-shadow(0 0 6px var(--color-accent-cyan))' }}
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle cx="12" cy="12" r="9.5" stroke="var(--color-accent-cyan)" strokeWidth="1.8" fill="rgba(0, 243, 255, 0.12)" />
+            <circle cx="12" cy="12" r="6" stroke="var(--color-accent-cyan)" strokeWidth="1.4" strokeDasharray="3 2" opacity="0.85" />
+            <circle cx="12" cy="12" r="2.5" fill="var(--color-accent-cyan)" />
+          </svg>
+        ) : (
+          <svg
+            className="h-5.5 w-5.5 animate-float-slight"
+            style={{ filter: 'drop-shadow(0 0 6px var(--color-accent-cyan))' }}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="12 2 19 21 12 17 5 21 12 2" />
+          </svg>
+        )}
       </div>
       <div className="flex flex-col gap-px overflow-hidden">
         <h1

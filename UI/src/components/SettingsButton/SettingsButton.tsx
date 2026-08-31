@@ -9,9 +9,9 @@ export default function SettingsButton() {
         onClick={handleClick}
         title="Customize UI Theme & Gesture Interactions"
         aria-label="Open Studio Settings"
-        className="group relative flex h-11 items-center justify-center overflow-hidden rounded-full border border-subtle bg-surface-elevated/90 p-2 text-secondary shadow-glass backdrop-blur-xl outline-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-glow hover:bg-surface-hover hover:px-3.5 hover:text-[var(--color-accent-cyan)] hover:shadow-[0_0_20px_var(--color-glow)] active:translate-y-0 active:scale-95"
+        className="group relative flex h-11 items-center justify-center overflow-hidden rounded-full border border-subtle bg-surface-elevated/90 p-2 text-secondary shadow-glass backdrop-blur-xl outline-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-glow hover:bg-surface-hover hover:px-3.5 hover:text-accent-cyan hover:shadow-[0_0_20px_var(--color-glow)] active:translate-y-0 active:scale-95"
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--color-accent-cyan)]/30 bg-[var(--color-accent-cyan)]/10 text-[var(--color-accent-cyan)] transition-all group-hover:border-[var(--color-accent-cyan)]/60 group-hover:bg-[var(--color-accent-cyan)]/20">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan transition-all group-hover:border-accent-cyan/60 group-hover:bg-accent-cyan/20">
           <svg
             className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:rotate-90"
             viewBox="0 0 24 24"
@@ -26,7 +26,7 @@ export default function SettingsButton() {
           </svg>
         </div>
 
-        <span className="max-w-0 overflow-hidden whitespace-nowrap font-display text-[0.78rem] font-bold tracking-wider text-primary opacity-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:max-w-24 group-hover:pl-2 group-hover:opacity-100 group-hover:text-[var(--color-accent-cyan)]">
+        <span className="max-w-0 overflow-hidden whitespace-nowrap font-display text-[0.78rem] font-bold tracking-wider text-primary opacity-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:max-w-24 group-hover:pl-2 group-hover:opacity-100 group-hover:text-accent-cyan">
           SETTINGS
         </span>
       </button>

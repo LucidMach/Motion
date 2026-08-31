@@ -20,8 +20,11 @@ export function configureDefault3DAtmosphere(map: mapboxgl.Map, lightPreset?: Ma
     const currentTheme = getThemeSettings();
     const mapAny = map as any;
     if (typeof mapAny.setConfigProperty === 'function') {
-      const preset = lightPreset || currentTheme.lightPreset || 'day';
+      const isMidnightLocked = currentTheme.presetId === 'tron' || currentTheme.presetId === 'matrix';
+      const preset = isMidnightLocked ? 'night' : (lightPreset || currentTheme.lightPreset || 'day');
+      const isMonochrome = currentTheme.presetId === 'monochrome' || currentTheme.presetId === 'tron' || currentTheme.mapStyle === 'monochrome';
       mapAny.setConfigProperty('basemap', 'lightPreset', preset);
+      mapAny.setConfigProperty('basemap', 'theme', isMonochrome ? 'monochrome' : 'default');
       mapAny.setConfigProperty('basemap', 'show3dObjects', true);
       mapAny.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
       mapAny.setConfigProperty('basemap', 'showTransitLabels', true);

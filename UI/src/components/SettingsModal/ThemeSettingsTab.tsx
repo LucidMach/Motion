@@ -14,12 +14,16 @@ const LIGHT_CHECKPOINTS: { id: MapLightPreset; label: string; icon: string; time
 ];
 
 export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTabProps) {
+  const isMidnightLocked = settings.presetId === 'tron' || settings.presetId === 'matrix';
+  const effectivePreset = isMidnightLocked ? 'night' : settings.lightPreset;
+
   const currentStepIndex = Math.max(
     0,
-    LIGHT_CHECKPOINTS.findIndex((cp) => cp.id === settings.lightPreset)
+    LIGHT_CHECKPOINTS.findIndex((cp) => cp.id === effectivePreset)
   );
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isMidnightLocked) return;
     const index = parseInt(e.target.value, 10);
     const selected = LIGHT_CHECKPOINTS[index];
     if (selected) {
@@ -37,14 +41,18 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
               Time of Day & Sunlight Atmosphere
             </label>
             <span className="text-[0.76rem] font-medium text-secondary">
-              Drag or click checkpoints to simulate real-time diurnal sunlight
+              {isMidnightLocked
+                ? 'Always locked to Midnight (00:00) in Tron & Matrix'
+                : 'Drag or click checkpoints to simulate real-time diurnal sunlight'}
             </span>
           </div>
 
           <span className="flex items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-cyan/10 px-3 py-1 font-mono text-[0.76rem] font-bold text-accent-cyan">
             <span>{LIGHT_CHECKPOINTS[currentStepIndex].icon}</span>
             <span>{LIGHT_CHECKPOINTS[currentStepIndex].label}</span>
-            <span className="text-secondary/70">({LIGHT_CHECKPOINTS[currentStepIndex].time})</span>
+            <span className="text-secondary/70">
+              ({LIGHT_CHECKPOINTS[currentStepIndex].time}{isMidnightLocked ? ' • Lock' : ''})
+            </span>
           </span>
         </div>
 
@@ -80,13 +88,12 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
                 return (
                   <div
                     key={cp.id}
-                    className={`flex h-4 w-4 items-center justify-center rounded-full border transition-all duration-200 ${
-                      isCurrent
+                    className={`flex h-4 w-4 items-center justify-center rounded-full border transition-all duration-200 ${isCurrent
                         ? 'border-white bg-accent-cyan shadow-[0_0_12px_var(--color-glow)] scale-125'
                         : isActive
-                        ? 'border-accent-cyan/80 bg-accent-cyan/40'
-                        : 'border-muted/50 bg-[rgba(10,15,29,0.9)]'
-                    }`}
+                          ? 'border-accent-cyan/80 bg-accent-cyan/40'
+                          : 'border-muted/50 bg-[rgba(10,15,29,0.9)]'
+                      }`}
                   />
                 );
               })}
@@ -96,14 +103,17 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
           {/* Interactive Checkpoint Labels */}
           <div className="grid grid-cols-4 gap-1.5 pt-1">
             {LIGHT_CHECKPOINTS.map((cp) => {
-              const isSelected = cp.id === settings.lightPreset;
+              const isSelected = cp.id === effectivePreset;
               return (
                 <button
                   key={cp.id}
                   type="button"
-                  onClick={() => onChange({ lightPreset: cp.id })}
+                  disabled={isMidnightLocked}
+                  onClick={() => !isMidnightLocked && onChange({ lightPreset: cp.id })}
                   className={`flex flex-col items-center gap-0.5 rounded-xl border p-2 text-center transition-all ${
-                    isSelected
+                    isMidnightLocked && cp.id !== 'night'
+                      ? 'cursor-not-allowed opacity-35 border-transparent bg-transparent text-secondary'
+                      : isSelected
                       ? 'border-accent-cyan/50 bg-surface-elevated text-accent-cyan shadow-[0_0_10px_var(--color-glow)]'
                       : 'border-transparent bg-transparent text-secondary hover:border-subtle hover:bg-surface-hover'
                   }`}
@@ -142,33 +152,45 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
                 key={preset.id}
                 type="button"
                 onClick={() => {
+                  const isNightLocked = preset.id === 'tron' || preset.id === 'matrix';
                   onChange({
-                    presetId: preset.id
+                    presetId: preset.id,
+                    lightPreset: isNightLocked ? 'night' : (preset.defaultLightPreset || settings.lightPreset)
                   });
                 }}
-                className={`group relative flex flex-col gap-2 rounded-2xl border p-3.5 text-left transition-all duration-250 ${
-                  isSelected
+                className={`group relative flex flex-col gap-2 rounded-2xl border p-3.5 text-left transition-all duration-250 ${isSelected
                     ? 'border-accent-cyan bg-surface-hover shadow-[0_0_20px_var(--color-glow)] ring-1 ring-accent-cyan/40'
                     : 'border-subtle bg-[rgba(5,7,13,0.5)] hover:border-subtle/80 hover:bg-surface-elevated'
-                }`}
+                  }`}
               >
                 {/* Header row: Palette badge + Swatch & Title */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    {/* Swatch circle */}
-                    <div
-                      className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 shadow-sm"
-                      style={{ backgroundColor: preset.deepBg }}
-                    >
+                    {/* Swatch circle / Icon */}
+                    {preset.id === 'tron' ? (
                       <div
-                        className="h-4.5 w-4.5 rounded-full border border-white/30 shadow-xs"
-                        style={{ backgroundColor: preset.accentCyan }}
-                      />
+                        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[#00f3ff] bg-[#01050a] shadow-[0_0_12px_rgba(0,243,255,0.6)]"
+                        title="Tron Identity Disc"
+                      >
+                        <div className="flex h-4.5 w-4.5 items-center justify-center rounded-full border border-[#00f3ff]/70 bg-[#041224]">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[#00f3ff] shadow-[0_0_6px_#00f3ff]" />
+                        </div>
+                      </div>
+                    ) : (
                       <div
-                        className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border border-white/30"
-                        style={{ backgroundColor: preset.accentIndigo }}
-                      />
-                    </div>
+                        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 shadow-sm"
+                        style={{ backgroundColor: preset.deepBg }}
+                      >
+                        <div
+                          className="h-4.5 w-4.5 rounded-full border border-white/30 shadow-xs"
+                          style={{ backgroundColor: preset.accentCyan }}
+                        />
+                        <div
+                          className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border border-white/30"
+                          style={{ backgroundColor: preset.accentIndigo }}
+                        />
+                      </div>
+                    )}
 
                     <div className="flex flex-col">
                       <span className="font-display text-[0.88rem] font-bold text-primary group-hover:text-white">
@@ -181,7 +203,9 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
                     {preset.seasonBadge && (
                       <span
                         className={`rounded-full border px-2.5 py-0.5 text-[0.66rem] font-bold ${
-                          preset.id === 'cyberpunk'
+                          preset.id === 'tron'
+                            ? 'border-[#00f3ff]/50 bg-[#00f3ff]/15 text-[#00f3ff] shadow-[0_0_8px_rgba(0,243,255,0.3)]'
+                            : preset.id === 'cyberpunk'
                             ? 'border-accent-cyan/40 bg-accent-cyan/15 text-accent-cyan shadow-[0_0_8px_rgba(56,189,248,0.2)]'
                             : isSelected
                             ? 'border-accent-cyan/30 bg-surface-elevated text-accent-cyan'
@@ -201,7 +225,7 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
                 <div className="flex items-center justify-between rounded-lg border border-white/5 bg-black/40 px-2.5 py-1.5">
                   <span className="font-mono text-[0.66rem] text-muted uppercase">Brand Title</span>
                   <span
-                    className="bg-clip-text font-display text-[0.82rem] font-extrabold tracking-[0.1em] text-transparent"
+                    className="bg-clip-text font-display text-[0.82rem] font-extrabold tracking-widest text-transparent"
                     style={{ backgroundImage: preset.brandGradient }}
                   >
                     MOTION
@@ -232,11 +256,10 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
                 key={level}
                 type="button"
                 onClick={() => onChange({ glassIntensity: level })}
-                className={`flex-1 rounded-full py-1 text-[0.72rem] font-bold transition-all ${
-                  settings.glassIntensity === level
+                className={`flex-1 rounded-full py-1 text-[0.72rem] font-bold transition-all ${settings.glassIntensity === level
                     ? 'border border-accent-cyan/40 bg-surface-elevated text-accent-cyan shadow-[0_0_8px_var(--color-glow)]'
                     : 'text-secondary hover:text-primary'
-                }`}
+                  }`}
               >
                 {level.charAt(0).toUpperCase() + level.slice(1)}
               </button>
@@ -256,14 +279,12 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
             role="switch"
             aria-checked={settings.showGlow}
             onClick={() => onChange({ showGlow: !settings.showGlow })}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              settings.showGlow ? 'bg-accent-cyan' : 'bg-subtle'
-            }`}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${settings.showGlow ? 'bg-accent-cyan' : 'bg-subtle'
+              }`}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                settings.showGlow ? 'translate-x-5' : 'translate-x-0'
-              }`}
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${settings.showGlow ? 'translate-x-5' : 'translate-x-0'
+                }`}
             />
           </button>
         </div>
