@@ -127,7 +127,7 @@ The top navigation bar positioned at `top: 20px`. Houses branding, dynamic spati
   - Brand Title: `MOTION` (gradient display text).
   - Dynamic Region Subtitle: `<span id="region-focus-label">` listening to `motion:region-change`.
 - **`.header-actions`**:
-  - **GPS Recenter Button** (`#btn-gps-recenter`): Displays pulsating status dot, `"GPS Accuracy: ±Xm"`, and recenter crosshairs icon. Dispatches `motion:cmd:fly-user` on click.
+  - **Location Recenter Card** (`#btn-gps-recenter`): Interactive pill containing a circular crosshair icon with a pulsing status dot (`.pulse-dot-mini`), the location title (`#gps-loc-name`, e.g. `"My Location"` / `"Melbourne CBD"`), and accuracy metric as structured subtext (`#gps-accuracy-sub`, e.g. `"±12m accuracy"`). Dispatches `motion:cmd:fly-user` on click.
 
 #### Styling & Accessibility
 - Semi-transparent glassmorphic container with `backdrop-filter: blur(16px)`.

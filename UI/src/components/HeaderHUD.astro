@@ -1,5 +1,5 @@
 ---
-// HeaderHUD.astro - Top Navigation and Live Status HUD with Dynamic Region & GPS Recenter
+// HeaderHUD.astro - Top Navigation and Live Status HUD with RTL Location & Accuracy Subtext
 ---
 
 <header class="header-hud glass-panel" aria-label="Navigation & Region Status Bar">
@@ -17,26 +17,26 @@
     </div>
   </div>
 
-  <!-- Header Right Actions: GPS Accuracy & Recenter Button -->
+  <!-- Header Right Action: Right-to-Left Location Button (Right-aligned text + Crosshair Icon) -->
   <div class="header-actions">
     <button
       id="btn-gps-recenter"
-      class="gps-action-pill glass-panel"
-      title="Recenter camera to my GPS location"
-      aria-label="GPS Accuracy and Recenter"
+      class="gps-location-card glass-panel"
+      title="Click to fly to your current location"
+      aria-label="Recenter to my location"
     >
-      <span class="gps-dot-wrap">
-        <span class="pulse-dot cyan" id="status-dot"></span>
-      </span>
-      <span class="gps-action-text" id="status-label">GPS Accuracy: ±15m</span>
-      <svg class="recenter-hint-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <circle cx="12" cy="12" r="3"></circle>
-        <line x1="12" y1="2" x2="12" y2="5"></line>
-        <line x1="12" y1="19" x2="12" y2="22"></line>
-        <line x1="2" y1="12" x2="5" y2="12"></line>
-        <line x1="19" y1="12" x2="22" y2="12"></line>
-      </svg>
+      <!-- Right-aligned text stack on the left -->
+      <div class="gps-text-stack">
+        <span class="gps-location-name" id="gps-loc-name">My Location</span>
+        <span class="gps-accuracy-subtext" id="gps-accuracy-sub">±15m accuracy</span>
+      </div>
+
+      <!-- Crosshair Icon container on the right (No blinking dot) -->
+      <div class="gps-icon-container">
+        <svg class="crosshair-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-5.91 11c.424-2.507 2.403-4.486 4.91-4.91v-2.021c-3.617.452-6.479 3.314-6.931 6.931h2.021zm6.91-4.91c2.507.423 4.486 2.402 4.91 4.91h2.021c-.452-3.617-3.314-6.479-6.931-6.931v2.021zm4.91 6.91c-.424 2.507-2.403 4.486-4.91 4.91v2.021c3.617-.452 6.479-3.314 6.931-6.931h-2.021zm-6.91 4.91c-2.507-.424-4.486-2.403-4.91-4.91h-2.021c.452 3.617 3.313 6.479 6.931 6.931v-2.021zm1-7.91c-1.104 0-2 .896-2 2s.896 2 2 2 2-.896 2-2-.896-2-2-2z"/>
+        </svg>
+      </div>
     </button>
   </div>
 </header>
@@ -122,7 +122,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 420px;
+    max-width: 400px;
     transition: color 0.3s ease, opacity 0.3s ease;
   }
 
@@ -136,56 +136,94 @@
     gap: 12px;
   }
 
-  /* GPS Accuracy & Recenter Button */
-  .gps-action-pill {
+  /* Crosshair Location Card (Right-to-Left Alignment) */
+  .gps-location-card {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 16px;
+    padding: 6px 8px 6px 16px;
     border-radius: var(--radius-full);
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-primary);
     background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
     cursor: pointer;
     transition: var(--transition-smooth);
     user-select: none;
+    outline: none;
   }
 
-  .gps-action-pill:hover {
+  .gps-location-card:hover {
     background: var(--bg-surface-hover);
     border-color: var(--border-glow);
-    color: #ffffff;
-    box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
     transform: translateY(-1px);
   }
 
-  .gps-action-pill:active {
-    transform: translateY(0px) scale(0.98);
+  .gps-location-card:active {
+    transform: translateY(0px) scale(0.97);
   }
 
-  .gps-dot-wrap {
+  .gps-text-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    gap: 1px;
+  }
+
+  .gps-location-name {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+  }
+
+  .gps-location-card:hover .gps-location-name {
+    color: #ffffff;
+  }
+
+  .gps-accuracy-subtext {
+    font-family: var(--font-sans);
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    letter-spacing: 0.02em;
+    line-height: 1;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+  }
+
+  .gps-icon-container {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .gps-action-text {
-    font-family: var(--font-sans);
-    letter-spacing: 0.01em;
-    white-space: nowrap;
-  }
-
-  .recenter-hint-icon {
     color: var(--accent-cyan);
-    opacity: 0.7;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   }
 
-  .gps-action-pill:hover .recenter-hint-icon {
-    opacity: 1;
-    transform: scale(1.15);
+  .gps-location-card:hover .gps-icon-container {
+    border-color: var(--accent-cyan);
+    background: rgba(56, 189, 248, 0.2);
+  }
+
+  .crosshair-icon {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gps-location-card:hover .crosshair-icon {
+    transform: scale(1.12);
   }
 
   @media (max-width: 768px) {
@@ -198,18 +236,31 @@
     }
 
     .brand-subtitle {
-      max-width: 190px;
+      max-width: 170px;
       font-size: 0.68rem;
     }
 
-    .gps-action-pill {
-      padding: 6px 12px;
-      font-size: 0.76rem;
-      gap: 6px;
+    .gps-location-card {
+      padding: 4px 6px 4px 12px;
+      gap: 8px;
     }
 
-    .recenter-hint-icon {
-      display: none;
+    .gps-icon-container {
+      width: 30px;
+      height: 30px;
+    }
+
+    .crosshair-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .gps-location-name {
+      font-size: 0.76rem;
+    }
+
+    .gps-accuracy-subtext {
+      font-size: 0.6rem;
     }
   }
 
@@ -221,32 +272,41 @@
 </style>
 
 <script>
-  // Dynamic GPS Status & Recenter Handler
-  const gpsPill = document.getElementById('btn-gps-recenter');
-  const statusLabel = document.getElementById('status-label');
-  const statusDot = document.getElementById('status-dot');
+  import type { LocationTelemetry } from '../scripts/mapController';
+
+  const gpsBtn = document.getElementById('btn-gps-recenter');
+  const locName = document.getElementById('gps-loc-name');
+  const accuracySub = document.getElementById('gps-accuracy-sub');
   const regionLabel = document.getElementById('region-focus-label');
 
   // Recenter on click
-  gpsPill?.addEventListener('click', () => {
+  gpsBtn?.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('motion:cmd:fly-user'));
+  });
+
+  // Listen to location telemetry updates
+  window.addEventListener('motion:location', (event: Event) => {
+    const loc = (event as CustomEvent<LocationTelemetry>).detail;
+    if (!loc) return;
+
+    if (locName) {
+      locName.textContent = loc.locationName || 'My Location';
+    }
+    if (accuracySub) {
+      accuracySub.textContent = `±${loc.accuracy}m accuracy`;
+    }
   });
 
   // Listen to status updates
   window.addEventListener('motion:status', (event: Event) => {
     const { state, message } = (event as CustomEvent<{ state: string; message: string }>).detail || {};
     
-    if (statusLabel && message) {
-      statusLabel.textContent = message;
-    }
-    
-    if (statusDot) {
-      statusDot.className = 'pulse-dot';
-      if (state === 'gps_active' || state === 'ready') {
-        statusDot.classList.add('cyan');
-      } else if (state === 'gps_acquiring' || state === 'needs_token' || state === 'gps_fallback') {
-        statusDot.classList.add('amber');
-      }
+    if (state === 'gps_acquiring') {
+      if (locName) locName.textContent = 'Acquiring GPS...';
+      if (accuracySub) accuracySub.textContent = 'Locating signal';
+    } else if (state === 'gps_fallback') {
+      if (locName) locName.textContent = 'Melbourne CBD';
+      if (accuracySub) accuracySub.textContent = '~15m (Approx)';
     }
   });
 

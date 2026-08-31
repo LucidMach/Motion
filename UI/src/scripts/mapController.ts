@@ -11,6 +11,7 @@ export interface LocationTelemetry {
   speed: number | null;
   timestamp: number;
   source: 'gps' | 'preset' | 'default';
+  locationName?: string;
 }
 
 export interface PresetLocation {
@@ -464,6 +465,8 @@ export class MotionMapController {
 
   private handlePositionUpdate(pos: GeolocationPosition, isFirstFix: boolean): void {
     const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = pos.coords;
+    const locRegion = resolveRegionInFocus(longitude, latitude, 16.0);
+    const locationName = locRegion.includes(' • ') ? locRegion.split(' • ')[0] : (locRegion || 'My Location');
 
     this.lastLocation = {
       latitude,
@@ -474,7 +477,8 @@ export class MotionMapController {
       heading: heading !== null && !isNaN(heading) ? Math.round(heading) : null,
       speed: speed !== null && !isNaN(speed) ? Math.round(speed * 3.6) : null, // km/h
       timestamp: pos.timestamp,
-      source: 'gps'
+      source: 'gps',
+      locationName
     };
 
     this.renderUserMarker([longitude, latitude], this.lastLocation.heading);
@@ -507,7 +511,8 @@ export class MotionMapController {
       heading: 0,
       speed: 0,
       timestamp: Date.now(),
-      source: 'default'
+      source: 'default',
+      locationName: 'Melbourne CBD'
     };
     this.renderUserMarker(defaultHub.coords, 0);
     this.dispatchLocation(this.lastLocation);
