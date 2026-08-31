@@ -3,6 +3,8 @@
 import '../styles/global.css';
 import MapboxMap from '../components/MapboxMap.astro';
 import HeaderHUD from '../components/HeaderHUD/HeaderHUD';
+import SettingsButton from '../components/SettingsButton/SettingsButton';
+import SettingsModal from '../components/SettingsModal/SettingsModal';
 import TokenModal from '../components/TokenModal/TokenModal';
 
 const pageTitle = "Motion • 3D Victorian Transit & Live Geolocation";
@@ -32,6 +34,44 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css" rel="stylesheet" />
 
     <title>{pageTitle}</title>
+
+    <script is:inline>
+      try {
+        const raw = localStorage.getItem('motion_theme_settings');
+        const defaultSettings = {
+          presetId: 'cyberpunk',
+          lightPreset: 'day',
+          mapStyle: 'standard',
+          glassIntensity: 'standard',
+          showGlow: true
+        };
+        const parsed = raw ? JSON.parse(raw) : defaultSettings;
+        if (!raw) {
+          localStorage.setItem('motion_theme_settings', JSON.stringify(defaultSettings));
+        }
+
+        const presets = {
+          cyberpunk: { deep: '#05070d', surface: 'rgba(10, 15, 29, 0.82)', elevated: 'rgba(16, 24, 46, 0.88)', hover: 'rgba(28, 41, 75, 0.92)', glow: 'rgba(56, 189, 248, 0.4)', cyan: '#38bdf8', indigo: '#818cf8', gradient: 'linear-gradient(90deg, #ffffff 0%, #38bdf8 55%, #818cf8 100%)', subtle: 'rgba(56, 189, 248, 0.15)' },
+          spring: { deep: '#06120b', surface: 'rgba(10, 28, 18, 0.85)', elevated: 'rgba(16, 44, 28, 0.9)', hover: 'rgba(26, 64, 40, 0.95)', glow: 'rgba(52, 211, 153, 0.4)', cyan: '#34d399', indigo: '#f472b6', gradient: 'linear-gradient(90deg, #ffffff 0%, #34d399 45%, #f472b6 100%)', subtle: 'rgba(52, 211, 153, 0.18)' },
+          summer: { deep: '#040d1c', surface: 'rgba(8, 24, 52, 0.85)', elevated: 'rgba(14, 38, 80, 0.9)', hover: 'rgba(22, 54, 110, 0.95)', glow: 'rgba(251, 191, 36, 0.4)', cyan: '#38bdf8', indigo: '#fbbf24', gradient: 'linear-gradient(90deg, #ffffff 0%, #38bdf8 45%, #fbbf24 100%)', subtle: 'rgba(56, 189, 248, 0.18)' },
+          autumn: { deep: '#140905', surface: 'rgba(32, 16, 10, 0.85)', elevated: 'rgba(48, 24, 14, 0.9)', hover: 'rgba(70, 36, 20, 0.95)', glow: 'rgba(251, 146, 60, 0.4)', cyan: '#fb923c', indigo: '#f43f5e', gradient: 'linear-gradient(90deg, #ffffff 0%, #fb923c 45%, #f43f5e 100%)', subtle: 'rgba(251, 146, 60, 0.18)' },
+          winter: { deep: '#040714', surface: 'rgba(10, 18, 38, 0.85)', elevated: 'rgba(18, 30, 64, 0.9)', hover: 'rgba(28, 46, 96, 0.95)', glow: 'rgba(103, 232, 249, 0.4)', cyan: '#67e8f9', indigo: '#c084fc', gradient: 'linear-gradient(90deg, #ffffff 0%, #67e8f9 45%, #c084fc 100%)', subtle: 'rgba(103, 232, 249, 0.18)' },
+          obsidian: { deep: '#020408', surface: 'rgba(6, 14, 12, 0.85)', elevated: 'rgba(10, 24, 20, 0.9)', hover: 'rgba(16, 38, 30, 0.95)', glow: 'rgba(16, 185, 129, 0.35)', cyan: '#10b981', indigo: '#14b8a6', gradient: 'linear-gradient(90deg, #ffffff 0%, #10b981 55%, #14b8a6 100%)', subtle: 'rgba(16, 185, 129, 0.15)' }
+        };
+        const p = presets[parsed.presetId] || presets.cyberpunk;
+        const root = document.documentElement;
+        root.style.setProperty('--color-deep', p.deep);
+        root.style.setProperty('--color-surface', p.surface);
+        root.style.setProperty('--color-surface-elevated', p.elevated);
+        root.style.setProperty('--color-surface-hover', p.hover);
+        root.style.setProperty('--color-glow', parsed.showGlow !== false ? p.glow : 'rgba(148, 163, 184, 0.15)');
+        root.style.setProperty('--color-accent-cyan', p.cyan);
+        root.style.setProperty('--color-accent-indigo', p.indigo);
+        root.style.setProperty('--color-brand-gradient', p.gradient);
+        root.style.setProperty('--color-subtle', p.subtle || 'rgba(148, 163, 184, 0.12)');
+        root.setAttribute('data-theme', parsed.presetId || 'cyberpunk');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <main id="app-container" class="relative h-screen w-screen overflow-hidden bg-deep">
@@ -40,6 +80,12 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
 
       <!-- Top Navigation and Region Status HUD -->
       <HeaderHUD client:load />
+
+      <!-- Bottom-Left Settings Button -->
+      <SettingsButton client:load />
+
+      <!-- Settings Configuration Modal (UI Theme & Gesture Controls) -->
+      <SettingsModal client:load />
 
       <!-- Token Configuration Modal (Triggers on missing token) -->
       <TokenModal client:load />

@@ -2,6 +2,10 @@ import mapboxgl from 'mapbox-gl';
 import { DEFAULT_HUB } from './transitHub';
 import { MotionNavigationControl } from './MotionNavigationControl';
 import { dispatchStatus } from './eventBus';
+import type { GestureSettings, MapLightPreset, MouseDragAction } from '../../types/settings';
+import { getGestureSettings } from '../settings/gestureManager';
+import { getThemeSettings, MAPBOX_STYLES } from '../settings/themeManager';
+import { applyMapSeasonalPalette } from './mapThemeCustomizer';
 
 export interface MapLifecycleHooks {
   onReady: () => void;
@@ -11,25 +15,75 @@ export interface MapLifecycleHooks {
   onPitch?: () => void;
 }
 
-function configureDefault3DAtmosphere(map: mapboxgl.Map): void {
+export function configureDefault3DAtmosphere(map: mapboxgl.Map, lightPreset?: MapLightPreset): void {
   try {
+    const currentTheme = getThemeSettings();
     const mapAny = map as any;
     if (typeof mapAny.setConfigProperty === 'function') {
-      mapAny.setConfigProperty('basemap', 'lightPreset', 'day');
+      const preset = lightPreset || currentTheme.lightPreset || 'day';
+      mapAny.setConfigProperty('basemap', 'lightPreset', preset);
       mapAny.setConfigProperty('basemap', 'show3dObjects', true);
       mapAny.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
       mapAny.setConfigProperty('basemap', 'showTransitLabels', true);
     }
+
+    // Apply seasonal styling (grass, buildings, water, atmosphere/fog)
+    applyMapSeasonalPalette(map, currentTheme.presetId);
   } catch (e) {
     console.warn('[MotionMap] Style configuration note:', e);
   }
 }
 
-export function configureOrbitControls(map: mapboxgl.Map): void {
-  // Disable default BoxZoomHandler so Shift + Left Click drag orbits instead of rubber-band zooming
+function matchesDragAction(e: MouseEvent, button: number, action: MouseDragAction): boolean {
+  const isShift = e.shiftKey || e.ctrlKey || e.metaKey;
+  if (action === 'left') return button === 0 && !isShift;
+  if (action === 'right') return button === 2 && !isShift;
+  if (action === 'shiftLeft') return button === 0 && isShift;
+  if (action === 'shiftRight') return button === 2 && isShift;
+  return false;
+}
+
+export function configureOrbitControls(map: mapboxgl.Map, customGestures?: GestureSettings): void {
+  const gestures = customGestures || getGestureSettings();
+  const {
+    orbitAction = 'shiftLeft',
+    panAction = 'left',
+    orbitSensitivity,
+    invertPitch,
+    enableScrollZoom,
+    enableDoubleClickZoom,
+    enableKeyboard
+  } = gestures;
+
+  // Disable default BoxZoomHandler
   if (map.boxZoom && map.boxZoom.isEnabled()) {
     map.boxZoom.disable();
   }
+
+  // Configure interaction toggles
+  if (map.scrollZoom) {
+    if (enableScrollZoom) map.scrollZoom.enable();
+    else map.scrollZoom.disable();
+  }
+  if (map.doubleClickZoom) {
+    if (enableDoubleClickZoom) map.doubleClickZoom.enable();
+    else map.doubleClickZoom.disable();
+  }
+  if (map.keyboard) {
+    if (enableKeyboard) map.keyboard.enable();
+    else map.keyboard.disable();
+  }
+
+  const isOrbitButton = (e: MouseEvent, button: number): boolean => {
+    if (matchesDragAction(e, button, orbitAction)) {
+      return true;
+    }
+    // Allow RMB drag orbit fallback when orbit is shiftLeft and pan is not RMB
+    if (orbitAction === 'shiftLeft' && button === 2 && panAction !== 'right') {
+      return true;
+    }
+    return false;
+  };
 
   const dragRotate = (map as any).dragRotate;
   if (dragRotate) {
@@ -37,28 +91,39 @@ export function configureOrbitControls(map: mapboxgl.Map): void {
     dragRotate.enablePitch();
     dragRotate.enableRotation();
 
-    // Mapbox mouse rotate/pitch handlers determine which button activates orbit/rotation/pitch
-    // We allow:
-    // - Shift + Left Mouse Button (orbit view)
-    // - Ctrl + Left Mouse Button (standard Mapbox modifier)
-    // - Right Mouse Button (standard secondary button orbit)
-    const isOrbitButton = (e: MouseEvent, button: number): boolean => {
-      return (button === 0 && (e.shiftKey || e.ctrlKey)) || button === 2;
-    };
-
     if (dragRotate._mouseRotate) {
       dragRotate._mouseRotate._correctButton = isOrbitButton;
+      dragRotate._mouseRotate._move = function (lastPoint: any, point: any) {
+        const degreesPerPixelMoved = 0.8 * orbitSensitivity;
+        const bearingDelta = (point.x - lastPoint.x) * degreesPerPixelMoved;
+        if (bearingDelta) {
+          this._active = true;
+          return { bearingDelta };
+        }
+      };
     }
+
     if (dragRotate._mousePitch) {
       dragRotate._mousePitch._correctButton = isOrbitButton;
+      dragRotate._mousePitch._move = function (lastPoint: any, point: any) {
+        const pitchFactor = (invertPitch ? 0.5 : -0.5) * orbitSensitivity;
+        const pitchDelta = (point.y - lastPoint.y) * pitchFactor;
+        if (pitchDelta) {
+          this._active = true;
+          return { pitchDelta };
+        }
+      };
     }
   }
 
-  // Ensure DragPanHandler only handles normal Left Button drag without Shift or Ctrl
+  // Ensure DragPanHandler responds appropriately
   const dragPan = (map as any).dragPan;
   if (dragPan && dragPan._mousePan) {
     dragPan._mousePan._correctButton = (e: MouseEvent, button: number): boolean => {
-      return button === 0 && !e.shiftKey && !e.ctrlKey;
+      if (isOrbitButton(e, button)) {
+        return false;
+      }
+      return matchesDragAction(e, button, panAction);
     };
   }
 }
@@ -66,9 +131,12 @@ export function configureOrbitControls(map: mapboxgl.Map): void {
 // Builds the Mapbox GL map, wires its lifecycle events, and guards against the
 // zero-dimension canvas glitch that shows up while the layout is still settling.
 export function createMotionMap(containerId: string, hooks: MapLifecycleHooks): mapboxgl.Map {
+  const currentMapStyle = getThemeSettings().mapStyle;
+  const initialStyleUrl = MAPBOX_STYLES[currentMapStyle]?.url || 'mapbox://styles/mapbox/standard';
+
   const map = new mapboxgl.Map({
     container: containerId,
-    style: 'mapbox://styles/mapbox/standard',
+    style: initialStyleUrl,
     center: DEFAULT_HUB.coords,
     zoom: 15.5,
     pitch: 58,

@@ -32,11 +32,15 @@ export default function HeaderHUD() {
     const onRegionChange = (event: Event) => {
       const regionName = (event as CustomEvent<RegionChangeEventDetail>).detail?.regionName;
       if (!regionName) return;
-      setRegionLabel(regionName);
-      setRegionUpdated(true);
-      if (regionFlashTimer.current) clearTimeout(regionFlashTimer.current);
-      regionFlashTimer.current = setTimeout(() => setRegionUpdated(false), 600);
+      setRegionLabel((prev) => {
+        if (prev === regionName) return prev;
+        setRegionUpdated(true);
+        if (regionFlashTimer.current) clearTimeout(regionFlashTimer.current);
+        regionFlashTimer.current = setTimeout(() => setRegionUpdated(false), 600);
+        return regionName;
+      });
     };
+
 
     window.addEventListener('motion:location', onLocation);
     window.addEventListener('motion:status', onStatus);

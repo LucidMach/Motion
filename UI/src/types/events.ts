@@ -27,3 +27,12 @@ export interface LocationTelemetry {
   source: 'gps' | 'preset' | 'default';
   locationName?: string;
 }
+
+export interface ThemeChangeEventDetail {
+  settings: import('./settings').ThemeSettings;
+}
+
+export interface GestureChangeEventDetail {
+  settings: import('./settings').GestureSettings;
+}
+

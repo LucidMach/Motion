@@ -1,17 +1,29 @@
+import { useEffect, useState } from 'react';
+import type { ThemeChangeEventDetail } from '../../types/events';
+
 interface BrandGroupProps {
   regionLabel: string;
   regionUpdated: boolean;
 }
 
 export default function BrandGroup({ regionLabel, regionUpdated }: BrandGroupProps) {
+  const [, setRenderTrigger] = useState(0);
+
+  useEffect(() => {
+    const onThemeChange = () => setRenderTrigger((prev) => prev + 1);
+    window.addEventListener('motion:theme-change', onThemeChange);
+    return () => window.removeEventListener('motion:theme-change', onThemeChange);
+  }, []);
+
   return (
     <div className="flex select-none items-center gap-3.5">
       <div
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent-cyan/40 bg-linear-to-br from-accent-cyan/20 to-accent-indigo/20 text-accent-cyan"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent-cyan/40 bg-linear-to-br from-accent-cyan/20 to-accent-indigo/20 text-accent-cyan transition-all duration-300 shadow-[0_0_12px_var(--color-glow)]"
         title="Motion Transit 3D Engine"
       >
         <svg
-          className="h-5.5 w-5.5 animate-float-slight drop-shadow-[0_0_8px_rgba(56,189,248,0.8)]"
+          className="h-5.5 w-5.5 animate-float-slight"
+          style={{ filter: 'drop-shadow(0 0 6px var(--color-accent-cyan))' }}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -24,17 +36,21 @@ export default function BrandGroup({ regionLabel, regionUpdated }: BrandGroupPro
       </div>
       <div className="flex flex-col gap-px overflow-hidden">
         <h1
-          className="bg-linear-to-r from-white via-accent-cyan to-indigo-400 bg-clip-text font-display text-xl font-extrabold leading-tight tracking-[0.12em] text-transparent"
-          style={{ backgroundImage: 'linear-gradient(90deg, #ffffff 0%, #38bdf8 60%, #818cf8 100%)' }}
+          className="bg-clip-text font-display text-xl font-extrabold leading-tight tracking-[0.12em] text-transparent transition-all duration-300"
+          style={{
+            backgroundImage: 'var(--color-brand-gradient, linear-gradient(90deg, #ffffff 0%, var(--color-accent-cyan) 55%, var(--color-accent-indigo) 100%))'
+          }}
         >
           MOTION
         </h1>
         <span
-          className={`max-w-100 overflow-hidden text-ellipsis whitespace-nowrap text-[0.74rem] font-semibold uppercase tracking-[0.04em] transition-colors duration-300 max-[768px]:max-w-42.5 max-[768px]:text-[0.68rem] max-[480px]:hidden ${regionUpdated ? 'text-accent-cyan' : 'text-secondary'
+          title={regionLabel}
+          className={`max-w-115 overflow-hidden text-ellipsis whitespace-nowrap text-[0.74rem] font-semibold uppercase tracking-[0.04em] transition-colors duration-300 max-[1024px]:max-w-75 max-[768px]:max-w-45 max-[768px]:text-[0.68rem] max-[480px]:hidden ${regionUpdated ? 'text-accent-cyan font-bold' : 'text-secondary'
             }`}
         >
           {regionLabel}
         </span>
+
       </div>
     </div>
   );

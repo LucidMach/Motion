@@ -1,13 +1,16 @@
 import mapboxgl from 'mapbox-gl';
 import { resolveRegionInFocus } from './regionResolver';
+import { ReverseGeocodingService } from './reverseGeocoder';
 import { dispatchStatus, dispatchRegion } from './eventBus';
 import { UserMarkerManager } from './userMarker';
 import { GeolocationTracker } from './geolocationTracker';
 import { LocationCoordinator } from './locationCoordinator';
 import { CameraController } from './cameraController';
-import { createMotionMap } from './mapLifecycle';
+import { createMotionMap, configureDefault3DAtmosphere, configureOrbitControls } from './mapLifecycle';
 import { MotionNavigationControl } from './MotionNavigationControl';
 import { suppressBenignMapboxWarnings } from './suppressBenignWarnings';
+import { MAPBOX_STYLES, getThemeSettings } from '../settings/themeManager';
+import type { ThemeChangeEventDetail, GestureChangeEventDetail } from '../../types/events';
 
 export { MotionNavigationControl };
 
@@ -19,6 +22,7 @@ export class MotionMapController {
   private map: mapboxgl.Map | null = null;
   private markerManager: UserMarkerManager | null = null;
   private camera = new CameraController(() => this.map);
+  private geocoder = new ReverseGeocodingService();
   private geoTracker = new GeolocationTracker({
     onUpdate: (pos, isFirstFix) => this.locationCoordinator.handleUpdate(pos, isFirstFix),
     onError: (err) => this.locationCoordinator.handleError(err),
@@ -33,7 +37,30 @@ export class MotionMapController {
   );
   private token = '';
   private currentRegion = '';
+  private currentStyleUrl = '';
   private regionDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+
+  private onThemeChange = (e: Event) => {
+    const settings = (e as CustomEvent<ThemeChangeEventDetail>).detail?.settings;
+    if (settings && this.map) {
+      const targetStyleUrl = MAPBOX_STYLES[settings.mapStyle]?.url || 'mapbox://styles/mapbox/standard';
+      if (this.currentStyleUrl && this.currentStyleUrl !== targetStyleUrl) {
+        this.currentStyleUrl = targetStyleUrl;
+        this.map.setStyle(targetStyleUrl);
+      } else {
+        this.currentStyleUrl = targetStyleUrl;
+        configureDefault3DAtmosphere(this.map, settings.lightPreset);
+      }
+    }
+  };
+
+  private onGestureChange = (e: Event) => {
+    const settings = (e as CustomEvent<GestureChangeEventDetail>).detail?.settings;
+    if (settings && this.map) {
+      configureOrbitControls(this.map, settings);
+    }
+  };
 
   init(containerId: string, initialToken?: string): void {
     suppressBenignMapboxWarnings();
@@ -69,6 +96,9 @@ export class MotionMapController {
       });
       this.markerManager = new UserMarkerManager(this.map, () => this.flyToUser());
 
+      window.addEventListener('motion:theme-change', this.onThemeChange);
+      window.addEventListener('motion:gesture-change', this.onGestureChange);
+
       dispatchStatus({ state: 'gps_acquiring', message: 'GPS Accuracy: Acquiring...' });
       this.geoTracker.start();
     } catch (err: any) {
@@ -78,20 +108,44 @@ export class MotionMapController {
   }
 
   private scheduleRegionUpdate(): void {
-    if (this.regionDebounceTimer) return;
+    if (this.regionDebounceTimer) clearTimeout(this.regionDebounceTimer);
     this.regionDebounceTimer = setTimeout(() => {
       this.regionDebounceTimer = null;
       this.updateRegionInFocus();
-    }, 150);
+    }, 350);
   }
 
-  updateRegionInFocus(): void {
+  async updateRegionInFocus(): Promise<void> {
     if (!this.map) return;
     const center = this.map.getCenter();
-    const region = resolveRegionInFocus(center.lng, center.lat, this.map.getZoom());
-    if (region !== this.currentRegion) {
-      this.currentRegion = region;
-      dispatchRegion(region);
+    const zoom = this.map.getZoom();
+    const fallbackRegion = resolveRegionInFocus(center.lng, center.lat, zoom);
+
+    if (zoom < 10.0) {
+      if (fallbackRegion && fallbackRegion !== this.currentRegion) {
+        this.currentRegion = fallbackRegion;
+        dispatchRegion(fallbackRegion);
+      }
+      return;
+    }
+
+    try {
+      const resolved = await this.geocoder.resolveLocation(
+        center.lng,
+        center.lat,
+        zoom,
+        fallbackRegion
+      );
+
+      if (resolved && resolved !== this.currentRegion) {
+        this.currentRegion = resolved;
+        dispatchRegion(resolved);
+      }
+    } catch {
+      if (fallbackRegion && fallbackRegion !== this.currentRegion) {
+        this.currentRegion = fallbackRegion;
+        dispatchRegion(fallbackRegion);
+      }
     }
   }
 
@@ -126,10 +180,14 @@ export class MotionMapController {
   }
 
   destroy(): void {
+    window.removeEventListener('motion:theme-change', this.onThemeChange);
+    window.removeEventListener('motion:gesture-change', this.onGestureChange);
     this.geoTracker.stop();
     if (this.regionDebounceTimer) clearTimeout(this.regionDebounceTimer);
+    this.geocoder.cancel();
     this.markerManager?.remove();
     this.map?.remove();
     this.map = null;
   }
 }
+
