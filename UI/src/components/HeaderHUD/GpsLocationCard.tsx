@@ -21,9 +21,9 @@ export default function GpsLocationCard({ locationName, accuracyText, onRecenter
         </span>
       </div>
 
-      <div className="relative flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan transition-all group-hover:border-accent-cyan group-hover:bg-accent-cyan/20 max-[768px]:h-[30px] max-[768px]:w-[30px]">
+      <div className="relative flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan transition-all group-hover:border-accent-cyan group-hover:bg-accent-cyan/20 max-[768px]:h-7.5 max-[768px]:w-7.5">
         <svg
-          className="h-[18px] w-[18px] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.12] max-[768px]:h-4 max-[768px]:w-4"
+          className="h-4.5 w-4.5 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.12] max-[768px]:h-4 max-[768px]:w-4"
           viewBox="0 0 24 24"
           width="18"
           height="18"

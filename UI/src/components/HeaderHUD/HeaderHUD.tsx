@@ -57,7 +57,7 @@ export default function HeaderHUD() {
   return (
     <header
       aria-label="Navigation & Region Status Bar"
-      className="pointer-events-auto absolute left-5 right-5 top-5 z-10 flex h-16 items-center justify-between rounded-lg border border-subtle bg-surface px-5 shadow-glass backdrop-blur-lg transition-colors hover:border-subtle max-[768px]:left-3 max-[768px]:right-3 max-[768px]:top-3 max-[768px]:h-[58px] max-[768px]:px-3"
+      className="pointer-events-auto absolute left-5 right-5 top-5 z-10 flex h-16 items-center justify-between rounded-lg border border-subtle bg-surface px-5 shadow-glass backdrop-blur-lg transition-colors hover:border-subtle max-[768px]:left-3 max-[768px]:right-3 max-[768px]:top-3 max-[768px]:h-14.5 max-[768px]:px-3"
     >
       <BrandGroup regionLabel={regionLabel} regionUpdated={regionUpdated} />
       <div className="flex items-center gap-3">

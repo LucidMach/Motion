@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @theme {
@@ -39,31 +38,34 @@
   --shadow-glow-cyan: 0 0 25px rgba(56, 189, 248, 0.25);
   --shadow-glow-indigo: 0 0 30px rgba(99, 102, 241, 0.2);
 
-  /* Custom keyframe animations (staggered/glowing effects utilities can't express cleanly) */
+  /* Transition Durations */
+  --duration-250: 250ms;
+
+  /* Custom keyframe animations */
   --animate-float-slight: float-slight 3s ease-in-out infinite alternate;
   --animate-ripple: ripple 2s infinite ease-out;
   --animate-radar-ping: radar-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-modal-in: modal-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
 
-@keyframes float-slight {
-  0% { transform: translateY(0px) rotate(0deg); }
-  100% { transform: translateY(-2px) rotate(2deg); }
-}
+  @keyframes float-slight {
+    0% { transform: translateY(0px) rotate(0deg); }
+    100% { transform: translateY(-2px) rotate(2deg); }
+  }
 
-@keyframes ripple {
-  0% { transform: scale(0.6); opacity: 1; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
+  @keyframes ripple {
+    0% { transform: scale(0.6); opacity: 1; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
 
-@keyframes radar-ping {
-  0% { transform: scale(0.4); opacity: 1; }
-  75%, 100% { transform: scale(1.6); opacity: 0; }
-}
+  @keyframes radar-ping {
+    0% { transform: scale(0.4); opacity: 1; }
+    75%, 100% { transform: scale(1.6); opacity: 0; }
+  }
 
-@keyframes modal-in {
-  from { transform: scale(0.92) translateY(12px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
+  @keyframes modal-in {
+    from { transform: scale(0.92) translateY(12px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
 }
 
 html, body {
@@ -144,6 +146,136 @@ html, body {
   transform: scale(1.25);
 }
 
+/* Custom Mapbox GL Control overrides & Unified Navigation Dock */
+.mapboxgl-ctrl-group.motion-navigation-dock,
+.mapboxgl-ctrl-group {
+  background: var(--color-surface-elevated) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--color-subtle) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-glass) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Base button styles applied to ALL dock buttons */
+.mapboxgl-ctrl-group button,
+.motion-ctrl-btn {
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--color-subtle) !important;
+  width: 38px !important;
+  height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--color-secondary) !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease !important;
+  user-select: none !important;
+  padding: 0 !important;
+  outline: none !important;
+}
+
+.mapboxgl-ctrl-group button:last-child,
+.motion-ctrl-btn:last-child {
+  border-bottom: none !important;
+}
+
+/* Consistent Hover Interaction */
+.mapboxgl-ctrl-group button:hover,
+.motion-ctrl-btn:hover {
+  background-color: var(--color-surface-hover) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Consistent Active / Click Press Interaction */
+.mapboxgl-ctrl-group button:active,
+.motion-ctrl-btn:active {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  transform: scale(0.92) !important;
+}
+
+/* Consistent SVG Icon Hover Animation for all buttons */
+.motion-ctrl-icon {
+  color: inherit;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+  pointer-events: none;
+}
+
+.motion-ctrl-btn:hover .motion-ctrl-icon {
+  transform: scale(1.15);
+  color: var(--color-primary);
+}
+
+/* 2D / 3D Perspective Button Variations */
+.motion-ctrl-btn.motion-camera-toggle {
+  height: 44px !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+  padding: 2px 0 !important;
+}
+
+.motion-ctrl-btn.motion-camera-toggle.is-3d {
+  color: var(--color-accent-cyan) !important;
+  background: rgba(56, 189, 248, 0.08) !important;
+}
+
+.motion-ctrl-btn.motion-camera-toggle.is-3d .cam-nav-icon {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+  color: var(--color-accent-cyan) !important;
+}
+
+.motion-ctrl-btn.motion-camera-toggle.is-3d .cam-btn-label {
+  color: var(--color-accent-cyan);
+}
+
+.motion-ctrl-btn.motion-camera-toggle.is-2d {
+  color: var(--color-secondary) !important;
+}
+
+.motion-ctrl-btn.motion-camera-toggle.is-2d .cam-btn-label {
+  color: var(--color-muted);
+}
+
+.cam-btn-label {
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mapboxgl-ctrl-icon {
+  filter: invert(1) opacity(0.85);
+}
+
+.mapboxgl-ctrl-attrib {
+  background: rgba(5, 7, 13, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: var(--color-muted) !important;
+  font-size: 10px !important;
+  border-radius: var(--radius-sm) 0 0 0 !important;
+}
+
+.mapboxgl-ctrl-attrib a {
+  color: var(--color-secondary) !important;
+  text-decoration: none;
+}
+
+.mapboxgl-ctrl-attrib a:hover {
+  color: var(--color-accent-cyan) !important;
+}
+
+.mapboxgl-compact {
+  border-radius: var(--radius-sm) !important;
+}
+
 /* Mapbox GL renders this DOM itself, so it can only be styled globally */
 .mapboxgl-popup-content {
   background: var(--color-surface-elevated) !important;
@@ -177,3 +309,4 @@ html, body {
 ::-webkit-scrollbar-track { background: rgba(10, 15, 29, 0.5); }
 ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
+

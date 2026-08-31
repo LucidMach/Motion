@@ -10,6 +10,9 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     envDir: '../',
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    build: {
+      chunkSizeWarningLimit: 2000
+    }
   }
 });

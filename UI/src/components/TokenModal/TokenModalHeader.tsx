@@ -6,7 +6,7 @@ export default function TokenModalHeader({ onClose }: TokenModalHeaderProps) {
   return (
     <div className="flex items-start justify-between">
       <div className="flex items-center gap-3">
-        <div className="flex h-[38px] w-[38px] items-center justify-center rounded-md border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan">
+        <div className="flex h-9.5 w-9.5 items-center justify-center rounded-md border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
           </svg>

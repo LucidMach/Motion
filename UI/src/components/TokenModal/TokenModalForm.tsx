@@ -13,11 +13,11 @@ export default function TokenModalForm({ token, onTokenChange, onSave, onCancel,
     <div className="flex flex-col gap-4">
       <p className="text-[0.85rem] leading-relaxed text-secondary">
         To render the 3D map, enter your Mapbox Public Access Token (starts with{' '}
-        <code className="rounded bg-[rgba(15,23,42,0.8)] px-[5px] py-[2px] font-mono text-[0.82rem] text-accent-cyan">pk.eyJ...</code>).
+        <code className="rounded bg-[rgba(15,23,42,0.8)] px-1.25 py-0.5 font-mono text-[0.82rem] text-accent-cyan">pk.eyJ...</code>).
       </p>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="mapbox-token-input" className="text-[0.7rem] font-semibold tracking-[0.05em] text-muted">
+        <label htmlFor="mapbox-token-input" className="text-[0.7rem] font-semibold tracking-wider text-muted">
           MAPBOX ACCESS TOKEN
         </label>
         <input
@@ -46,7 +46,7 @@ export default function TokenModalForm({ token, onTokenChange, onSave, onCancel,
       <div className="mt-2 flex justify-end">
         <button
           onClick={onSave}
-          className="flex items-center gap-2 rounded-md border border-accent-cyan/50 bg-gradient-to-br from-[#0284c7] to-[#4f46e5] px-[18px] py-2.5 font-sans text-[0.85rem] font-semibold text-white shadow-[0_0_16px_rgba(56,189,248,0.3)] transition-all hover:-translate-y-px hover:shadow-[0_0_22px_rgba(56,189,248,0.5)]"
+          className="flex items-center gap-2 rounded-md border border-accent-cyan/50 bg-linear-to-br from-[#0284c7] to-[#4f46e5] px-4.5 py-2.5 font-sans text-[0.85rem] font-semibold text-white shadow-[0_0_16px_rgba(56,189,248,0.3)] transition-all hover:-translate-y-px hover:shadow-[0_0_22px_rgba(56,189,248,0.5)]"
         >
           <span>Apply & Load 3D Map</span>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
