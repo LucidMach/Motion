@@ -199,24 +199,39 @@ python testPTVOpenData/testPTVOpenData.py \
 
 ---
 
-## 6. Running the Test Suite
+## 6. Interactive 3D Web UI & Search Engine
 
-Run the full end-to-end and unit test suite via [`run_tests.sh`](file:///Users/lucidmach/Motion/run_tests.sh):
+The frontend located in [`UI/`](file:///Users/lucidmach/Motion/UI) provides an interactive 3D map interface:
+
+- **Bottom Search Bar Island**: Glassmorphic search interface (`SearchBar.tsx`) with instant keyboard access (`Enter` to focus/search, `Esc` back/clear hierarchy, `↑/↓` arrow key option cycling).
+- **Live Dynamic Geocoding**: Resolves university faculties, landmarks, and street addresses across Victoria in real time via **OpenStreetMap Nominatim** merged with over 27,000+ local **GTFS transit stops**.
+- **100% Fixed WebGL 3D Target Dot**: Destination pin rendered natively in WebGL on the GPU with pulsing radar rings (`motion-search-target-core`), mathematically locked to map coordinates with zero drift during 360° orbit, pan, and tilt (0° to 85°).
+- **Spatial Region Engine**: Real-time bounding box and proximity resolver displaying the active corridor (e.g., `Melbourne CBD`, `Monash Innovation Hub`, `Richmond Interchange`).
+
+---
+
+## 7. Running the Test Suite
+
+Run the full end-to-end and unit test suite via [`run_tests.sh`](file:///Users/lucidmach/Motion/run_tests.sh) or `pytest`:
 
 ```bash
-./run_tests.sh
+# Python routing engine & API test suite
+pytest tests/test_api.py
+
+# Frontend Astro/React production build
+cd UI && pnpm build
 ```
 
 This verifies:
-1. Python dependencies (`sqlite3`, `networkx`, `geopy`, `osmnx`, `scipy`).
-2. GTFS SQLite database tables and edge counts.
-3. Directional routing unit tests ([`directional_routing/test_directional_routing.py`](file:///Users/lucidmach/Motion/directional_routing/test_directional_routing.py)).
+1. Python dependencies (`sqlite3`, `fastapi`, `networkx`, `geopy`, `osmnx`, `scipy`).
+2. GTFS SQLite database tables, stops, routes, and transfer edges.
+3. Directional routing and Nominatim live geocoding endpoints.
 4. Geometry, bearing calculations, and arrival timestamp parsing.
 5. End-to-end multi-modal routing scenarios with live disruptions and detours.
 
 ---
 
-## 7. Project Structure
+## 8. Project Structure
 
 ```
 .
@@ -232,16 +247,17 @@ This verifies:
 ├── precompute_graph/           # KDTree spatial & transit edge precomputation
 │   ├── precompute_graph.py
 │   └── precompute_graph.spec.md
-├── routing_engine/             # Multi-criteria Dijkstra / timetable router
-│   ├── routing_engine.py
-│   └── routing_engine.spec.md
-├── testPTVOpenData/            # GTFS-Realtime API client & orchestrator
-│   ├── testPTVOpenData.py
-│   └── testPTVOpenData.spec.md
-├── UI/                         # Astro 5 + Mapbox 3D Geolocation Frontend
-│   ├── src/components/         # HeaderHUD, MapboxMap, TokenModal
-│   ├── src/scripts/            # MotionMapController & Spatial Region Resolver
-│   └── COMPONENTS_SPEC.md      # UI Component Specification Sheet
+├── server/                     # FastAPI backend server
+│   ├── main.py
+│   ├── models/schemas.py       # Pydantic schemas (StopSearchResult, RoutePlan)
+│   └── routes/stops.py         # Search & nearby endpoints with OSM Nominatim
+├── tests/                      # Pytest suite
+│   └── test_api.py
+├── UI/                         # Astro 5 + React 19 + Mapbox 3D Geolocation Frontend
+│   ├── src/components/         # HeaderHUD, SearchBar, MapboxMap, TokenModal
+│   ├── src/scripts/map/        # MotionMapController, WebGL Search Marker, Region Resolver
+│   ├── src/services/api.ts     # Client API with live OSM Nominatim & offline fallbacks
+│   └── ARCHITECTURE.md         # UI Architecture & Event Bus Specification
 ├── CHANGELOG.md                # Project version history & UI changelog
 ├── environment.yml             # Conda environment definition
 ├── gtfs_schedule.db            # SQLite database (gitignored)

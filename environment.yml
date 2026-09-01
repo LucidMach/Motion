@@ -54,4 +54,8 @@ dependencies:
       - shapely==2.1.2
       - six==1.17.0
       - threadpoolctl==3.6.0
+      - fastapi>=0.110.0
+      - uvicorn[standard]>=0.28.0
+      - pydantic>=2.6.0
 prefix: /Users/lucidmach/miniconda3/envs/motion
+

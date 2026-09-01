@@ -1,5 +1,7 @@
 */cache
 */__pycache__
+*/*/__pycache__
+*/*/*/__pycache__
 
 /gtfs_schedule.db
 /gtfs
@@ -25,4 +27,3 @@ dist/
 
 */.pnpm-store
 .pnpm-store
-
