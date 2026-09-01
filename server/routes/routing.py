@@ -6,6 +6,8 @@ from fastapi import APIRouter, HTTPException
 from server.models.schemas import RouteRequest, RouteResponse, RouteLeg
 from server.services.disruption_reconciliation import reconcile_with_live_disruptions
 import directional_routing
+from directional_routing import DB_NAME, geocode_address, haversine
+from ptv_realtime import ptv_realtime
 from directional_routing import DB_NAME, haversine
 from testPTVOpenData import testPTVOpenData
 
@@ -22,9 +24,9 @@ def compute_route(req: RouteRequest) -> RouteResponse:
 
     # 1. Parse target arrival datetime
     if req.arrival_timestamp:
-        target_arrival_dt = testPTVOpenData.parse_arrival_datetime(req.arrival_timestamp)
+        target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_timestamp)
     elif req.arrival_time:
-        target_arrival_dt = testPTVOpenData.parse_arrival_datetime(req.arrival_time)
+        target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_time)
     else:
         # Default to 45 minutes from now if unspecified
         target_arrival_dt = datetime.now() + timedelta(minutes=45)
@@ -33,9 +35,9 @@ def compute_route(req: RouteRequest) -> RouteResponse:
 
     # 2. Collect disruptions
     all_disruptions = list(req.disruptions or [])
-    if req.fetch_live_alerts and testPTVOpenData.API_KEY and not req.disruptions:
+    if req.fetch_live_alerts and ptv_realtime.API_KEY and not req.disruptions:
         try:
-            live_alerts = testPTVOpenData.fetch_live_service_alerts(target_arrival_dt)
+            live_alerts = ptv_realtime.fetch_live_service_alerts(target_arrival_dt)
             if live_alerts:
                 all_disruptions.extend(live_alerts)
         except Exception as e:
@@ -79,27 +81,33 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             prefer_replacement_bus=req.prefer_replacement_bus
         )
 
-    reconciliation = reconcile_with_live_disruptions(
-        itinerary=raw_itinerary,
-        recompute_fn=_recompute,
-        realtime_checker=testPTVOpenData.fetch_realtime_delays_and_cancellations,
-    )
+    for leg in raw_itinerary.get("legs", []):
+        if leg.get("type") == "TRANSIT" and not leg.get("is_replacement"):
+            trip_id = leg.get("trip_id")
+            if trip_id and trip_id != "SCHEDULED":
+                delay, is_canc = ptv_realtime.fetch_realtime_delays_and_cancellations(trip_id)
+                if is_canc:
+                    cancelled_detected_in_realtime.append(trip_id)
+                elif delay > 0:
+                    real_time_delay_mins += delay
 
-    if reconciliation.recompute_attempted and not reconciliation.recompute_succeeded:
-        return RouteResponse(
-            status="Error",
-            message=(
-                "Live GTFS-Realtime reported a cancellation on this itinerary "
-                f"(trip(s): {', '.join(reconciliation.cancelled_trip_ids)}) and no "
-                "alternative route could be computed. Please try again."
-            ),
-            disruptions_detected=all_disruptions
-        )
+    # 5. If live cancellation detected, recompute itinerary
+    if cancelled_detected_in_realtime:
+        all_cancelled_trips = list(set((req.cancelled_trips or []) + cancelled_detected_in_realtime))
+        try:
+            raw_itinerary = directional_routing.calculate_directional_itinerary(
+                start_address=req.origin,
+                dest_address=req.destination,
+                arrival_dt=target_arrival_dt,
+                disruptions=all_disruptions,
+                cancelled_routes=req.cancelled_routes,
+                cancelled_trips=all_cancelled_trips,
+                prefer_replacement_bus=req.prefer_replacement_bus
+            )
+        except Exception:
+            pass
 
-    raw_itinerary = reconciliation.itinerary
-    real_time_delay_mins = reconciliation.realtime_delay_mins
-
-    # 5. Format legs and attach path coordinates for Mapbox
+    # 6. Format legs and attach path coordinates for Mapbox
     formatted_legs: List[RouteLeg] = []
     for leg in raw_itinerary.get("legs", []):
         from_lat, from_lon = leg.get("from_lat"), leg.get("from_lon")

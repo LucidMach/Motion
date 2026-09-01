@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Query
-from testPTVOpenData import testPTVOpenData
+from ptv_realtime import ptv_realtime
 
 router = APIRouter(prefix="/api/disruptions", tags=["Disruptions & Alerts"])
 
@@ -15,7 +15,7 @@ def get_live_disruptions(
     """
     now = datetime.now()
     try:
-        alerts = testPTVOpenData.fetch_live_service_alerts(
+        alerts = ptv_realtime.fetch_live_service_alerts(
             target_arrival_dt=now,
             lookback_window_mins=window_mins
         )

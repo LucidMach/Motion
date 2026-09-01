@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import os
 import sys
 import networkx as nx
+from geopy.geocoders import Nominatim
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
