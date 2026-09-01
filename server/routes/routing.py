@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 
 from server.models.schemas import RouteRequest, RouteResponse, RouteLeg
+from server.services.disruption_reconciliation import reconcile_with_live_disruptions
 import directional_routing
 from directional_routing import DB_NAME, geocode_address, haversine
 from ptv_realtime import ptv_realtime
@@ -62,9 +63,23 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             message=raw_itinerary.get("message", "Route calculation could not find a valid connection.")
         )
 
-    # 4. Check for live real-time delays or cancellations on transit legs
-    real_time_delay_mins = 0
-    cancelled_detected_in_realtime = []
+    # 4. Reconcile against live real-time delays and cancellations. If a
+    # cancellation is detected, this recomputes the itinerary excluding the
+    # cancelled trip(s) - and tells us plainly if that recompute failed,
+    # instead of silently handing back a stale itinerary that may still
+    # instruct the rider to board a trip GTFS-Realtime has already reported
+    # cancelled.
+    def _recompute(cancelled_trip_ids):
+        all_cancelled_trips = list(set((req.cancelled_trips or []) + cancelled_trip_ids))
+        return directional_routing.calculate_directional_itinerary(
+            start_address=req.origin,
+            dest_address=req.destination,
+            arrival_dt=target_arrival_dt,
+            disruptions=all_disruptions,
+            cancelled_routes=req.cancelled_routes,
+            cancelled_trips=all_cancelled_trips,
+            prefer_replacement_bus=req.prefer_replacement_bus
+        )
 
     for leg in raw_itinerary.get("legs", []):
         if leg.get("type") == "TRANSIT" and not leg.get("is_replacement"):
@@ -122,7 +137,7 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             coordinates=leg_coords if leg_coords else None
         ))
 
-    # 7. Calculate recommended departure timestamp with buffer and real-time delays
+    # 6. Calculate recommended departure timestamp with buffer and real-time delays
     latest_departure_str = raw_itinerary.get("latest_departure_time", "00:00")
     try:
         dep_hour, dep_min = map(int, latest_departure_str.split(":"))

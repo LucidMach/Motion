@@ -122,6 +122,11 @@ print_section "3b. Running Geocoding Module Unit Tests"
 "$PYTHON_CMD" -m unittest geocoding/test_geocoding.py -v
 report_result "Unit Tests (test_geocoding.py)" $?
 
+# 3c. Disruption Reconciliation Unit Tests
+print_section "3c. Running Disruption Reconciliation Unit Tests"
+"$PYTHON_CMD" -m unittest server/services/test_disruption_reconciliation.py -v
+report_result "Unit Tests (test_disruption_reconciliation.py)" $?
+
 # 4. Routing Engine Integration Test (Mock & Calculation)
 print_section "4. Testing Directional Routing Itinerary Computation"
 "$PYTHON_CMD" -c "
