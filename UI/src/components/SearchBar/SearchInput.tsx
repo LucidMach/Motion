@@ -39,11 +39,10 @@ export default function SearchInput({
 
   return (
     <div
-      className={`group relative flex h-14 w-full items-center rounded-full border bg-surface-elevated/95 px-4 shadow-glass backdrop-blur-xl transition-all duration-300 ${
-        isOpen
+      className={`group relative flex h-14 w-full items-center rounded-full border bg-surface-elevated/95 px-4 shadow-glass backdrop-blur-xl transition-all duration-300 ${isOpen
           ? 'border-accent-cyan/80 shadow-[0_0_25px_rgba(56,189,248,0.25),0_8px_32px_rgba(0,0,0,0.5)]'
-          : 'border-subtle hover:border-accent-cyan/50 hover:shadow-[0_0_20px_rgba(56,189,248,0.15)] focus-within:border-accent-cyan/80 focus-within:shadow-[0_0_25px_rgba(56,189,248,0.25)]'
-      }`}
+          : 'border-subtle hover:border-accent-cyan/50 hover:shadow-[0_0_20px_rgba(56,189,248,0.15)] focus-within:border-accent-cyan/80 focus-within:shadow-glow-cyan'
+        }`}
     >
       {/* Search / Radar Icon */}
       <div className="flex h-8 w-8 shrink-0 items-center justify-center text-accent-cyan transition-transform group-focus-within:scale-110">
@@ -106,8 +105,8 @@ export default function SearchInput({
               escapeActionLabel === 'Back'
                 ? 'Back to match list (Esc)'
                 : escapeActionLabel === 'Close'
-                ? 'Close results list (Esc)'
-                : 'Clear search bar (Esc)'
+                  ? 'Close results list (Esc)'
+                  : 'Clear search bar (Esc)'
             }
             aria-label={`${escapeActionLabel} (Esc)`}
             className="flex items-center gap-1.5 rounded-full border border-subtle/80 bg-surface-hover/70 px-2.5 py-1 text-secondary transition-all hover:border-subtle hover:bg-surface-hover hover:text-primary cursor-pointer active:scale-95"

@@ -149,7 +149,7 @@ export default function SearchResultsPanel({
       </div>
 
       {/* Results Container */}
-      <div className="max-h-[380px] overflow-y-auto space-y-2 pr-0.5 max-[768px]:max-h-[280px]">
+      <div className="max-h-95 overflow-y-auto space-y-2 pr-0.5 max-[768px]:max-h-70">
         {/* Loading state skeleton */}
         {isLoading && (
           <div className="space-y-2.5 py-1">
@@ -195,7 +195,7 @@ export default function SearchResultsPanel({
             <SearchResultItem
               result={focusedResult}
               isSelected={true}
-              onSelect={() => {}}
+              onSelect={() => { }}
               onNavigate={onNavigate}
             />
           </div>

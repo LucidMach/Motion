@@ -143,11 +143,10 @@ export default function SearchResultItem({
           onSelect(result);
         }
       }}
-      className={`group relative flex items-center justify-between gap-3 rounded-2xl border p-3 transition-all duration-200 cursor-pointer ${
-        isSelected
+      className={`group relative flex items-center justify-between gap-3 rounded-2xl border p-3 transition-all duration-200 cursor-pointer ${isSelected
           ? 'border-accent-cyan/60 bg-accent-cyan/10 shadow-[0_0_16px_rgba(56,189,248,0.2)]'
           : 'border-subtle bg-surface-elevated/70 hover:border-accent-cyan/40 hover:bg-surface-hover hover:shadow-subtle'
-      }`}
+        }`}
     >
       {/* Left: Mode Icon + Stop Details */}
       <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
@@ -189,7 +188,7 @@ export default function SearchResultItem({
             onNavigate(result, e);
           }}
           title={`Navigate to ${result.stop_name}`}
-          className="group/btn relative flex items-center gap-1.5 rounded-full border border-accent-cyan/50 bg-gradient-to-r from-accent-cyan/20 to-accent-indigo/20 px-3.5 py-1.5 font-display text-[0.75rem] font-bold text-accent-cyan shadow-sm transition-all duration-200 hover:border-accent-cyan hover:from-accent-cyan hover:to-accent-indigo hover:text-deep hover:shadow-[0_0_16px_rgba(56,189,248,0.4)] active:scale-95 cursor-pointer"
+          className="group/btn relative flex items-center gap-1.5 rounded-full border border-accent-cyan/50 bg-linear-to-r from-accent-cyan/20 to-accent-indigo/20 px-3.5 py-1.5 font-display text-[0.75rem] font-bold text-accent-cyan shadow-sm transition-all duration-200 hover:border-accent-cyan hover:from-accent-cyan hover:to-accent-indigo hover:text-deep hover:shadow-[0_0_16px_rgba(56,189,248,0.4)] active:scale-95 cursor-pointer"
         >
           <svg
             className="h-3.5 w-3.5 transition-transform duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5"
