@@ -149,11 +149,11 @@ This populates two tables in `gtfs_schedule.db`:
 
 ## 5. Usage & Querying Routes
 
-Use [`testPTVOpenData/testPTVOpenData.py`](file:///Users/lucidmach/Motion/testPTVOpenData/testPTVOpenData.py) to calculate recommended departures and itineraries:
+Use [`ptv_realtime/ptv_realtime.py`](file:///Users/lucidmach/Motion/ptv_realtime/ptv_realtime.py) to calculate recommended departures and itineraries:
 
 ### 5.1 Query with Target Arrival Time & Safety Buffer
 ```bash
-python testPTVOpenData/testPTVOpenData.py \
+python ptv_realtime/ptv_realtime.py \
   --start "Richmond" \
   --destination "Footscray" \
   --arrival-time "2026-08-20 09:15" \
@@ -162,7 +162,7 @@ python testPTVOpenData/testPTVOpenData.py \
 
 ### 5.2 Query with Unix Epoch Arrival Timestamp
 ```bash
-python testPTVOpenData/testPTVOpenData.py \
+python ptv_realtime/ptv_realtime.py \
   --start "Richmond" \
   --destination "Footscray" \
   --arrival-timestamp 1787219700 \
@@ -171,7 +171,7 @@ python testPTVOpenData/testPTVOpenData.py \
 
 ### 5.3 Simulate Disruption with Replacement Bus Preference
 ```bash
-python testPTVOpenData/testPTVOpenData.py \
+python ptv_realtime/ptv_realtime.py \
   --start "Richmond" \
   --destination "Footscray" \
   --arrival-time "09:15" \
@@ -180,7 +180,7 @@ python testPTVOpenData/testPTVOpenData.py \
 
 ### 5.4 Simulate Disruption with Rail Detour (No Replacement Bus)
 ```bash
-python testPTVOpenData/testPTVOpenData.py \
+python ptv_realtime/ptv_realtime.py \
   --start "Richmond" \
   --destination "Footscray" \
   --arrival-time "09:15" \
@@ -190,7 +190,7 @@ python testPTVOpenData/testPTVOpenData.py \
 
 ### 5.5 Offline Query (Skip Live GTFS-R API Calls)
 ```bash
-python testPTVOpenData/testPTVOpenData.py \
+python ptv_realtime/ptv_realtime.py \
   --start "Alan Finkel Building" \
   --destination "The Spot Building" \
   --arrival-time "10:00" \
@@ -212,20 +212,26 @@ The frontend located in [`UI/`](file:///Users/lucidmach/Motion/UI) provides an i
 
 ## 7. Running the Test Suite
 
-Run the full end-to-end and unit test suite via [`run_tests.sh`](file:///Users/lucidmach/Motion/run_tests.sh) or `pytest`:
+[`run_tests.sh`](file:///Users/lucidmach/Motion/run_tests.sh) runs the full suite - dependency checks, GTFS database checks, every unit test file (`directional_routing`, `ptv_realtime`, `tests/test_api.py`), and the end-to-end CLI scenarios - in one pass:
 
 ```bash
-# Python routing engine & API test suite
-pytest tests/test_api.py
+./run_tests.sh
+```
 
+To run just the FastAPI backend suite on its own:
+```bash
+python -m unittest tests/test_api.py
+```
+
+```bash
 # Frontend Astro/React production build
 cd UI && pnpm build
 ```
 
 This verifies:
-1. Python dependencies (`sqlite3`, `fastapi`, `networkx`, `geopy`, `osmnx`, `scipy`).
+1. Python dependencies (`sqlite3`, `fastapi`, `networkx`, `geopy`, `scipy`).
 2. GTFS SQLite database tables, stops, routes, and transfer edges.
-3. Directional routing and Nominatim live geocoding endpoints.
+3. Directional routing, PTV realtime parsing, and the FastAPI backend's HTTP surface.
 4. Geometry, bearing calculations, and arrival timestamp parsing.
 5. End-to-end multi-modal routing scenarios with live disruptions and detours.
 

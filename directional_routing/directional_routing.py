@@ -4,16 +4,14 @@ import time
 from datetime import datetime, timedelta
 import os
 import sys
-import osmnx as ox
 import networkx as nx
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
-
-ox.settings.use_cache = True
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+
+from geocoding import geocode_address
 
 def resolve_db_path(db_path):
     if db_path == ':memory:' or os.path.exists(db_path):
@@ -28,75 +26,6 @@ WALKING_SPEED_KMH = 5.0
 TRANSFER_PENALTY_MINS = 7.0
 REPLACEMENT_BUS_SPEED_KMH = 28.0
 REPLACEMENT_BUS_DWELL_MINS = 1.0
-
-KNOWN_LOCATIONS = {
-    'alan finkel building': (-37.9126, 145.1332),
-    'the spot building': (-37.8016, 144.9592),
-    'the spot': (-37.8016, 144.9592),
-    'monash university': (-37.9137, 145.1318),
-    'monash university clayton': (-37.9137, 145.1318),
-    'university of melbourne': (-37.7983, 144.9610),
-    'unimelb': (-37.7983, 144.9610),
-    'rmit university': (-37.8080, 144.9632),
-    'rmit': (-37.8080, 144.9632),
-    'melbourne cricket ground': (-37.8199, 144.9834),
-    'mcg': (-37.8199, 144.9834),
-    'marvel stadium': (-37.8165, 144.9475),
-    'queen victoria market': (-37.8076, 144.9568),
-    'crown melbourne': (-37.8228, 144.9582),
-    'richmond': (-37.8242, 144.9895),
-    'richmond station': (-37.8242, 144.9895),
-    'footscray': (-37.8010, 144.9004),
-    'footscray station': (-37.8010, 144.9004),
-    'flinders street': (-37.8181, 144.9663),
-    'flinders street station': (-37.8181, 144.9663),
-    'southern cross': (-37.8182, 144.9522),
-    'southern cross station': (-37.8182, 144.9522),
-    'melbourne central': (-37.8100, 144.9628),
-    'melbourne central station': (-37.8100, 144.9628),
-    'parliament': (-37.8111, 144.9729),
-    'parliament station': (-37.8111, 144.9729),
-    'flagstaff': (-37.8119, 144.9556),
-    'flagstaff station': (-37.8119, 144.9556),
-    'st kilda': (-37.8675, 144.9735),
-    'st kilda beach': (-37.8675, 144.9735),
-}
-
-def geocode_address(address, db_path=DB_NAME):
-    """Geocodes an address with offline landmark dictionary, stops database lookup, and Nominatim fallback."""
-    norm = address.strip().lower()
-    for k, v in KNOWN_LOCATIONS.items():
-        if k in norm or norm in k:
-            return v
-
-    # Try matching against known stops in local GTFS database
-    try:
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        c.execute("SELECT stop_lat, stop_lon FROM stops WHERE stop_name LIKE ? ORDER BY LENGTH(stop_name) ASC LIMIT 1", (f"%{address}%",))
-        row = c.fetchone()
-        conn.close()
-        if row and row[0] is not None and row[1] is not None:
-            return float(row[0]), float(row[1])
-    except Exception:
-        pass
-
-    # Fallback to Nominatim online geocoder
-    geolocator = Nominatim(user_agent="motion_routing_app", timeout=5)
-    queries = [
-        f"{address}, Victoria, Australia",
-        f"{address}, Melbourne, Victoria, Australia",
-        address,
-        f"{address}, Australia"
-    ]
-    for q in queries:
-        try:
-            location = geolocator.geocode(q)
-            if location:
-                return location.latitude, location.longitude
-        except Exception:
-            continue
-    return None
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0
@@ -560,7 +489,7 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
             
             target_name = dest_address if seg['to_node'] == 'DESTINATION' else G.nodes[seg['to_node']].get('name', seg['to_node'])
             from_name = start_address if seg['from_node'] == 'ORIGIN' else G.nodes[seg['from_node']].get('name', seg['from_node'])
-            
+
             legs.append({
                 'type': 'WALK',
                 'mode': 'Walk',
@@ -569,7 +498,11 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                 'start_time': format_secs(start_t),
                 'end_time': format_secs(curr_target),
                 'from_stop': from_name,
-                'to_stop': target_name
+                'to_stop': target_name,
+                'from_lat': G.nodes[seg['from_node']].get('lat'),
+                'from_lon': G.nodes[seg['from_node']].get('lon'),
+                'to_lat': G.nodes[seg['to_node']].get('lat'),
+                'to_lon': G.nodes[seg['to_node']].get('lon')
             })
             curr_target = start_t
             
@@ -621,7 +554,11 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                         'stops_count': stops_count,
                         'from_stop': u_name,
                         'to_stop': v_name,
-                        'is_replacement': False
+                        'is_replacement': False,
+                        'from_lat': G.nodes[s_u].get('lat'),
+                        'from_lon': G.nodes[s_u].get('lon'),
+                        'to_lat': G.nodes[s_v].get('lat'),
+                        'to_lon': G.nodes[s_v].get('lon')
                     })
                     curr_target = found_leg['departure_secs']
                 else:
@@ -651,7 +588,11 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                         'stops_count': stops_count,
                         'from_stop': u_name,
                         'to_stop': v_name,
-                        'is_replacement': is_rep
+                        'is_replacement': is_rep,
+                        'from_lat': G.nodes[s_u].get('lat'),
+                        'from_lon': G.nodes[s_u].get('lon'),
+                        'to_lat': G.nodes[s_v].get('lat'),
+                        'to_lon': G.nodes[s_v].get('lon')
                     })
                     curr_target = dep_secs
                 end_idx = best_start_idx
@@ -673,7 +614,11 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                 'start_time': prev['start_time'],
                 'end_time': l['end_time'],
                 'from_stop': prev['from_stop'],
-                'to_stop': l['to_stop']
+                'to_stop': l['to_stop'],
+                'from_lat': prev.get('from_lat'),
+                'from_lon': prev.get('from_lon'),
+                'to_lat': l.get('to_lat'),
+                'to_lon': l.get('to_lon')
             }
         else:
             merged_legs.append(l)
@@ -703,7 +648,9 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
         "modes_summary": " -> ".join(modes_sequence),
         "transfers_count": transfers_count,
         "disruptions_applied": normalized_disruptions,
-        "replacement_buses_used": replacement_buses_used
+        "replacement_buses_used": replacement_buses_used,
+        "origin_coords": (origin_lat, origin_lon),
+        "dest_coords": (dest_lat, dest_lon)
     }
     
     conn.close()

@@ -1,4 +1,4 @@
-from .testPTVOpenData import (
+from .ptv_realtime import (
     parse_arrival_datetime,
     is_alert_active_at_time,
     resolve_route_name_from_id,
