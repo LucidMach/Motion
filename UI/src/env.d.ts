@@ -19,6 +19,7 @@ declare module 'react' {
 
 interface ImportMetaEnv {
   readonly PUBLIC_MAPBOX_TOKEN: string;
+  readonly PUBLIC_API_URL?: string;
 }
 
 interface ImportMeta {
