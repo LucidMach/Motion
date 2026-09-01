@@ -35,6 +35,32 @@ LINE_METADATA = {
 _CACHED_LINES_GEOJSON: Optional[Dict[str, Any]] = None
 _CACHED_STATIONS_GEOJSON: Optional[Dict[str, Any]] = None
 
+# City Loop interchange stations, keyed by clean name (suffix already stripped)
+# so "Flagstaff Station" and "Flagstaff Railway Station" both match regardless
+# of which GTFS stop row wins the by-name dedup in generate_metro_geojson.
+CITY_LOOP_STATIONS = {
+    "Flinders Street",
+    "Southern Cross",
+    "Melbourne Central",
+    "Parliament",
+    "Flagstaff",
+    "Richmond",
+    "South Yarra",
+    "North Melbourne",
+    "Footscray",
+    "Caulfield",
+}
+
+
+def clean_station_name(stop_name: str) -> str:
+    """Strips the GTFS "Railway Station"/"Station" suffix for display and matching."""
+    return stop_name.replace(" Railway Station", "").replace(" Station", "")
+
+
+def is_city_loop_station(clean_name: str) -> bool:
+    """Whether a station (by its already-cleaned name) is a City Loop interchange."""
+    return clean_name in CITY_LOOP_STATIONS
+
 
 def ensure_geojson_dir():
     os.makedirs(GEOJSON_DIR, exist_ok=True)
@@ -163,21 +189,8 @@ def generate_metro_geojson() -> tuple[Dict[str, Any], Dict[str, Any]]:
 
                 lat = float(s["stop_lat"])
                 lon = float(s["stop_lon"])
-                
-                is_city_loop = stop_name in {
-                    "Flinders Street Railway Station",
-                    "Southern Cross Railway Station",
-                    "Melbourne Central Railway Station",
-                    "Parliament Railway Station",
-                    "Flagstaff Railway Station",
-                    "Richmond Railway Station",
-                    "South Yarra Railway Station",
-                    "North Melbourne Railway Station",
-                    "Footscray Railway Station",
-                    "Caulfield Railway Station"
-                }
 
-                clean_name = stop_name.replace(" Railway Station", "").replace(" Station", "")
+                clean_name = clean_station_name(stop_name)
 
                 station_features.append({
                     "type": "Feature",
@@ -189,7 +202,7 @@ def generate_metro_geojson() -> tuple[Dict[str, Any], Dict[str, Any]]:
                         "stop_id": stop_id,
                         "stop_name": clean_name,
                         "full_name": stop_name,
-                        "is_interchange": is_city_loop,
+                        "is_interchange": is_city_loop_station(clean_name),
                         "mode": "Metro Train"
                     }
                 })
