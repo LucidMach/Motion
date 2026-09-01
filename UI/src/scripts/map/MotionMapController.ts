@@ -3,6 +3,7 @@ import { resolveRegionInFocus } from './regionResolver';
 import { ReverseGeocodingService } from './reverseGeocoder';
 import { dispatchStatus, dispatchRegion } from './eventBus';
 import { UserMarkerManager } from './userMarker';
+import { SearchMarkerManager } from './searchMarker';
 import { GeolocationTracker } from './geolocationTracker';
 import { LocationCoordinator } from './locationCoordinator';
 import { CameraController } from './cameraController';
@@ -21,6 +22,8 @@ export { MotionNavigationControl };
 export class MotionMapController {
   private map: mapboxgl.Map | null = null;
   private markerManager: UserMarkerManager | null = null;
+  private searchMarkerManager: SearchMarkerManager | null = null;
+  private lastSearchCoords: [number, number] | null = null;
   private camera = new CameraController(() => this.map);
   private geocoder = new ReverseGeocodingService();
   private geoTracker = new GeolocationTracker({
@@ -95,6 +98,11 @@ export class MotionMapController {
         onPitch: () => this.camera.syncPitchState()
       });
       this.markerManager = new UserMarkerManager(this.map, () => this.flyToUser());
+      this.searchMarkerManager = new SearchMarkerManager(this.map, () => {
+        if (this.lastSearchCoords) {
+          this.camera.flyTo(this.lastSearchCoords, 17.0, 62);
+        }
+      });
 
       window.addEventListener('motion:theme-change', this.onThemeChange);
       window.addEventListener('motion:gesture-change', this.onGestureChange);
@@ -171,6 +179,23 @@ export class MotionMapController {
     }
   }
 
+  flyTo(coords: [number, number], zoom = 16.5, pitch = 60): void {
+    if (!this.map) return;
+    this.camera.flyTo(coords, zoom, pitch);
+  }
+
+  setSearchTarget(coords: [number, number], title: string, subtitle?: string): void {
+    if (!this.map) return;
+    this.lastSearchCoords = coords;
+    this.searchMarkerManager?.render(coords, title, subtitle);
+    this.camera.flyTo(coords, 17.0, 62);
+  }
+
+  clearSearchTarget(): void {
+    this.lastSearchCoords = null;
+    this.searchMarkerManager?.remove();
+  }
+
   toggle3D(): boolean {
     return this.camera.toggle();
   }
@@ -186,6 +211,7 @@ export class MotionMapController {
     if (this.regionDebounceTimer) clearTimeout(this.regionDebounceTimer);
     this.geocoder.cancel();
     this.markerManager?.remove();
+    this.searchMarkerManager?.remove();
     this.map?.remove();
     this.map = null;
   }

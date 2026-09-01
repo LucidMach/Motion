@@ -46,7 +46,12 @@ export class UserMarkerManager {
       popupHtml(coords[1], coords[0], accuracy, false)
     );
 
-    this.marker = new mapboxgl.Marker({ element: wrapper, rotationAlignment: 'map', pitchAlignment: 'map' })
+    this.marker = new mapboxgl.Marker({
+      element: wrapper,
+      anchor: 'center',
+      pitchAlignment: 'viewport',
+      rotationAlignment: 'viewport',
+    })
       .setLngLat(coords)
       .setPopup(popup)
       .addTo(this.map);

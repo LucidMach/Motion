@@ -13,11 +13,13 @@ graph TD
     App[index.astro] --> Map[MapboxMap.astro]
     App --> HUD[HeaderHUD.tsx - React island]
     App --> Modal[TokenModal.tsx - React island]
+    App --> Search[SearchBar.tsx - React island]
 
     Map --> Controller[MotionMapController]
     Controller --> NavDock[MotionNavigationControl]
     Controller --> Geolocation[Navigator Geolocation API]
     Controller --> RegionEngine[regionResolver.ts]
+    Controller --> SearchTarget[searchMarker.ts - WebGL GPU Layers]
     Controller --> EventBus[Window CustomEvent Bus]
 
     EventBus -.->|motion:status| HUD
@@ -27,6 +29,9 @@ graph TD
     HUD -.->|motion:cmd:fly-user| Controller
     NavDock -.->|motion:cmd:toggle-3d| Controller
     Modal -.->|motion:cmd:update-token| Controller
+    Search -.->|motion:cmd:fly-to| Controller
+    Search -.->|motion:cmd:clear-search-target| Controller
+    Search -.->|motion:cmd:navigate-to| App
 ```
 
 ## 3. Design system tokens
@@ -59,6 +64,7 @@ Defined in `src/styles/global.css` via Tailwind v4's `@theme` (generates `bg-*`/
 | :--- | :--- | :--- |
 | `HeaderHUD` | React island | [`src/components/HeaderHUD/HeaderHUD.spec.md`](src/components/HeaderHUD/HeaderHUD.spec.md) |
 | `TokenModal` | React island | [`src/components/TokenModal/TokenModal.spec.md`](src/components/TokenModal/TokenModal.spec.md) |
+| `SearchBar` | React island | [`src/components/SearchBar/SearchBar.spec.md`](src/components/SearchBar/SearchBar.spec.md) |
 | `MapboxMap` | Astro (imperative canvas) | [`src/components/MapboxMap.spec.md`](src/components/MapboxMap.spec.md) |
 | `MotionNavigationControl` | Mapbox `IControl` (vanilla) | [`src/scripts/map/MotionNavigationControl.spec.md`](src/scripts/map/MotionNavigationControl.spec.md) |
 
@@ -107,6 +113,9 @@ interface LocationTelemetry {
 | Command Event | Payload (`detail`) | Description |
 | :--- | :--- | :--- |
 | `motion:cmd:fly-user` | none | Flies camera to the user's current GPS position |
+| `motion:cmd:fly-to` | `{ coords: [lon, lat], zoom?, pitch?, title?, subtitle? }` | Flies camera to target coordinates & places native WebGL target dot |
+| `motion:cmd:clear-search-target` | none | Immediately unmounts & removes the WebGL 3D target dot pin from the map |
+| `motion:cmd:navigate-to` | `{ stop_id, stop_name, stop_lat, stop_lon, mode? }` | Dispatches destination details to initiate navigation routing |
 | `motion:cmd:toggle-3d` | none | Toggles between 3D oblique and 2D nadir perspective |
 | `motion:cmd:set-3d` | `{ is3D: boolean }` | Explicitly switches perspective mode |
 | `motion:cmd:update-token` | `{ token: string }` | Updates and saves the Mapbox access token |

@@ -36,3 +36,19 @@ export interface GestureChangeEventDetail {
   settings: import('./settings').GestureSettings;
 }
 
+export interface FlyToEventDetail {
+  coords: [number, number]; // [lon, lat]
+  zoom?: number;
+  pitch?: number;
+  title?: string;
+  subtitle?: string;
+}
+
+export interface NavigateToEventDetail {
+  stop_id: string;
+  stop_name: string;
+  stop_lat: number;
+  stop_lon: number;
+  mode?: string;
+}
+

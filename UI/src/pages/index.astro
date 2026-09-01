@@ -6,6 +6,7 @@ import HeaderHUD from '../components/HeaderHUD/HeaderHUD';
 import SettingsButton from '../components/SettingsButton/SettingsButton';
 import SettingsModal from '../components/SettingsModal/SettingsModal';
 import TokenModal from '../components/TokenModal/TokenModal';
+import SearchBar from '../components/SearchBar/SearchBar';
 
 const pageTitle = "Motion • 3D Victorian Transit & Live Geolocation";
 const pageDescription = "High-performance 3D transit routing and live GPS geolocation navigator with Mapbox 3D Engine.";
@@ -89,6 +90,9 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
 
       <!-- Settings Configuration Modal (UI Theme & Gesture Controls) -->
       <SettingsModal client:load />
+
+      <!-- Bottom Search Bar & Match Results -->
+      <SearchBar client:load />
 
       <!-- Token Configuration Modal (Triggers on missing token) -->
       <TokenModal client:load />
