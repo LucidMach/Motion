@@ -4,12 +4,8 @@ import time
 from datetime import datetime, timedelta
 import os
 import sys
-import osmnx as ox
 import networkx as nx
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
-
-ox.settings.use_cache = True
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
