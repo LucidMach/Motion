@@ -1,7 +1,9 @@
 # Technical Specification: PTV GTFS-Realtime Departure Calculator
 
 ## Overview
-`testPTVOpenData.py` is the live API integration and orchestration utility that fetches GTFS-Realtime (GTFS-R) data from Transport Victoria. Given a user's **Start Location**, **Destination Location**, and **Target Arrival Time / Timestamp**, it queries live PTV Service Alerts and Trip Updates, filters disruptions to **only those active during the journey's time window and affecting the transit corridor**, and computes the optimal **Recommended Departure Time** using `directional_routing.py`.
+`ptv_realtime.py` is the live API integration and orchestration utility that fetches GTFS-Realtime (GTFS-R) data from Transport Victoria. Given a user's **Start Location**, **Destination Location**, and **Target Arrival Time / Timestamp**, it queries live PTV Service Alerts and Trip Updates, filters disruptions to **only those active during the journey's time window and affecting the transit corridor**, and computes the optimal **Recommended Departure Time** using `directional_routing.py`.
+
+Its production-facing surface - `parse_arrival_datetime`, `fetch_live_service_alerts`, and `fetch_realtime_delays_and_cancellations` - is imported directly by `server/routes/routing.py` and `server/routes/disruptions.py`. The CLI below (`calculate_recommended_departure`, `parse_cli_args`, the `__main__` block) is a manual/offline driver for the same module, not a separate test harness.
 
 ---
 
@@ -69,17 +71,17 @@ For each alert with `active_period` list of `[start_timestamp, end_timestamp]`:
 
 ```bash
 # ISO Date & Time
-python testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10
+python ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10
 
 # Unix Epoch Timestamp
-python testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-timestamp 1787219700 --buffer 10
+python ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-timestamp 1787219700 --buffer 10
 
 # Simulated Route Cancellation with Replacement Bus Preference
-python testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-time "09:15" --disrupt-route "Sandringham"
+python ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-time "09:15" --disrupt-route "Sandringham"
 
 # Simulated Route Cancellation with Rail Detour Mode (No Replacement Bus)
-python testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-time "09:15" --disrupt-route "Sandringham" --no-replacement-bus
+python ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-time "09:15" --disrupt-route "Sandringham" --no-replacement-bus
 
 # Offline / Skip Live Alerts Fetch
-python testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-time "09:15" --no-live-alerts
+python ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-time "09:15" --no-live-alerts
 ```

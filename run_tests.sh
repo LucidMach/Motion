@@ -108,6 +108,20 @@ print_section "3. Running Directional Routing Unit Tests"
 "$PYTHON_CMD" -m unittest directional_routing/test_directional_routing.py -v
 report_result "Unit Tests (test_directional_routing.py)" $?
 
+# 3b. PTV Realtime Module Unit Tests
+print_section "3b. Running PTV Realtime Module Unit Tests"
+"$PYTHON_CMD" -m unittest ptv_realtime/test_ptv_realtime.py -v
+report_result "Unit Tests (test_ptv_realtime.py)" $?
+
+# 3c. FastAPI Backend Test Suite
+print_section "3c. Running FastAPI Backend Test Suite"
+"$PYTHON_CMD" -m unittest tests/test_api.py -v
+report_result "FastAPI Backend Test Suite (test_api.py)" $?
+# 3b. Geocoding Module Unit Tests
+print_section "3b. Running Geocoding Module Unit Tests"
+"$PYTHON_CMD" -m unittest geocoding/test_geocoding.py -v
+report_result "Unit Tests (test_geocoding.py)" $?
+
 # 4. Routing Engine Integration Test (Mock & Calculation)
 print_section "4. Testing Directional Routing Itinerary Computation"
 "$PYTHON_CMD" -c "
@@ -125,23 +139,23 @@ report_result "Directional Logic & Geometry Verification" $?
 print_section "5. Running End-to-End Multi-Modal Route Tests with Arrival Timestamps"
 
 echo -e "${YELLOW}Test 5A: Richmond -> Footscray (Target Arrival: 2026-08-20 09:15, Buffer: 10m)${NC}"
-"$PYTHON_CMD" testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10
+"$PYTHON_CMD" ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10
 report_result "Route: Richmond -> Footscray (ISO Timestamp: 2026-08-20 09:15)" $?
 
 echo -e "\n${YELLOW}Test 5B: Alan Finkel Building -> The Spot Building (Target Arrival: 2026-08-20 10:00, Buffer: 10m)${NC}"
-"$PYTHON_CMD" testPTVOpenData/testPTVOpenData.py --start "Alan Finkel Building" --destination "The Spot Building" --arrival-time "2026-08-20 10:00" --buffer 10
+"$PYTHON_CMD" ptv_realtime/ptv_realtime.py --start "Alan Finkel Building" --destination "The Spot Building" --arrival-time "2026-08-20 10:00" --buffer 10
 report_result "Route: Alan Finkel Building -> The Spot Building (ISO Timestamp: 2026-08-20 10:00)" $?
 
 echo -e "\n${YELLOW}Test 5C: Richmond -> Footscray with Sandringham Disrupted (Prefer Replacement Bus)${NC}"
-"$PYTHON_CMD" testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10 --disrupt-route "Sandringham"
+"$PYTHON_CMD" ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10 --disrupt-route "Sandringham"
 report_result "Dynamic Reroute (Replacement Bus): Richmond -> Footscray" $?
 
 echo -e "\n${YELLOW}Test 5D: Richmond -> Footscray with Sandringham Disrupted (No Replacement Bus - Detour Mode)${NC}"
-"$PYTHON_CMD" testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10 --disrupt-route "Sandringham" --no-replacement-bus
+"$PYTHON_CMD" ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-time "2026-08-20 09:15" --buffer 10 --disrupt-route "Sandringham" --no-replacement-bus
 report_result "Dynamic Reroute (Alternative Line Detour): Richmond -> Footscray" $?
 
 echo -e "\n${YELLOW}Test 5E: Richmond -> Footscray with Unix Epoch Arrival Timestamp (1787219700)${NC}"
-"$PYTHON_CMD" testPTVOpenData/testPTVOpenData.py --start "Richmond" --destination "Footscray" --arrival-timestamp 1787219700 --buffer 10 --no-live-alerts
+"$PYTHON_CMD" ptv_realtime/ptv_realtime.py --start "Richmond" --destination "Footscray" --arrival-timestamp 1787219700 --buffer 10 --no-live-alerts
 report_result "Route: Richmond -> Footscray (Unix Epoch Arrival Timestamp: 1787219700)" $?
 
 # Summary Report

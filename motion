@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#
+# Motion project CLI. Currently just `motion dev` - runs the API and the UI
+# dev servers together and tears both down on Ctrl+C.
+
+set -euo pipefail
+
+# Resolve the real path of this script even when invoked through a symlink
+# (e.g. /opt/homebrew/bin/motion -> this file), so it always finds the repo
+# root regardless of the caller's cwd.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+    DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+PROJECT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+activate_conda_env() {
+    if [ "${CONDA_DEFAULT_ENV:-}" = "motion" ]; then
+        return
+    fi
+    if ! command -v conda &> /dev/null; then
+        return
+    fi
+    local conda_base
+    conda_base="$(conda info --base 2>/dev/null || true)"
+    if [ -n "$conda_base" ] && [ -f "$conda_base/etc/profile.d/conda.sh" ]; then
+        # shellcheck disable=SC1091
+        source "$conda_base/etc/profile.d/conda.sh"
+        conda activate motion 2>/dev/null || echo "motion: warning - couldn't activate conda env 'motion', using current environment" >&2
+    fi
+}
+
+cmd_dev() {
+    activate_conda_env
+    cd "$PROJECT_DIR"
+
+    echo -e "${CYAN}${BOLD}Starting Motion dev servers (API :8000, UI :3000)...${NC}"
+    echo -e "${CYAN}Ctrl+C stops both.${NC}\n"
+
+    cleanup() {
+        trap - EXIT INT TERM
+        echo -e "\n${CYAN}Stopping dev servers...${NC}"
+        # kill 0 covers pnpm and uvicorn's own PID, but uvicorn --reload spawns
+        # a separate worker subprocess that doesn't share this process group -
+        # pkill by exact command is the fallback that actually reaches it.
+        kill 0 2> /dev/null || true
+        sleep 0.3
+        pkill -f "uvicorn server.main:app" 2> /dev/null || true
+    }
+    trap cleanup EXIT INT TERM
+
+    (cd "$PROJECT_DIR" && exec uvicorn server.main:app --reload --port 8000) &
+    (cd "$PROJECT_DIR/UI" && exec pnpm dev) &
+
+    wait
+}
+
+case "${1:-}" in
+    dev)
+        cmd_dev
+        ;;
+    *)
+        echo "Usage: motion dev"
+        echo "  dev   Run the API (uvicorn, :8000) and UI (pnpm dev, :3000) together"
+        exit 1
+        ;;
+esac

@@ -1,22 +1,16 @@
 import time
 from datetime import datetime, timedelta
-import sqlite3
-from typing import List, Dict, Any, Optional
+from typing import List
 from fastapi import APIRouter, HTTPException
 
 from server.models.schemas import RouteRequest, RouteResponse, RouteLeg
 import directional_routing
 from directional_routing import DB_NAME, geocode_address, haversine
+from ptv_realtime import ptv_realtime
+from directional_routing import DB_NAME, haversine
 from testPTVOpenData import testPTVOpenData
 
 router = APIRouter(prefix="/api", tags=["Routing Engine"])
-
-
-def get_stop_coords(stop_name: str, db_path: str = DB_NAME) -> Optional[List[float]]:
-    """Returns [lat, lon] for a stop or landmark."""
-    if not stop_name:
-        return None
-    return geocode_address(stop_name, db_path=db_path)
 
 
 @router.post("/route", response_model=RouteResponse)
@@ -29,9 +23,9 @@ def compute_route(req: RouteRequest) -> RouteResponse:
 
     # 1. Parse target arrival datetime
     if req.arrival_timestamp:
-        target_arrival_dt = testPTVOpenData.parse_arrival_datetime(req.arrival_timestamp)
+        target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_timestamp)
     elif req.arrival_time:
-        target_arrival_dt = testPTVOpenData.parse_arrival_datetime(req.arrival_time)
+        target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_time)
     else:
         # Default to 45 minutes from now if unspecified
         target_arrival_dt = datetime.now() + timedelta(minutes=45)
@@ -40,9 +34,9 @@ def compute_route(req: RouteRequest) -> RouteResponse:
 
     # 2. Collect disruptions
     all_disruptions = list(req.disruptions or [])
-    if req.fetch_live_alerts and testPTVOpenData.API_KEY and not req.disruptions:
+    if req.fetch_live_alerts and ptv_realtime.API_KEY and not req.disruptions:
         try:
-            live_alerts = testPTVOpenData.fetch_live_service_alerts(target_arrival_dt)
+            live_alerts = ptv_realtime.fetch_live_service_alerts(target_arrival_dt)
             if live_alerts:
                 all_disruptions.extend(live_alerts)
         except Exception as e:
@@ -76,7 +70,7 @@ def compute_route(req: RouteRequest) -> RouteResponse:
         if leg.get("type") == "TRANSIT" and not leg.get("is_replacement"):
             trip_id = leg.get("trip_id")
             if trip_id and trip_id != "SCHEDULED":
-                delay, is_canc = testPTVOpenData.fetch_realtime_delays_and_cancellations(trip_id)
+                delay, is_canc = ptv_realtime.fetch_realtime_delays_and_cancellations(trip_id)
                 if is_canc:
                     cancelled_detected_in_realtime.append(trip_id)
                 elif delay > 0:
@@ -101,15 +95,15 @@ def compute_route(req: RouteRequest) -> RouteResponse:
     # 6. Format legs and attach path coordinates for Mapbox
     formatted_legs: List[RouteLeg] = []
     for leg in raw_itinerary.get("legs", []):
-        from_coords = get_stop_coords(leg.get("from_stop", ""))
-        to_coords = get_stop_coords(leg.get("to_stop", ""))
+        from_lat, from_lon = leg.get("from_lat"), leg.get("from_lon")
+        to_lat, to_lon = leg.get("to_lat"), leg.get("to_lon")
 
         leg_coords = []
-        if from_coords and to_coords:
+        if from_lat is not None and from_lon is not None and to_lat is not None and to_lon is not None:
             # Mapbox expects [lon, lat]
             leg_coords = [
-                [from_coords[1], from_coords[0]],
-                [to_coords[1], to_coords[0]]
+                [from_lon, from_lat],
+                [to_lon, to_lat]
             ]
 
         formatted_legs.append(RouteLeg(
@@ -146,8 +140,8 @@ def compute_route(req: RouteRequest) -> RouteResponse:
     except Exception:
         rec_dep_str = latest_departure_str
 
-    origin_c = get_stop_coords(req.origin)
-    dest_c = get_stop_coords(req.destination)
+    origin_c = raw_itinerary.get("origin_coords")
+    dest_c = raw_itinerary.get("dest_coords")
     total_exec_secs = round(time.time() - start_time_exec, 3)
 
     return RouteResponse(
