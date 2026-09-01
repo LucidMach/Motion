@@ -108,6 +108,11 @@ print_section "3. Running Directional Routing Unit Tests"
 "$PYTHON_CMD" -m unittest directional_routing/test_directional_routing.py -v
 report_result "Unit Tests (test_directional_routing.py)" $?
 
+# 3b. Network Service Unit Tests
+print_section "3b. Running Network Service Unit Tests"
+"$PYTHON_CMD" -m unittest server/services/test_network_service.py -v
+report_result "Unit Tests (test_network_service.py)" $?
+
 # 4. Routing Engine Integration Test (Mock & Calculation)
 print_section "4. Testing Directional Routing Itinerary Computation"
 "$PYTHON_CMD" -c "
