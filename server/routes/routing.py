@@ -5,6 +5,8 @@ from fastapi import APIRouter, HTTPException
 
 from server.models.schemas import RouteRequest, RouteResponse, RouteLeg
 import directional_routing
+from directional_routing import DB_NAME, geocode_address, haversine
+from ptv_realtime import ptv_realtime
 from directional_routing import DB_NAME, haversine
 from testPTVOpenData import testPTVOpenData
 
@@ -21,9 +23,9 @@ def compute_route(req: RouteRequest) -> RouteResponse:
 
     # 1. Parse target arrival datetime
     if req.arrival_timestamp:
-        target_arrival_dt = testPTVOpenData.parse_arrival_datetime(req.arrival_timestamp)
+        target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_timestamp)
     elif req.arrival_time:
-        target_arrival_dt = testPTVOpenData.parse_arrival_datetime(req.arrival_time)
+        target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_time)
     else:
         # Default to 45 minutes from now if unspecified
         target_arrival_dt = datetime.now() + timedelta(minutes=45)
@@ -32,9 +34,9 @@ def compute_route(req: RouteRequest) -> RouteResponse:
 
     # 2. Collect disruptions
     all_disruptions = list(req.disruptions or [])
-    if req.fetch_live_alerts and testPTVOpenData.API_KEY and not req.disruptions:
+    if req.fetch_live_alerts and ptv_realtime.API_KEY and not req.disruptions:
         try:
-            live_alerts = testPTVOpenData.fetch_live_service_alerts(target_arrival_dt)
+            live_alerts = ptv_realtime.fetch_live_service_alerts(target_arrival_dt)
             if live_alerts:
                 all_disruptions.extend(live_alerts)
         except Exception as e:
@@ -68,7 +70,7 @@ def compute_route(req: RouteRequest) -> RouteResponse:
         if leg.get("type") == "TRANSIT" and not leg.get("is_replacement"):
             trip_id = leg.get("trip_id")
             if trip_id and trip_id != "SCHEDULED":
-                delay, is_canc = testPTVOpenData.fetch_realtime_delays_and_cancellations(trip_id)
+                delay, is_canc = ptv_realtime.fetch_realtime_delays_and_cancellations(trip_id)
                 if is_canc:
                     cancelled_detected_in_realtime.append(trip_id)
                 elif delay > 0:
