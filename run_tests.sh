@@ -117,6 +117,10 @@ report_result "Unit Tests (test_ptv_realtime.py)" $?
 print_section "3c. Running FastAPI Backend Test Suite"
 "$PYTHON_CMD" -m unittest tests/test_api.py -v
 report_result "FastAPI Backend Test Suite (test_api.py)" $?
+# 3b. Geocoding Module Unit Tests
+print_section "3b. Running Geocoding Module Unit Tests"
+"$PYTHON_CMD" -m unittest geocoding/test_geocoding.py -v
+report_result "Unit Tests (test_geocoding.py)" $?
 
 # 4. Routing Engine Integration Test (Mock & Calculation)
 print_section "4. Testing Directional Routing Itinerary Computation"
