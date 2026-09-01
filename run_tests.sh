@@ -70,8 +70,8 @@ fi
 echo "Using Python binary: $(which "$PYTHON_CMD") ($("$PYTHON_CMD" --version))"
 
 "$PYTHON_CMD" -c "
-import sqlite3, math, networkx, geopy, osmnx
-print('  ✓ sqlite3, math, networkx, geopy, osmnx are available.')
+import sqlite3, math, networkx, geopy
+print('  ✓ sqlite3, math, networkx, geopy are available.')
 "
 report_result "Python Dependencies Check" $?
 

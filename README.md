@@ -229,7 +229,7 @@ cd UI && pnpm build
 ```
 
 This verifies:
-1. Python dependencies (`sqlite3`, `fastapi`, `networkx`, `geopy`, `osmnx`, `scipy`).
+1. Python dependencies (`sqlite3`, `fastapi`, `networkx`, `geopy`, `scipy`).
 2. GTFS SQLite database tables, stops, routes, and transfer edges.
 3. Directional routing, PTV realtime parsing, and the FastAPI backend's HTTP surface.
 4. Geometry, bearing calculations, and arrival timestamp parsing.
