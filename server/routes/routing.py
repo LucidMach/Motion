@@ -8,8 +8,6 @@ from server.services.disruption_reconciliation import reconcile_with_live_disrup
 import directional_routing
 from directional_routing import DB_NAME, geocode_address, haversine
 from ptv_realtime import ptv_realtime
-from directional_routing import DB_NAME, haversine
-from testPTVOpenData import testPTVOpenData
 
 router = APIRouter(prefix="/api", tags=["Routing Engine"])
 
@@ -81,31 +79,13 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             prefer_replacement_bus=req.prefer_replacement_bus
         )
 
-    for leg in raw_itinerary.get("legs", []):
-        if leg.get("type") == "TRANSIT" and not leg.get("is_replacement"):
-            trip_id = leg.get("trip_id")
-            if trip_id and trip_id != "SCHEDULED":
-                delay, is_canc = ptv_realtime.fetch_realtime_delays_and_cancellations(trip_id)
-                if is_canc:
-                    cancelled_detected_in_realtime.append(trip_id)
-                elif delay > 0:
-                    real_time_delay_mins += delay
-
-    # 5. If live cancellation detected, recompute itinerary
-    if cancelled_detected_in_realtime:
-        all_cancelled_trips = list(set((req.cancelled_trips or []) + cancelled_detected_in_realtime))
-        try:
-            raw_itinerary = directional_routing.calculate_directional_itinerary(
-                start_address=req.origin,
-                dest_address=req.destination,
-                arrival_dt=target_arrival_dt,
-                disruptions=all_disruptions,
-                cancelled_routes=req.cancelled_routes,
-                cancelled_trips=all_cancelled_trips,
-                prefer_replacement_bus=req.prefer_replacement_bus
-            )
-        except Exception:
-            pass
+    disruption_check = reconcile_with_live_disruptions(
+        itinerary=raw_itinerary,
+        recompute_fn=_recompute,
+        realtime_checker=ptv_realtime.fetch_realtime_delays_and_cancellations,
+    )
+    raw_itinerary = disruption_check.itinerary
+    real_time_delay_mins = disruption_check.realtime_delay_mins
 
     # 6. Format legs and attach path coordinates for Mapbox
     formatted_legs: List[RouteLeg] = []

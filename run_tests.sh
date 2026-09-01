@@ -103,8 +103,8 @@ else
     echo -e "${YELLOW}Warning: $DB_FILE not found. Running with mock datasets.${NC}"
 fi
 
-# 3. Directional Routing Unit Tests
-print_section "3. Running Directional Routing Unit Tests"
+# 3a. Directional Routing Unit Tests
+print_section "3a. Running Directional Routing Unit Tests"
 "$PYTHON_CMD" -m unittest directional_routing/test_directional_routing.py -v
 report_result "Unit Tests (test_directional_routing.py)" $?
 
@@ -113,19 +113,25 @@ print_section "3b. Running PTV Realtime Module Unit Tests"
 "$PYTHON_CMD" -m unittest ptv_realtime/test_ptv_realtime.py -v
 report_result "Unit Tests (test_ptv_realtime.py)" $?
 
-# 3c. FastAPI Backend Test Suite
-print_section "3c. Running FastAPI Backend Test Suite"
-"$PYTHON_CMD" -m unittest tests/test_api.py -v
-report_result "FastAPI Backend Test Suite (test_api.py)" $?
-# 3b. Geocoding Module Unit Tests
-print_section "3b. Running Geocoding Module Unit Tests"
+# 3c. Geocoding Module Unit Tests
+print_section "3c. Running Geocoding Module Unit Tests"
 "$PYTHON_CMD" -m unittest geocoding/test_geocoding.py -v
 report_result "Unit Tests (test_geocoding.py)" $?
 
-# 3c. Disruption Reconciliation Unit Tests
-print_section "3c. Running Disruption Reconciliation Unit Tests"
+# 3d. Disruption Reconciliation Unit Tests
+print_section "3d. Running Disruption Reconciliation Unit Tests"
 "$PYTHON_CMD" -m unittest server/services/test_disruption_reconciliation.py -v
 report_result "Unit Tests (test_disruption_reconciliation.py)" $?
+
+# 3e. Network Service Unit Tests
+print_section "3e. Running Network Service Unit Tests"
+"$PYTHON_CMD" -m unittest server/services/test_network_service.py -v
+report_result "Unit Tests (test_network_service.py)" $?
+
+# 3f. FastAPI Backend Test Suite
+print_section "3f. Running FastAPI Backend Test Suite"
+"$PYTHON_CMD" -m unittest tests/test_api.py -v
+report_result "FastAPI Backend Test Suite (test_api.py)" $?
 
 # 4. Routing Engine Integration Test (Mock & Calculation)
 print_section "4. Testing Directional Routing Itinerary Computation"
