@@ -126,10 +126,11 @@ def calculate_directional_itinerary(
 ---
 
 ### 2. `geocode_address(address, db_path)`
-Resolves text queries into `(latitude, longitude)` coordinates using a 3-tier strategy:
-1. **Offline Dictionary Lookup**: Matches normalized text against `KNOWN_LOCATIONS`.
-2. **Local GTFS Stop Database**: Matches against `stops` table via `stop_name LIKE %address%`.
-3. **Online Nominatim Fallback**: Queries OpenStreetMap Nominatim service with automatic timeout handling.
+Resolves text queries or coordinate strings into `(latitude, longitude)` coordinates using a 4-tier strategy:
+1. **Direct Coordinate Fast-Path**: Parses `"lat,lon"` numeric string inputs immediately without database or network latency.
+2. **Offline Dictionary Lookup**: Matches normalized text against `KNOWN_LOCATIONS`.
+3. **Local GTFS Stop Database**: Matches against `stops` table via `stop_name LIKE %address%`.
+4. **Online Nominatim Fallback**: Queries OpenStreetMap Nominatim service with automatic timeout handling.
 
 ---
 

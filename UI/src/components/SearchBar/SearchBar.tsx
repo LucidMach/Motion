@@ -78,8 +78,9 @@ export default function SearchBar() {
 
       // Focus result and fly camera
       handleSelect(result);
+      setIsOpen(false);
 
-      // Dispatch navigate command event for future navigation routing engine
+      // Dispatch navigate command event for routing engine
       window.dispatchEvent(
         new CustomEvent('motion:cmd:navigate-to', {
           detail: {
@@ -131,6 +132,17 @@ export default function SearchBar() {
       handleClear();
     }
   }, [isOpen, focusedResult, handleClear]);
+
+  // Listen for route clear event to synchronize search bar state
+  useEffect(() => {
+    const handleRouteCleared = () => {
+      handleClear();
+    };
+    window.addEventListener('motion:cmd:clear-route', handleRouteCleared);
+    return () => {
+      window.removeEventListener('motion:cmd:clear-route', handleRouteCleared);
+    };
+  }, [handleClear]);
 
   // Execute search across GTFS stops, landmarks, and OpenStreetMap
   const executeSearch = useCallback(async () => {

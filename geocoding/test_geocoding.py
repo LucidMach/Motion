@@ -128,5 +128,19 @@ class TestGeocodingSearch(unittest.TestCase):
         self.assertTrue(len(fake.calls) > 0)
 
 
+    def test_geocode_address_lat_lon_numeric_strings(self):
+        fake = FakeGeocodingAdapter({})
+        coords = geocoding.geocode_address("-37.8180, 144.9671", db_path=":memory:", adapter=fake)
+        self.assertIsNotNone(coords)
+        self.assertAlmostEqual(coords[0], -37.8180, places=3)
+        self.assertAlmostEqual(coords[1], 144.9671, places=3)
+        self.assertEqual(fake.calls, [])
+
+        coords2 = geocoding.geocode_address("-37.8242,144.9895", db_path=":memory:", adapter=fake)
+        self.assertIsNotNone(coords2)
+        self.assertAlmostEqual(coords2[0], -37.8242, places=3)
+        self.assertEqual(fake.calls, [])
+
+
 if __name__ == "__main__":
     unittest.main()

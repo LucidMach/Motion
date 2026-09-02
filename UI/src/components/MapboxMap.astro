@@ -73,6 +73,17 @@ const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || "" } =
     window.addEventListener("motion:cmd:clear-search-target", () => {
       mapController?.clearSearchTarget();
     });
+
+    window.addEventListener("motion:cmd:plot-route", (e: Event) => {
+      const detail = (e as CustomEvent<{ route: import('../services/api').RouteResponse }>).detail;
+      if (detail?.route) {
+        mapController?.plotRoute(detail.route);
+      }
+    });
+
+    window.addEventListener("motion:cmd:clear-route", () => {
+      mapController?.clearRoute();
+    });
   }
 
   if (document.readyState === "loading") {

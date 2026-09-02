@@ -4,6 +4,7 @@ export interface RouteLeg {
   type: 'WALK' | 'TRANSIT' | 'TRANSFER' | 'REPLACEMENT_BUS' | string;
   mode: string;
   route?: string;
+  color?: string;
   from_stop?: string;
   to_stop?: string;
   start_time: string;
@@ -14,6 +15,63 @@ export interface RouteLeg {
   trip_id?: string;
   is_replacement?: boolean;
   coordinates?: [number, number][]; // [[lon, lat], ...]
+}
+
+export function getLegColor(leg: RouteLeg): string {
+  if (leg.color) return leg.color;
+
+  const mode = (leg.mode || leg.type || '').toLowerCase();
+  const route = (leg.route || '').toLowerCase();
+
+  if (leg.is_replacement || leg.type === 'REPLACEMENT_BUS' || mode.includes('replacement')) {
+    return '#FF8200'; // Orange for Rail Replacement Buses
+  }
+
+  if (mode.includes('walk')) {
+    return '#38BDF8'; // Glowing Neon Cyan
+  }
+
+  if (mode.includes('bus')) {
+    return '#FF8200'; // Orange for Buses
+  }
+
+  if (mode.includes('tram')) {
+    return '#78BE20'; // Melbourne Tram Green
+  }
+
+  if (mode.includes('train') || mode.includes('rail')) {
+    if (
+      route.includes('belgrave') ||
+      route.includes('lilydale') ||
+      route.includes('alamein') ||
+      route.includes('glen waverley')
+    ) {
+      return '#152C6B'; // Burnley Navy
+    }
+    if (route.includes('cranbourne') || route.includes('pakenham')) {
+      return '#34ACE1'; // Caulfield Cyan
+    }
+    if (
+      route.includes('frankston') ||
+      route.includes('werribee') ||
+      route.includes('williamstown') ||
+      route.includes('stony point')
+    ) {
+      return '#028430'; // Cross-City Green
+    }
+    if (route.includes('sandringham')) {
+      return '#F178AF'; // Sandringham Pink
+    }
+    if (route.includes('craigieburn') || route.includes('upfield') || route.includes('sunbury')) {
+      return '#FFBE00'; // Northern Gold
+    }
+    if (route.includes('mernda') || route.includes('hurstbridge')) {
+      return '#BE1014'; // Clifton Hill Red
+    }
+    return '#0072CE'; // Default Metro Blue
+  }
+
+  return '#38BDF8';
 }
 
 export interface RouteResponse {

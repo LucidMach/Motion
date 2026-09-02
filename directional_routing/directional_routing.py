@@ -410,25 +410,31 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
     
     # Connect Origin directly to candidate stops
     G.add_node('ORIGIN', type='location', lat=origin_lat, lon=origin_lon, name=start_address)
-    start_stops = get_directional_nearby_stops(conn, origin_lat, origin_lon, radius=1.2)
+    start_stops = get_directional_nearby_stops(conn, origin_lat, origin_lon, radius=1.5)
     connected_start = 0
     for s in start_stops:
         if s['stop_id'] in G:
             G.add_edge('ORIGIN', s['stop_id'], weight=s['walk_time_mins'], type='walk', distance_km=s['distance_km'], walk_mins=s['walk_time_mins'])
             connected_start += 1
-            if connected_start >= 8:
+            if connected_start >= 12:
                 break
             
     # Connect Destination directly from candidate stops
     G.add_node('DESTINATION', type='location', lat=dest_lat, lon=dest_lon, name=dest_address)
-    end_stops = get_directional_nearby_stops(conn, dest_lat, dest_lon, radius=1.2)
+    end_stops = get_directional_nearby_stops(conn, dest_lat, dest_lon, radius=1.5)
     connected_end = 0
     for s in end_stops:
         if s['stop_id'] in G:
             G.add_edge(s['stop_id'], 'DESTINATION', weight=s['walk_time_mins'], type='walk', distance_km=s['distance_km'], walk_mins=s['walk_time_mins'])
             connected_end += 1
-            if connected_end >= 8:
+            if connected_end >= 12:
                 break
+
+    # Connect direct walking edge if within walkable threshold
+    direct_dist = haversine(origin_lat, origin_lon, dest_lat, dest_lon)
+    if direct_dist <= 3.0:
+        direct_walk_mins = walking_time_mins(direct_dist)
+        G.add_edge('ORIGIN', 'DESTINATION', weight=direct_walk_mins, type='walk', distance_km=direct_dist, walk_mins=direct_walk_mins)
             
     if G.out_degree('ORIGIN') == 0 or G.in_degree('DESTINATION') == 0:
         conn.close()
@@ -490,6 +496,17 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
             target_name = dest_address if seg['to_node'] == 'DESTINATION' else G.nodes[seg['to_node']].get('name', seg['to_node'])
             from_name = start_address if seg['from_node'] == 'ORIGIN' else G.nodes[seg['from_node']].get('name', seg['from_node'])
 
+            from_lat = G.nodes[seg['from_node']].get('lat')
+            from_lon = G.nodes[seg['from_node']].get('lon')
+            to_lat = G.nodes[seg['to_node']].get('lat')
+            to_lon = G.nodes[seg['to_node']].get('lon')
+
+            walk_coords = []
+            if from_lat is not None and from_lon is not None:
+                walk_coords.append([from_lon, from_lat])
+            if to_lat is not None and to_lon is not None:
+                walk_coords.append([to_lon, to_lat])
+
             legs.append({
                 'type': 'WALK',
                 'mode': 'Walk',
@@ -499,10 +516,11 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                 'end_time': format_secs(curr_target),
                 'from_stop': from_name,
                 'to_stop': target_name,
-                'from_lat': G.nodes[seg['from_node']].get('lat'),
-                'from_lon': G.nodes[seg['from_node']].get('lon'),
-                'to_lat': G.nodes[seg['to_node']].get('lat'),
-                'to_lon': G.nodes[seg['to_node']].get('lon')
+                'from_lat': from_lat,
+                'from_lon': from_lon,
+                'to_lat': to_lat,
+                'to_lon': to_lon,
+                'coordinates': walk_coords
             })
             curr_target = start_t
             
@@ -540,6 +558,15 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                 v_name = G.nodes[s_v].get('name', s_v)
                 stops_count = end_idx - best_start_idx
                 
+                # Gather coordinates for all intermediate stops along this transit leg
+                sub_nodes = t_nodes[best_start_idx : end_idx + 1]
+                transit_coords = []
+                for node_id in sub_nodes:
+                    n_lat = G.nodes[node_id].get('lat')
+                    n_lon = G.nodes[node_id].get('lon')
+                    if n_lat is not None and n_lon is not None:
+                        transit_coords.append([n_lon, n_lat])
+
                 if found_leg:
                     dur_mins = max(1, (found_leg['arrival_secs'] - found_leg['departure_secs']) // 60)
                     legs.append({
@@ -558,7 +585,8 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                         'from_lat': G.nodes[s_u].get('lat'),
                         'from_lon': G.nodes[s_u].get('lon'),
                         'to_lat': G.nodes[s_v].get('lat'),
-                        'to_lon': G.nodes[s_v].get('lon')
+                        'to_lon': G.nodes[s_v].get('lon'),
+                        'coordinates': transit_coords
                     })
                     curr_target = found_leg['departure_secs']
                 else:
@@ -592,7 +620,8 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                         'from_lat': G.nodes[s_u].get('lat'),
                         'from_lon': G.nodes[s_u].get('lon'),
                         'to_lat': G.nodes[s_v].get('lat'),
-                        'to_lon': G.nodes[s_v].get('lon')
+                        'to_lon': G.nodes[s_v].get('lon'),
+                        'coordinates': transit_coords
                     })
                     curr_target = dep_secs
                 end_idx = best_start_idx
@@ -606,6 +635,12 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
         if merged_legs and merged_legs[-1]['type'] == 'WALK' and l['type'] == 'WALK':
             prev = merged_legs[-1]
             dur = prev['duration_mins'] + l['duration_mins']
+            prev_coords = prev.get('coordinates', [])
+            l_coords = l.get('coordinates', [])
+            combined_coords = list(prev_coords)
+            for pt in l_coords:
+                if not combined_coords or pt != combined_coords[-1]:
+                    combined_coords.append(pt)
             merged_legs[-1] = {
                 'type': 'WALK',
                 'mode': 'Walk',
@@ -618,7 +653,8 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
                 'from_lat': prev.get('from_lat'),
                 'from_lon': prev.get('from_lon'),
                 'to_lat': l.get('to_lat'),
-                'to_lon': l.get('to_lon')
+                'to_lon': l.get('to_lon'),
+                'coordinates': combined_coords
             }
         else:
             merged_legs.append(l)

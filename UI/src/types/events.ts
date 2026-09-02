@@ -50,5 +50,15 @@ export interface NavigateToEventDetail {
   stop_lat: number;
   stop_lon: number;
   mode?: string;
+  origin?: string;
+  origin_coords?: [number, number]; // [lon, lat]
+}
+
+export interface PlotRouteEventDetail {
+  route: import('../services/api').RouteResponse;
+}
+
+export interface ClearRouteEventDetail {
+  source?: string;
 }
 

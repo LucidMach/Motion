@@ -54,6 +54,7 @@ class RouteLeg(BaseModel):
     instruction: str = Field(..., description="Human-readable turn-by-turn instruction")
     trip_id: Optional[str] = Field(None, description="Trip identifier")
     is_replacement: Optional[bool] = Field(False, description="Whether this leg is a replacement bus")
+    color: Optional[str] = Field(None, description="Hex color code for transit line visualization on map")
     coordinates: Optional[List[List[float]]] = Field(
         None,
         description="Coordinates for map polyline path [[lon, lat], ...]"

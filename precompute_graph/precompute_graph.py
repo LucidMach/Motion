@@ -4,7 +4,12 @@ import time
 import os
 import sys
 import numpy as np
-from scipy.spatial import KDTree
+
+try:
+    from scipy.spatial import KDTree
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -105,16 +110,36 @@ def precompute_transfer_edges(conn, max_walk_distance_km=0.5):
     lats = np.array([s[1] for s in stops])
     lons = np.array([s[2] for s in stops])
     
-    # Unit sphere coordinates for KDTree
-    xyz = lat_lon_to_cartesian(lats, lons)
-    tree = KDTree(xyz)
-    
-    # 500m on Earth in unit sphere chord distance: 2 * sin(d / (2 * R))
-    R = 6371.0
-    r_chord = 2.0 * np.sin(max_walk_distance_km / (2.0 * R))
-    
-    pairs = tree.query_pairs(r=r_chord)
-    print(f"Found {len(pairs)} transfer stop pairs within {max_walk_distance_km*1000:.0f}m.")
+    pairs = set()
+    if HAS_SCIPY:
+        # Unit sphere coordinates for KDTree
+        xyz = lat_lon_to_cartesian(lats, lons)
+        tree = KDTree(xyz)
+        
+        # 500m on Earth in unit sphere chord distance: 2 * sin(d / (2 * R))
+        R = 6371.0
+        r_chord = 2.0 * np.sin(max_walk_distance_km / (2.0 * R))
+        pairs = tree.query_pairs(r=r_chord)
+    else:
+        # Spatial grid partition fallback (0.005 degree cell ~ 500m)
+        cell_size = max_walk_distance_km / 111.0
+        grid = {}
+        for idx, (lat, lon) in enumerate(zip(lats, lons)):
+            gx = int(lat / cell_size)
+            gy = int(lon / cell_size)
+            grid.setdefault((gx, gy), []).append(idx)
+        
+        for (gx, gy), idxs in grid.items():
+            neighbor_idxs = []
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    neighbor_idxs.extend(grid.get((gx + dx, gy + dy), []))
+            for i in idxs:
+                for j in neighbor_idxs:
+                    if i < j:
+                        pairs.add((i, j))
+
+    print(f"Found {len(pairs)} transfer candidate stop pairs within {max_walk_distance_km*1000:.0f}m.")
     
     batch = []
     for i, j in pairs:

@@ -263,13 +263,35 @@ def geocode_address(
     db_path: Optional[str] = None,
     adapter: Optional[GeocodingAdapter] = None,
 ) -> Optional[Tuple[float, float]]:
-    """Resolves free text - an address, a landmark name, or a station name
-    typed by a user - to coordinates. Checked in order: curated landmarks,
-    the GTFS stops table, then Nominatim as the source of truth for anything
-    in neither."""
+    """Resolves free text - an address, a landmark name, a station name,
+    a stop ID, or numeric 'lat,lon' coordinates - to (lat, lon) coordinates."""
+    if not address or not isinstance(address, str):
+        return None
+
+    raw_trimmed = address.strip()
+
+    # 1. Numeric coordinate strings (e.g. "-37.8180, 144.9671" or "-37.8180,144.9671")
+    if "," in raw_trimmed:
+        parts = [p.strip() for p in raw_trimmed.split(",")]
+        if len(parts) == 2:
+            try:
+                lat = float(parts[0])
+                lon = float(parts[1])
+                if -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0:
+                    return lat, lon
+            except (ValueError, TypeError):
+                pass
+
+    # 2. Stop ID lookup (e.g. "stop:1234" or pure numeric GTFS stop ID)
+    if raw_trimmed.startswith("stop:") or raw_trimmed.isdigit():
+        stop_id_clean = raw_trimmed.replace("stop:", "").strip()
+        coords = resolve_stop_coords(stop_id_clean, db_path=db_path)
+        if coords:
+            return coords
+
     db_path = db_path or _default_db_path()
     adapter = adapter or live_adapter
-    norm = address.strip().lower()
+    norm = raw_trimmed.lower()
 
     lm = landmarks.find(norm)
     if lm:

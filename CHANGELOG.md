@@ -4,6 +4,33 @@ All notable changes to the **Motion** multi-modal transit routing engine and use
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-09-02
+
+### 🚆 Multi-Modal Transit Navigation HUD, Map Route Plotting & Dynamic Arrival Engine
+
+#### Added
+- **Interactive Multi-Modal Route Plotting (`routeLayer.ts`)**:
+  - Dynamically renders transit itineraries on the Mapbox GL 3D canvas with neon glowing halo layers, inner solid tracks, and animated dashed pedestrian paths.
+  - Official PTV color encoding: Train line group colors (Navy, Cyan, Green, Pink, Gold, Red, Blue), Tram green (`#78BE20`), Bus & Replacement Bus orange (`#FF8200`), Walking cyan (`#38BDF8`).
+  - Transfer waypoint stations marked with glowing concentric ring indicators.
+  - Automatic dynamic camera bounds fitting (`fitBounds()`) with smooth easing animations and tilt retention.
+- **Glassmorphic Navigation Panel HUD (`NavigationPanel.tsx`)**:
+  - **Editable Origin Location**: Defaults to GPS "My Location", with click-to-edit autocomplete search across all Victorian transit stops, landmarks, and addresses.
+  - **Encapsulated Card Containers**: Symmetrically encapsulated "From", "To", and "Arrive by" rows styled in matching elevated glass cards (`rounded-2xl bg-deep/60 px-3 py-2 border border-subtle/40`).
+  - **Direct Arrive By Time Selector**: Contiguous time input with dedicated `[ AM | PM ]` segmented toggle pill and real-time itinerary recalculation.
+  - **Arrival Offset Arithmetic**: Preset buttons (`+15m`, `+30m`, `+1h`) add directly to the current arrival time ($T_{\text{target}} = T_{\text{arrival}} + \Delta t$).
+  - **Two-Stage `Escape` Key Workflow**: 1st press minimizes HUD into floating pill for map inspection; 2nd press clears the route from the map and resets the search bar.
+  - **Floating Minimized Pill**: Sleek bottom pill displaying active route summary, departure time, and total travel duration.
+  - **Direction Swap (`⇅`)**: 1-click button to invert origin and destination and recompute reverse itinerary.
+  - **Turn-by-Turn Accordion**: Detailed breakdown with transfer notices, stop counts, line icons, and live disruption alerts.
+- **Backend Routing Enhancements (`server/routes/routing.py`, `directional_routing/directional_routing.py`)**:
+  - **Departure Time Forward-Adjustment**: In ASAP/Latest mode, departure time is enforced $\ge \text{current\_time} + \text{buffer}$, advancing to the next upcoming scheduled service.
+  - **Fast-Path Coordinate Geocoding**: Direct `"lat,lon"` numeric string parsing bypassing network geocoder calls.
+  - **Intermediate Stop Coordinates Extraction**: Full multi-stop polyline sequences returned in `RouteLeg` schema for accurate curve plotting.
+  - **Pure Spatial Grid Search Fallback (`precompute_graph.py`)**: Enables GTFS edge indexing without external SciPy dependency.
+
+---
+
 ## [0.4.0] - 2026-09-02
 
 ### ⚡ Tiered Search Ranking, Enter Selection & Active Query Re-Search

@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 
 from server.models.schemas import RouteRequest, RouteResponse, RouteLeg
@@ -12,6 +12,42 @@ from ptv_realtime import ptv_realtime
 router = APIRouter(prefix="/api", tags=["Routing Engine"])
 
 
+from server.services.network_service import LINE_METADATA
+
+def get_transit_line_color(mode: Optional[str], route_name: Optional[str], is_replacement: bool = False) -> str:
+    """
+    Returns official PTV line hex color:
+    - Train line group colors (Navy, Cyan, Green, Pink, Gold, Red, Blue)
+    - Tram green (#78BE20)
+    - Bus / Replacement Bus orange (#FF8200)
+    - Walk cyan (#38BDF8)
+    """
+    if is_replacement:
+        return "#FF8200"
+
+    mode_str = (mode or "").lower()
+    r_name = (route_name or "").strip()
+
+    if "walk" in mode_str:
+        return "#38BDF8"
+
+    if "bus" in mode_str:
+        return "#FF8200"
+
+    if "tram" in mode_str:
+        return "#78BE20"
+
+    if "train" in mode_str or "rail" in mode_str:
+        if r_name in LINE_METADATA:
+            return LINE_METADATA[r_name]["color"]
+        for k, v in LINE_METADATA.items():
+            if k.lower() in r_name.lower() or r_name.lower() in k.lower():
+                return v["color"]
+        return "#0072CE"
+
+    return "#38BDF8"
+
+
 @router.post("/route", response_model=RouteResponse)
 def compute_route(req: RouteRequest) -> RouteResponse:
     """
@@ -21,13 +57,16 @@ def compute_route(req: RouteRequest) -> RouteResponse:
     start_time_exec = time.time()
 
     # 1. Parse target arrival datetime
+    is_asap_mode = (not req.arrival_timestamp and not req.arrival_time)
+    now_dt = datetime.now()
+
     if req.arrival_timestamp:
         target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_timestamp)
     elif req.arrival_time:
         target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_time)
     else:
-        # Default to 45 minutes from now if unspecified
-        target_arrival_dt = datetime.now() + timedelta(minutes=45)
+        # Default to 60 minutes from now if unspecified
+        target_arrival_dt = now_dt + timedelta(minutes=60)
 
     target_arrival_epoch = int(target_arrival_dt.timestamp())
 
@@ -52,21 +91,43 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             cancelled_trips=req.cancelled_trips,
             prefer_replacement_bus=req.prefer_replacement_bus
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Routing algorithm error: {str(e)}")
 
-    if raw_itinerary.get("status") != "Success":
+        # In ASAP/Leave Now mode, if the earliest leg departs before now,
+        # advance target arrival time so the user receives a trip they can actually catch.
+        if is_asap_mode and isinstance(raw_itinerary, dict) and raw_itinerary.get("status") == "Success":
+            latest_dep_str = raw_itinerary.get("latest_departure_time", "00:00")
+            dep_h, dep_m = map(int, latest_dep_str.split(":"))
+            dep_dt = datetime(now_dt.year, now_dt.month, now_dt.day, dep_h, dep_m, 0)
+            min_dep_dt = now_dt + timedelta(minutes=req.buffer_minutes + 1)
+
+            if dep_dt < min_dep_dt:
+                travel_mins = raw_itinerary.get("total_travel_time_mins", 30)
+                # Advance target arrival so departure is at or after min_dep_dt
+                target_arrival_dt = min_dep_dt + timedelta(minutes=int(travel_mins) + 15)
+                target_arrival_epoch = int(target_arrival_dt.timestamp())
+                raw_itinerary = directional_routing.calculate_directional_itinerary(
+                    start_address=req.origin,
+                    dest_address=req.destination,
+                    arrival_dt=target_arrival_dt,
+                    disruptions=all_disruptions,
+                    cancelled_routes=req.cancelled_routes,
+                    cancelled_trips=req.cancelled_trips,
+                    prefer_replacement_bus=req.prefer_replacement_bus
+                )
+    except Exception as e:
+        print(f"[RoutingRoute] Routing calculation note: {e}")
         return RouteResponse(
             status="Error",
-            message=raw_itinerary.get("message", "Route calculation could not find a valid connection.")
+            message=f"Routing calculation note: {str(e)}"
         )
 
-    # 4. Reconcile against live real-time delays and cancellations. If a
-    # cancellation is detected, this recomputes the itinerary excluding the
-    # cancelled trip(s) - and tells us plainly if that recompute failed,
-    # instead of silently handing back a stale itinerary that may still
-    # instruct the rider to board a trip GTFS-Realtime has already reported
-    # cancelled.
+    if not isinstance(raw_itinerary, dict) or raw_itinerary.get("status") != "Success":
+        return RouteResponse(
+            status="Error",
+            message=raw_itinerary.get("message", "Route calculation could not find a valid connection.") if isinstance(raw_itinerary, dict) else "Route calculation could not find a valid connection."
+        )
+
+    # 4. Reconcile against live real-time delays and cancellations
     def _recompute(cancelled_trip_ids):
         all_cancelled_trips = list(set((req.cancelled_trips or []) + cancelled_trip_ids))
         return directional_routing.calculate_directional_itinerary(
@@ -87,24 +148,30 @@ def compute_route(req: RouteRequest) -> RouteResponse:
     raw_itinerary = disruption_check.itinerary
     real_time_delay_mins = disruption_check.realtime_delay_mins
 
-    # 6. Format legs and attach path coordinates for Mapbox
+    # 5. Format legs, compute line colors, and attach path coordinates for Mapbox
     formatted_legs: List[RouteLeg] = []
     for leg in raw_itinerary.get("legs", []):
         from_lat, from_lon = leg.get("from_lat"), leg.get("from_lon")
         to_lat, to_lon = leg.get("to_lat"), leg.get("to_lon")
+        is_rep = bool(leg.get("is_replacement", False))
+        mode = leg.get("mode", "Transit")
+        route = leg.get("route")
 
-        leg_coords = []
-        if from_lat is not None and from_lon is not None and to_lat is not None and to_lon is not None:
+        leg_coords = leg.get("coordinates")
+        if not leg_coords and from_lat is not None and from_lon is not None and to_lat is not None and to_lon is not None:
             # Mapbox expects [lon, lat]
             leg_coords = [
                 [from_lon, from_lat],
                 [to_lon, to_lat]
             ]
 
+        leg_color = leg.get("color") or get_transit_line_color(mode, route, is_rep)
+
         formatted_legs.append(RouteLeg(
             type=leg.get("type", "TRANSIT"),
-            mode=leg.get("mode", "Transit"),
-            route=leg.get("route"),
+            mode=mode,
+            route=route,
+            color=leg_color,
             from_stop=leg.get("from_stop"),
             to_stop=leg.get("to_stop"),
             start_time=leg.get("start_time", "00:00"),
@@ -113,7 +180,7 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             distance_km=leg.get("distance_km"),
             instruction=leg.get("instruction", ""),
             trip_id=leg.get("trip_id"),
-            is_replacement=leg.get("is_replacement", False),
+            is_replacement=is_rep,
             coordinates=leg_coords if leg_coords else None
         ))
 

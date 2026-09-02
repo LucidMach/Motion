@@ -58,7 +58,8 @@ Within each tier, results are scored and sorted by:
 ## 4. Event Contracts
 
 ### Listens For
-*(None directly; coordinates state internally and communicates via window CustomEvents).*
+- `motion:cmd:clear-route` (`CustomEvent<void>`):
+  - Received when active route navigation is closed or dismissed, automatically clearing search text, focus, and 3D target pins.
 
 ### Dispatches
 - `motion:cmd:fly-to` (`CustomEvent<FlyToEventDetail>`):
