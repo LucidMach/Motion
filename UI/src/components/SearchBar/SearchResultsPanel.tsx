@@ -98,7 +98,7 @@ export default function SearchResultsPanel({
                 </button>
 
                 <span className="hidden sm:inline font-mono text-[0.65rem] text-muted ml-1">
-                  (↑ / ↓ to switch)
+                  (↑ / ↓ switch · ↵ navigate)
                 </span>
               </div>
             )}
@@ -116,7 +116,7 @@ export default function SearchResultsPanel({
             )}
             {!isLoading && results.length > 0 && (
               <span className="hidden sm:inline font-mono text-[0.65rem] text-muted">
-                (↑ / ↓ to navigate)
+                (↑ / ↓ navigate · ↵ select)
               </span>
             )}
           </div>

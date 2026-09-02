@@ -4,6 +4,7 @@ import SearchResultsPanel from './SearchResultsPanel';
 import { motionApi, type StopSearchResult } from '../../services/api';
 export default function SearchBar() {
   const [query, setQuery] = useState('');
+  const [lastSearchedQuery, setLastSearchedQuery] = useState('');
   const [results, setResults] = useState<StopSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -30,6 +31,7 @@ export default function SearchBar() {
 
   const handleClear = useCallback(() => {
     setQuery('');
+    setLastSearchedQuery('');
     setResults([]);
     setHasSearched(false);
     setIsOpen(false);
@@ -43,22 +45,57 @@ export default function SearchBar() {
   }, []);
 
   // Select a result from list, focus it (hiding other options), fly camera to it, and render the map dot
-  const handleSelect = useCallback((result: StopSearchResult) => {
-    setFocusedResult(result);
-    if (result.stop_lon !== undefined && result.stop_lat !== undefined) {
+  const handleSelect = useCallback(
+    (result: StopSearchResult) => {
+      setFocusedResult(result);
+      const idx = results.findIndex((r) => r.stop_id === result.stop_id);
+      if (idx !== -1) {
+        setSelectedIndex(idx);
+      }
+      if (result.stop_lon !== undefined && result.stop_lat !== undefined) {
+        window.dispatchEvent(
+          new CustomEvent('motion:cmd:fly-to', {
+            detail: {
+              coords: [result.stop_lon, result.stop_lat],
+              zoom: 17.0,
+              pitch: 62,
+              title: result.stop_name,
+              subtitle: result.street_name || result.mode || 'Transit Stop',
+            },
+          })
+        );
+      }
+    },
+    [results]
+  );
+
+  // Trigger Navigate action
+  const handleNavigate = useCallback(
+    (result: StopSearchResult, e?: React.MouseEvent | MouseEvent | React.KeyboardEvent | KeyboardEvent) => {
+      if (e && 'stopPropagation' in e) {
+        e.stopPropagation();
+      }
+
+      // Focus result and fly camera
+      handleSelect(result);
+
+      // Dispatch navigate command event for future navigation routing engine
       window.dispatchEvent(
-        new CustomEvent('motion:cmd:fly-to', {
+        new CustomEvent('motion:cmd:navigate-to', {
           detail: {
-            coords: [result.stop_lon, result.stop_lat],
-            zoom: 17.0,
-            pitch: 62,
-            title: result.stop_name,
-            subtitle: result.street_name || result.mode || 'Transit Stop',
+            stop_id: result.stop_id,
+            stop_name: result.stop_name,
+            stop_lat: result.stop_lat,
+            stop_lon: result.stop_lon,
+            mode: result.mode,
           },
         })
       );
-    }
-  }, []);
+
+      console.info(`[Motion Search] Navigate triggered for target: ${result.stop_name} (${result.stop_id})`);
+    },
+    [handleSelect]
+  );
 
   // Next & previous option cycling (Right/Left arrows)
   const handleNextOption = useCallback(() => {
@@ -95,29 +132,124 @@ export default function SearchBar() {
     }
   }, [isOpen, focusedResult, handleClear]);
 
+  // Execute search across GTFS stops, landmarks, and OpenStreetMap
+  const executeSearch = useCallback(async () => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
+    setIsLoading(true);
+    setHasSearched(true);
+    setIsOpen(true);
+    setFocusedResult(null);
+
+    try {
+      const searchData = await motionApi.searchStops(trimmed, 12);
+      setResults(searchData);
+      setLastSearchedQuery(trimmed);
+      setSelectedIndex(searchData.length > 0 ? 0 : -1);
+    } catch (err) {
+      console.warn('[SearchBar] Search error:', err);
+      setResults([]);
+      setSelectedIndex(-1);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [query]);
+
+  // Unified submission handler (invoked on Enter from search input or action button)
+  const handleInputSubmit = useCallback(() => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    const isNewQuery = trimmedQuery.toLowerCase() !== lastSearchedQuery.trim().toLowerCase();
+
+    // 1. If user typed a new query (or results are not open), Enter MUST trigger a new search
+    if (isNewQuery || !isOpen || results.length === 0) {
+      executeSearch();
+      return;
+    }
+
+    // 2. If search results are currently open for this exact query and no option is focused,
+    // hitting Enter selects the highlighted search option
+    if (isOpen && !focusedResult && results.length > 0 && !isLoading) {
+      const targetIdx = selectedIndex >= 0 && selectedIndex < results.length ? selectedIndex : 0;
+      setSelectedIndex(targetIdx);
+      handleSelect(results[targetIdx]);
+      return;
+    }
+
+    // 3. If an option is already focused for this query, hitting Enter triggers navigation
+    if (isOpen && focusedResult && !isLoading) {
+      handleNavigate(focusedResult);
+      return;
+    }
+
+    // 4. Default fallback: execute search
+    executeSearch();
+  }, [
+    query,
+    isOpen,
+    focusedResult,
+    results,
+    isLoading,
+    lastSearchedQuery,
+    selectedIndex,
+    handleSelect,
+    handleNavigate,
+    executeSearch,
+  ]);
+
   // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
-        // If in results list with a keyboard-highlighted item, Enter selects that item
-        if (isOpen && !focusedResult && selectedIndex >= 0 && selectedIndex < results.length) {
-          e.preventDefault();
-          handleSelect(results[selectedIndex]);
+        const activeEl = document.activeElement;
+        const isSearchInputFocused = activeEl === inputRef.current;
+
+        // If the search input is focused, SearchInput's onKeyDown handles Enter via handleInputSubmit
+        if (isSearchInputFocused) {
           return;
         }
 
-        const activeEl = document.activeElement;
-        const isSearchInputFocused = activeEl === inputRef.current;
         const isOtherInputFocused =
           (activeEl instanceof HTMLInputElement && activeEl !== inputRef.current) ||
           activeEl instanceof HTMLTextAreaElement ||
           activeEl?.getAttribute('contenteditable') === 'true';
 
-        if (!isSearchInputFocused && !isOtherInputFocused) {
-          e.preventDefault();
-          inputRef.current?.focus();
-          inputRef.current?.select();
+        if (isOtherInputFocused) {
+          return;
         }
+
+        const trimmedQuery = query.trim();
+        const isNewQuery = trimmedQuery.toLowerCase() !== lastSearchedQuery.trim().toLowerCase();
+
+        // If query was modified since last search, Enter triggers a new search
+        if (isNewQuery) {
+          e.preventDefault();
+          executeSearch();
+          return;
+        }
+
+        // If in results list and not inside an input, Enter selects the search option
+        if (isOpen && !focusedResult && results.length > 0 && !isLoading) {
+          e.preventDefault();
+          const targetIdx = selectedIndex >= 0 && selectedIndex < results.length ? selectedIndex : 0;
+          setSelectedIndex(targetIdx);
+          handleSelect(results[targetIdx]);
+          return;
+        }
+
+        // If in single focused result view, Enter triggers navigate
+        if (isOpen && focusedResult && !isLoading) {
+          e.preventDefault();
+          handleNavigate(focusedResult, e);
+          return;
+        }
+
+        // If search bar is unfocused and no panel is open, Enter focuses the input
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
       } else if (e.key === 'Escape') {
         handleEscape();
       } else if (e.key === 'ArrowDown' && isOpen && results.length > 0) {
@@ -143,56 +275,35 @@ export default function SearchBar() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, results, focusedResult, selectedIndex, handleNextOption, handlePrevOption, handleSelect, handleEscape]);
-
-  // Execute search across GTFS stops, landmarks, and OpenStreetMap
-  const executeSearch = useCallback(async () => {
-    const trimmed = query.trim();
-    if (!trimmed) return;
-
-    setIsLoading(true);
-    setHasSearched(true);
-    setIsOpen(true);
-    setSelectedIndex(-1);
-    setFocusedResult(null);
-
-    try {
-      const searchData = await motionApi.searchStops(trimmed, 12);
-      setResults(searchData);
-    } catch (err) {
-      console.warn('[SearchBar] Search error:', err);
-      setResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [query]);
-
-  // Trigger Navigate action
-  const handleNavigate = (result: StopSearchResult, e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Focus result and fly camera
-    handleSelect(result);
-
-    // Dispatch navigate command event for future navigation routing engine
-    window.dispatchEvent(
-      new CustomEvent('motion:cmd:navigate-to', {
-        detail: {
-          stop_id: result.stop_id,
-          stop_name: result.stop_name,
-          stop_lat: result.stop_lat,
-          stop_lon: result.stop_lon,
-          mode: result.mode,
-        },
-      })
-    );
-
-    console.info(`[Motion Search] Navigate triggered for target: ${result.stop_name} (${result.stop_id})`);
-  };
+  }, [
+    isOpen,
+    results,
+    focusedResult,
+    selectedIndex,
+    isLoading,
+    query,
+    lastSearchedQuery,
+    handleNextOption,
+    handlePrevOption,
+    handleSelect,
+    handleNavigate,
+    executeSearch,
+    handleEscape,
+  ]);
 
   const handleBackToResults = () => {
     setFocusedResult(null);
   };
+
+  const isNewQuery = query.trim().toLowerCase() !== lastSearchedQuery.trim().toLowerCase();
+  let submitActionType: 'search' | 'select' | 'navigate' = 'search';
+  if (isOpen && focusedResult && !isNewQuery) {
+    submitActionType = 'navigate';
+  } else if (isOpen && !focusedResult && results.length > 0 && !isNewQuery) {
+    submitActionType = 'select';
+  } else {
+    submitActionType = 'search';
+  }
 
   return (
     <div
@@ -231,15 +342,25 @@ export default function SearchBar() {
             setResults([]);
             setHasSearched(false);
             setFocusedResult(null);
+            setLastSearchedQuery('');
             window.dispatchEvent(new CustomEvent('motion:cmd:clear-search-target'));
+          } else {
+            // Typing after getting a result resets focused option so Enter searches
+            if (focusedResult) {
+              setFocusedResult(null);
+            }
+            if (val.trim().toLowerCase() !== lastSearchedQuery.trim().toLowerCase()) {
+              setSelectedIndex(-1);
+            }
           }
         }}
-        onSubmit={executeSearch}
+        onSubmit={handleInputSubmit}
         onClear={handleClear}
         onEscape={handleEscape}
         escapeActionLabel={isOpen && focusedResult ? 'Back' : isOpen ? 'Close' : 'Clear'}
         isLoading={isLoading}
         isOpen={isOpen}
+        submitActionType={submitActionType}
       />
     </div>
   );

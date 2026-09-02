@@ -9,6 +9,7 @@ interface SearchInputProps {
   escapeActionLabel?: 'Back' | 'Close' | 'Clear';
   isLoading: boolean;
   isOpen: boolean;
+  submitActionType?: 'search' | 'select' | 'navigate';
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -21,8 +22,18 @@ export default function SearchInput({
   escapeActionLabel = 'Clear',
   isLoading,
   isOpen,
+  submitActionType = 'search',
   inputRef,
 }: SearchInputProps) {
+  const submitActionLabel =
+    submitActionType === 'navigate' ? 'Navigate' : submitActionType === 'select' ? 'Select' : 'Search';
+  const submitActionTooltip =
+    submitActionType === 'navigate'
+      ? 'Hit Enter to navigate (↵)'
+      : submitActionType === 'select'
+        ? 'Hit Enter to select option (↵)'
+        : 'Hit Enter to search (↵)';
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -148,15 +159,15 @@ export default function SearchInput({
           </button>
         )}
 
-        {/* Enter key badge & Search Action Button */}
+        {/* Enter key badge & Action Button (Search / Select / Navigate) */}
         <button
           type="button"
           onClick={onSubmit}
-          title="Hit Enter to search"
-          aria-label="Execute search"
+          title={submitActionTooltip}
+          aria-label={submitActionLabel}
           className="flex items-center gap-1.5 rounded-full border border-subtle bg-surface-hover/80 px-3 py-1.5 font-display text-[0.72rem] font-semibold text-secondary transition-all hover:border-accent-cyan/50 hover:bg-accent-cyan/15 hover:text-accent-cyan active:scale-95 cursor-pointer max-[640px]:px-2.5"
         >
-          <span className="hidden sm:inline">Search</span>
+          <span className="hidden sm:inline">{submitActionLabel}</span>
           <kbd className="rounded bg-deep/80 px-1.5 py-0.5 font-mono text-[0.68rem] text-primary border border-subtle">
             ↵
           </kbd>

@@ -4,6 +4,26 @@ All notable changes to the **Motion** multi-modal transit routing engine and use
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-02
+
+### ⚡ Tiered Search Ranking, Enter Selection & Active Query Re-Search
+
+#### Added
+- **Multi-Tier Search Ranking (`geocoding/core.py`)**: Sourced across Curated Landmarks, GTFS transit stops, and live OpenStreetMap geocoding with a 5-tier user-centric priority structure:
+  1. **Tier 1**: Buildings, Campuses, Universities & Key Landmarks (*The Spot Building, Alan Finkel Building, Monash University, RMIT, UniMelb, MCG, Marvel Stadium, Crown Melbourne*)
+  2. **Tier 2**: Major Train & Railway Stations (*Flinders Street Station, Southern Cross Station, Richmond Station, Clayton Station*)
+  3. **Tier 3**: Tram & Light Rail Stops (*Stop 7 - RMIT/Swanston St, Bourke St Mall*)
+  4. **Tier 4**: Bus Stops, Interchanges & Ferry Terminals (*Monash University Bus Interchange, local bus bays*)
+  5. **Tier 5**: Suburbs, Administrative Regions & Street Addresses (*Carlton, Melbourne CBD, 198 Berkeley St*)
+- **Multi-Tier Match Scoring**: Within each tier, candidates are scored by exact match $\rightarrow$ prefix match $\rightarrow$ word-start match $\rightarrow$ substring match $\rightarrow$ clean title length.
+- **Search Result Selection via `Enter`**: Pressing `Enter` on the search results list immediately selects the highlighted option (or top match) into the focused view and flies the 3D map camera. Pressing `Enter` in focused view triggers navigation.
+- **Active Query Modification Detection**: Typing or editing text after receiving search results or focusing a stop immediately resets the previous focus/selection and ensures `Enter` executes a fresh search query for the new text.
+- **Dynamic Submit Action Pill**: Search input pill dynamically renders contextual button badges (`Search ↵`, `Select ↵`, `Navigate ↵`) with matching tooltips and ARIA accessibility labels.
+- **Auto-Scroll Keyboard Navigation**: `SearchResultItem.tsx` automatically scrolls highlighted items into view using an active ref when navigating with `↑` / `↓` keys.
+- **Ranked Search Unit Tests**: Added automated test coverage in `geocoding/test_geocoding.py` (`test_search_ranks_buildings_then_train_stations_then_trams_then_bus`).
+
+---
+
 ## [0.3.0] - 2026-09-01
 
 ### 🔍 Live Transit & Landmark Search with Native WebGL Target Pin

@@ -103,21 +103,79 @@ def _osm_place_to_place(item: dict, fallback_name: str) -> Optional[Place]:
     )
 
 
+def _get_mode_tier(mode: str) -> int:
+    lower = mode.lower()
+    # Tier 1: Buildings, Campuses, Landmarks, Universities, Faculties, Colleges
+    if any(k in lower for k in ("building", "landmark", "campus", "university", "college", "school", "faculty")):
+        return 1
+    # Tier 2: Train Stations / Railway Stations
+    if any(k in lower for k in ("train", "rail", "railway", "station")):
+        return 2
+    # Tier 3: Tram Stops / Light Rail
+    if "tram" in lower:
+        return 3
+    # Tier 4: Bus Stops, Interchanges, Ferry, Other Transit
+    if any(k in lower for k in ("bus", "interchange", "ferry", "transit")):
+        return 4
+    # Tier 5: Suburbs, Regions, Addresses, General Locations
+    return 5
+
+
+def _match_score(query: str, name: str) -> int:
+    q = query.strip().lower()
+    n = name.strip().lower()
+    if not q or not n:
+        return 5
+    if n == q:
+        return 0  # Exact match
+    if n.startswith(q):
+        return 1  # Full name prefix match
+    words = re.findall(r'[\w]+', n)
+    if any(w.startswith(q) for w in words):
+        return 2  # Word prefix match (e.g. "Spot" in "The Spot")
+    if q in n:
+        return 3  # Substring match
+    return 4  # Loose match
+
+
 def search(
     query: str,
     limit: int = 10,
     db_path: Optional[str] = None,
     adapter: Optional[GeocodingAdapter] = None,
 ) -> List[Place]:
-    """Ranked autocomplete search: GTFS stops, then curated landmarks, then
-    Nominatim fills any remaining slots. Duplicate names are dropped, first
-    source wins."""
+    """Ranked autocomplete search prioritizing user-centric destinations:
+    Tier 1: Buildings, Universities, Campuses & Curated Landmarks
+    Tier 2: Train & Railway Stations
+    Tier 3: Tram Stops & Light Rail
+    Tier 4: Bus Stops, Interchanges & Ferry Terminals
+    Tier 5: Suburbs, Regions & General Addresses
+    """
     db_path = db_path or _default_db_path()
     adapter = adapter or live_adapter
+    norm_query = query.strip().lower()
+    if not norm_query:
+        return []
 
-    results: List[Place] = []
+    candidates: List[Place] = []
     seen = set()
 
+    # 1. Curated Landmarks (High-priority buildings, stadiums, campuses)
+    for lm in landmarks.search(query):
+        key = lm.names[0].lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        candidates.append(Place(
+            stop_id=f"landmark:{lm.names[0].replace(' ', '_')}",
+            stop_name=lm.names[0].title(),
+            street_name=lm.street,
+            stop_lat=lm.lat,
+            stop_lon=lm.lon,
+            mode=lm.mode,
+        ))
+
+    # 2. GTFS Transit Database (Train stations, tram stops, bus stops)
     try:
         conn = sqlite3.connect(db_path)
         try:
@@ -132,17 +190,17 @@ def search(
                     LENGTH(stop_name) ASC
                 LIMIT ?
                 """,
-                (f"%{query}%", f"{query}%", limit),
+                (f"%{query}%", f"{query}%", max(limit * 3, 30)),
             )
             for stop_id, stop_name, lat, lon in c.fetchall():
                 if lat is None or lon is None:
                     continue
                 display_name, street = _split_display_name(stop_name)
-                key = display_name.lower().replace(" railway station", "").replace(" station", "")
+                key = display_name.lower().replace(" railway station", "").replace(" station", "").strip()
                 if key in seen:
                     continue
                 seen.add(key)
-                results.append(Place(
+                candidates.append(Place(
                     stop_id=stop_id,
                     stop_name=display_name,
                     street_name=street,
@@ -150,44 +208,34 @@ def search(
                     stop_lon=float(lon),
                     mode=_classify_gtfs_stop(stop_name),
                 ))
-                if len(results) >= limit:
-                    break
         finally:
             conn.close()
     except sqlite3.Error:
         pass
 
-    if len(results) < limit:
-        for lm in landmarks.search(query):
-            key = lm.names[0]
-            if key in seen:
-                continue
-            seen.add(key)
-            results.append(Place(
-                stop_id=f"landmark:{lm.names[0].replace(' ', '_')}",
-                stop_name=lm.names[0].title(),
-                street_name=lm.street,
-                stop_lat=lm.lat,
-                stop_lon=lm.lon,
-                mode=lm.mode,
-            ))
-            if len(results) >= limit:
-                break
-
-    if len(results) < limit:
-        for item in adapter.search_places(query, limit=limit - len(results)):
+    # 3. Live OpenStreetMap Geocoding (Buildings, amenities, regions)
+    if len(candidates) < limit:
+        for item in adapter.search_places(query, limit=max(limit, 5)):
             place = _osm_place_to_place(item, fallback_name=query)
             if not place:
                 continue
-            key = place.stop_name.lower()
+            key = place.stop_name.lower().replace(" railway station", "").replace(" station", "").strip()
             if key in seen:
                 continue
             seen.add(key)
-            results.append(place)
-            if len(results) >= limit:
-                break
+            candidates.append(place)
 
-    return results[:limit]
+    # Multi-tier ranking: (Tier, Match Relevance Score, String Length, Alphabetical Name)
+    candidates.sort(
+        key=lambda p: (
+            _get_mode_tier(p.mode),
+            _match_score(query, p.stop_name),
+            len(p.stop_name),
+            p.stop_name.lower(),
+        )
+    )
+
+    return candidates[:limit]
 
 
 def resolve_stop_coords(stop_id: str, db_path: Optional[str] = None) -> Optional[Tuple[float, float]]:

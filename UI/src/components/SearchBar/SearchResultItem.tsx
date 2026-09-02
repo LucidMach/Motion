@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { StopSearchResult } from '../../services/api';
 
 interface SearchResultItemProps {
@@ -14,6 +14,16 @@ export default function SearchResultItem({
   onSelect,
   onNavigate,
 }: SearchResultItemProps) {
+  const itemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isSelected && itemRef.current) {
+      itemRef.current.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    }
+  }, [isSelected]);
   // Mode-based icon rendering
   const renderModeIcon = () => {
     const mode = (result.mode || '').toLowerCase();
@@ -134,6 +144,7 @@ export default function SearchResultItem({
 
   return (
     <div
+      ref={itemRef}
       role="button"
       tabIndex={0}
       onClick={() => onSelect(result)}

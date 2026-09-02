@@ -50,6 +50,46 @@ class TestGeocodingSearch(unittest.TestCase):
         finally:
             os.remove(path)
 
+    def test_search_ranks_buildings_then_train_stations_then_trams_then_bus(self):
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        try:
+            conn = sqlite3.connect(path)
+            c = conn.cursor()
+            c.execute("CREATE TABLE stops (stop_id TEXT PRIMARY KEY, stop_name TEXT, stop_lat REAL, stop_lon REAL)")
+            # Add a bus stop, a train station, and a tram stop all matching "Test"
+            c.execute("INSERT INTO stops VALUES ('1', 'Test Bus Interchange', -37.8, 144.9)")
+            c.execute("INSERT INTO stops VALUES ('2', 'Test Railway Station', -37.81, 144.91)")
+            c.execute("INSERT INTO stops VALUES ('3', 'Test Tram Stop', -37.82, 144.92)")
+            conn.commit()
+            conn.close()
+
+            fake = FakeGeocodingAdapter({
+                "test": [
+                    {"lat": "-37.83", "lon": "144.93", "category": "building", "type": "commercial",
+                     "name": "Test Tower Building", "address": {"road": "Test St", "suburb": "Melbourne"},
+                     "osm_type": "node", "osm_id": "999"}
+                ]
+            })
+
+            results = geocoding.search("Test", limit=10, db_path=path, adapter=fake)
+            self.assertEqual(len(results), 4)
+            # Tier 1: Building (Test Tower Building)
+            self.assertEqual(results[0].stop_name, "Test Tower Building")
+            self.assertIn("Building", results[0].mode)
+            # Tier 2: Train Station (Test Railway Station)
+            self.assertEqual(results[1].stop_name, "Test Railway Station")
+            self.assertEqual(results[1].mode, "Train Station")
+            # Tier 3: Tram Stop (Test Tram Stop)
+            self.assertEqual(results[2].stop_name, "Test Tram Stop")
+            self.assertEqual(results[2].mode, "Tram Stop")
+            # Tier 4: Bus Stop (Test Bus Interchange)
+            self.assertEqual(results[3].stop_name, "Test Bus Interchange")
+            self.assertEqual(results[3].mode, "Bus Stop")
+        finally:
+            os.remove(path)
+
     def test_resolve_stop_coords_never_touches_nominatim(self):
         import tempfile
         fd, path = tempfile.mkstemp(suffix=".db")
