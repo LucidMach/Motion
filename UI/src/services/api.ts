@@ -240,6 +240,10 @@ class MotionApiClient {
     return this.request<RouteMetadata[]>('/api/network/routes');
   }
 
+  async getLiveTrains(): Promise<GeoJSON.FeatureCollection> {
+    return this.request<GeoJSON.FeatureCollection>('/api/network/trains/live');
+  }
+
   async getLiveDisruptions(windowMins: number = 60): Promise<any[]> {
     return this.request<any[]>(`/api/disruptions/live?window_mins=${windowMins}`);
   }
