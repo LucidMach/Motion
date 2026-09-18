@@ -16,6 +16,7 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
   const [isDismissed, setIsDismissed] = useState(false);
   const [showBypass, setShowBypass] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState('');
+  const [mapboxConfigured, setMapboxConfigured] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -25,6 +26,10 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
     const cachedReady = sessionStorage.getItem('motion_api_ready');
     const currentBaseUrl = apiBaseUrl || motionApi.baseUrl;
     setResolvedUrl(currentBaseUrl);
+
+    // Validate client Mapbox token
+    const token = (typeof window !== 'undefined' ? localStorage.getItem('motion_mapbox_token') : null) || import.meta.env.PUBLIC_MAPBOX_TOKEN || '';
+    setMapboxConfigured(Boolean(token && token.startsWith('pk.') && token.length > 20));
 
     // Elapsed timer to detect Render free-tier cold sleep
     timerRef.current = setInterval(() => {
@@ -213,7 +218,7 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
               />
             </div>
 
-            {/* 3-Point System Verification Checklist */}
+            {/* 5-Point System Verification Checklist */}
             <div className="flex flex-col gap-2 border-t border-subtle pt-2.5 font-mono text-[0.74rem]">
               {/* Check 1: Server Status (Render Awake) */}
               <div className="flex items-center justify-between">
@@ -245,6 +250,28 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
                 </span>
                 <span className={`font-semibold ${(systemTelemetry?.transit_edges_count ?? 0) > 0 ? 'text-primary' : 'text-muted'}`}>
                   {(systemTelemetry?.transit_edges_count ?? 0) > 0 ? `${(systemTelemetry?.transit_edges_count ?? 0).toLocaleString()} Transit Edges` : 'Verifying SQLite DB...'}
+                </span>
+              </div>
+
+              {/* Check 4: PTV Open Data Realtime API Key */}
+              <div className="flex items-center justify-between">
+                <span className="text-secondary flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${systemTelemetry?.ptv_api_configured ? 'bg-accent-emerald' : 'bg-accent-amber'}`} />
+                  4. PTV Live Alerts API:
+                </span>
+                <span className={`font-semibold ${systemTelemetry?.ptv_api_configured ? 'text-accent-emerald' : 'text-accent-amber'}`}>
+                  {systemTelemetry?.ptv_api_configured ? 'API Key Active' : 'Simulated / Standby'}
+                </span>
+              </div>
+
+              {/* Check 5: Mapbox 3D Token */}
+              <div className="flex items-center justify-between">
+                <span className="text-secondary flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${mapboxConfigured ? 'bg-accent-emerald' : 'bg-accent-amber'}`} />
+                  5. Mapbox 3D Engine:
+                </span>
+                <span className={`font-semibold ${mapboxConfigured ? 'text-accent-emerald' : 'text-accent-amber'}`}>
+                  {mapboxConfigured ? 'Token Verified' : 'Needs Token (pk...)'}
                 </span>
               </div>
             </div>

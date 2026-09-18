@@ -63,7 +63,11 @@ def get_system_status():
             print(f"[SystemRoute] DB query notice: {e}")
 
     api_key = os.getenv("PTV_API_KEY") or os.getenv("PTVOpenDataAPIKey", "")
-    ptv_configured = bool(api_key and "replace_me" not in api_key.lower())
+    ptv_configured = bool(api_key and "replace_me" not in api_key.lower() and len(api_key.strip()) > 5)
+    
+    mapbox_token = os.getenv("PUBLIC_MAPBOX_TOKEN", "")
+    mapbox_configured = bool(mapbox_token and mapbox_token.startswith("pk.") and len(mapbox_token.strip()) > 20)
+
     db_loaded = stops_count > 0 and (transit_edges_count > 0 or transfer_edges_count > 0)
 
     checks = {
@@ -87,6 +91,16 @@ def get_system_status():
             "routes_count": routes_count,
             "transit_edges_count": transit_edges_count,
             "transfer_edges_count": transfer_edges_count
+        },
+        "4_ptv_realtime_api": {
+            "status": "pass" if ptv_configured else "warn",
+            "message": "Live PTV GTFS-R Disruption API Active" if ptv_configured else "PTV API key not configured (using simulated disruptions)",
+            "configured": ptv_configured
+        },
+        "5_mapbox_token": {
+            "status": "pass" if mapbox_configured else "info",
+            "message": "Mapbox 3D Engine Token Configured" if mapbox_configured else "Mapbox token required by client for 3D tiles",
+            "configured": mapbox_configured
         }
     }
 
