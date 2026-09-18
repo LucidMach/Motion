@@ -132,14 +132,15 @@ def resolve_route_name_from_id(route_id, db_path=directional_routing.DB_NAME):
         pass
     return route_id
 
-def fetch_live_service_alerts(target_arrival_dt, lookback_window_mins=120, db_path=directional_routing.DB_NAME):
-    """
-    Fetches real-time GTFS-Realtime Service Alerts across transit modes from PTV API.
-    Filters alerts to ONLY those active at the specific arrival timestamp and journey window.
-    """
-    print(f"Fetching real-time service alerts from Transport Victoria API (Window target: {target_arrival_dt.strftime('%Y-%m-%d %H:%M')})...")
+_RAW_ALERTS_CACHE = {"timestamp": 0, "raw_alerts": []}
+
+def get_raw_service_alerts(db_path=directional_routing.DB_NAME, ttl_secs=60):
+    now = time.time()
+    if _RAW_ALERTS_CACHE["raw_alerts"] and (now - _RAW_ALERTS_CACHE["timestamp"]) < ttl_secs:
+        return _RAW_ALERTS_CACHE["raw_alerts"]
+
     headers = {"KeyID": API_KEY} if API_KEY else {}
-    active_disruptions = []
+    raw_alerts = []
     
     KNOWN_LINE_NAMES = [
         "Alamein", "Belgrave", "Craigieburn", "Cranbourne", "Frankston", "Glen Waverley",
@@ -149,7 +150,7 @@ def fetch_live_service_alerts(target_arrival_dt, lookback_window_mins=120, db_pa
     
     for mode_name, url in SERVICE_ALERT_URLS.items():
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            response = requests.get(url, headers=headers, timeout=2)
             if response.status_code != 200 or response.content.startswith((b"<!DOCTYPE html", b"<html", b"<!doctype")):
                 continue
                 
@@ -161,17 +162,12 @@ def fetch_live_service_alerts(target_arrival_dt, lookback_window_mins=120, db_pa
                     continue
                 alert = entity.alert
                 
-                # Check timing filter
                 periods = [{"start": p.start, "end": p.end} for p in alert.active_period]
-                if not is_alert_active_at_time(periods, target_arrival_dt, lookback_window_mins):
-                    continue
-                    
                 header = alert.header_text.translation[0].text if alert.header_text.translation else ""
                 desc = alert.description_text.translation[0].text if alert.description_text.translation else ""
                 combined_text = f"{header} {desc}".strip()
                 
                 effect_code = alert.effect
-                # Map GTFS-RT Effect enum: 1=NO_SERVICE, 2=REDUCED_SERVICE, 3=SIGNIFICANT_DELAYS, 4=DETOUR
                 if effect_code in (1, 2):
                     effect_str = "NO_SERVICE"
                 elif effect_code == 3:
@@ -198,7 +194,7 @@ def fetch_live_service_alerts(target_arrival_dt, lookback_window_mins=120, db_pa
                     matched_routes.add("General Network")
                     
                 for r in matched_routes:
-                    active_disruptions.append({
+                    raw_alerts.append({
                         "route_name": r,
                         "effect": effect_str,
                         "replacement_bus_available": has_replacement_bus,
@@ -209,37 +205,65 @@ def fetch_live_service_alerts(target_arrival_dt, lookback_window_mins=120, db_pa
         except Exception:
             continue
             
+    _RAW_ALERTS_CACHE["timestamp"] = now
+    _RAW_ALERTS_CACHE["raw_alerts"] = raw_alerts
+    return raw_alerts
+
+def fetch_live_service_alerts(target_arrival_dt, lookback_window_mins=120, db_path=directional_routing.DB_NAME):
+    """
+    Fetches real-time GTFS-Realtime Service Alerts across transit modes from PTV API.
+    Filters alerts to ONLY those active at the specific arrival timestamp and journey window.
+    """
+    raw_alerts = get_raw_service_alerts(db_path=db_path)
+    active_disruptions = []
+    for alert in raw_alerts:
+        if is_alert_active_at_time(alert.get("active_periods", []), target_arrival_dt, lookback_window_mins):
+            active_disruptions.append(alert)
     return active_disruptions
+
+_TRIP_UPDATES_CACHE = {"timestamp": 0, "feed": None}
+
+def get_cached_trip_updates_feed(ttl_secs=45):
+    now = time.time()
+    if _TRIP_UPDATES_CACHE["feed"] is not None and (now - _TRIP_UPDATES_CACHE["timestamp"]) < ttl_secs:
+        return _TRIP_UPDATES_CACHE["feed"]
+    
+    headers = {"KeyID": API_KEY} if API_KEY else {}
+    url = DIRECT_TRIP_UPDATES_URL
+    try:
+        response = requests.get(url, headers=headers, timeout=3)
+        if response.status_code == 200 and not response.content.startswith((b"<!DOCTYPE html", b"<html", b"<!doctype")):
+            feed = gtfs_realtime_pb2.FeedMessage()
+            feed.ParseFromString(response.content)
+            _TRIP_UPDATES_CACHE["timestamp"] = now
+            _TRIP_UPDATES_CACHE["feed"] = feed
+            return feed
+    except Exception:
+        pass
+    return _TRIP_UPDATES_CACHE["feed"]
 
 def fetch_realtime_delays_and_cancellations(target_trip_id):
     """
     Fetches real-time GTFS and returns (delay_mins, is_cancelled) for the given trip ID.
+    Uses in-memory cached feed to avoid multi-second HTTP latency on consecutive leg checks.
     """
-    headers = {"KeyID": API_KEY} if API_KEY else {}
-    url = DIRECT_TRIP_UPDATES_URL
-    
+    feed = get_cached_trip_updates_feed()
+    if not feed:
+        return 0, False
+
     try:
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            if response.content.startswith((b"<!DOCTYPE html", b"<html", b"<!doctype")):
-                return 0, False
-                
-            feed = gtfs_realtime_pb2.FeedMessage()
-            feed.ParseFromString(response.content)
-            
-            for entity in feed.entity:
-                if entity.HasField('trip_update'):
-                    trip = entity.trip_update.trip
-                    if trip.trip_id == target_trip_id:
-                        is_cancelled = (trip.schedule_relationship == 3)
-                        delay = 0
-                        for update in entity.trip_update.stop_time_update:
-                            if update.HasField('departure') and update.departure.delay > 0:
-                                delay = max(delay, update.departure.delay // 60)
-                            if update.HasField('arrival') and update.arrival.delay > 0:
-                                delay = max(delay, update.arrival.delay // 60)
-                        return delay, is_cancelled
-            return 0, False
+        for entity in feed.entity:
+            if entity.HasField('trip_update'):
+                trip = entity.trip_update.trip
+                if trip.trip_id == target_trip_id:
+                    is_cancelled = (trip.schedule_relationship == 3)
+                    delay = 0
+                    for update in entity.trip_update.stop_time_update:
+                        if update.HasField('departure') and update.departure.delay > 0:
+                            delay = max(delay, update.departure.delay // 60)
+                        if update.HasField('arrival') and update.arrival.delay > 0:
+                            delay = max(delay, update.arrival.delay // 60)
+                    return delay, is_cancelled
     except Exception:
         pass
     return 0, False
