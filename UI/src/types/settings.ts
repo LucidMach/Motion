@@ -1,4 +1,4 @@
-export type ThemePresetId = 'cyberpunk' | 'spring' | 'summer' | 'autumn' | 'winter' | 'monochrome' | 'matrix' | 'tron';
+export type ThemePresetId = 'monochrome';
 export type MapLightPreset = 'dawn' | 'day' | 'dusk' | 'night';
 export type MapStyleId = 'standard' | 'monochrome' | 'satellite' | 'dark' | 'light' | 'navigation' | 'outdoors';
 export type OrbitModifier = 'shift' | 'ctrl' | 'alt' | 'none' | 'rightOnly';
@@ -34,7 +34,10 @@ export interface MapStyleOption {
 export interface ThemeSettings {
   presetId: ThemePresetId;
   lightPreset: MapLightPreset;
+  timeMinutes?: number; // 0 to 1440 (e.g. 720 = 12:00 PM)
+  syncWithRealTime?: boolean; // When true, automatically tracks real-world local time
   mapStyle: MapStyleId;
+  shadowIntensity?: number; // 0.0 (off) to 1.0 (deep)
   glassIntensity: 'subtle' | 'standard' | 'high';
   showGlow: boolean;
 }
@@ -54,7 +57,10 @@ export interface GestureSettings {
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   presetId: 'monochrome',
   lightPreset: 'day',
+  timeMinutes: 720,
+  syncWithRealTime: true,
   mapStyle: 'monochrome',
+  shadowIntensity: 0.85,
   glassIntensity: 'standard',
   showGlow: true
 };

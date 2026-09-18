@@ -5,7 +5,8 @@ import { dispatchStatus } from './eventBus';
 import type { GestureSettings, MapLightPreset, MouseDragAction } from '../../types/settings';
 import { getGestureSettings } from '../settings/gestureManager';
 import { getThemeSettings, MAPBOX_STYLES } from '../settings/themeManager';
-import { applyMapSeasonalPalette } from './mapThemeCustomizer';
+import { applyMap3DLightingAndShadows } from './mapThemeCustomizer';
+import type { ThemeSettings } from '../../types/settings';
 
 export interface MapLifecycleHooks {
   onReady: () => void;
@@ -15,23 +16,20 @@ export interface MapLifecycleHooks {
   onPitch?: () => void;
 }
 
-export function configureDefault3DAtmosphere(map: mapboxgl.Map, lightPreset?: MapLightPreset): void {
+export function configureDefault3DAtmosphere(map: mapboxgl.Map, customSettings?: Partial<ThemeSettings> | MapLightPreset): void {
   try {
-    const currentTheme = getThemeSettings();
-    const mapAny = map as any;
-    if (typeof mapAny.setConfigProperty === 'function') {
-      const isMidnightLocked = currentTheme.presetId === 'tron' || currentTheme.presetId === 'matrix';
-      const preset = isMidnightLocked ? 'night' : (lightPreset || currentTheme.lightPreset || 'day');
-      const isMonochrome = currentTheme.presetId === 'monochrome' || currentTheme.presetId === 'tron' || currentTheme.mapStyle === 'monochrome';
-      mapAny.setConfigProperty('basemap', 'lightPreset', preset);
-      mapAny.setConfigProperty('basemap', 'theme', isMonochrome ? 'monochrome' : 'default');
-      mapAny.setConfigProperty('basemap', 'show3dObjects', true);
-      mapAny.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
-      mapAny.setConfigProperty('basemap', 'showTransitLabels', true);
+    const baseSettings = getThemeSettings();
+    let effectiveSettings: ThemeSettings;
+
+    if (typeof customSettings === 'string') {
+      effectiveSettings = { ...baseSettings, lightPreset: customSettings as MapLightPreset };
+    } else if (customSettings) {
+      effectiveSettings = { ...baseSettings, ...customSettings };
+    } else {
+      effectiveSettings = baseSettings;
     }
 
-    // Apply seasonal styling (grass, buildings, water, atmosphere/fog)
-    applyMapSeasonalPalette(map, currentTheme.presetId);
+    applyMap3DLightingAndShadows(map, effectiveSettings);
   } catch (e) {
     console.warn('[MotionMap] Style configuration note:', e);
   }

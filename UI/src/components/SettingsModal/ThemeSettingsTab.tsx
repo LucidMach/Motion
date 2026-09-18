@@ -1,265 +1,223 @@
-import type { MapLightPreset, ThemeSettings } from '../../types/settings';
-import { THEME_PRESETS } from '../../scripts/settings/themeManager';
+import type { MapStyleId, ThemeSettings } from '../../types/settings';
+import { MAPBOX_STYLES, getCurrentLocalMinutes } from '../../scripts/settings/themeManager';
+import { calculateSolarState } from '../../scripts/map/mapThemeCustomizer';
 
 interface ThemeSettingsTabProps {
   settings: ThemeSettings;
   onChange: (updated: Partial<ThemeSettings>) => void;
 }
 
-const LIGHT_CHECKPOINTS: { id: MapLightPreset; label: string; icon: string; time: string; desc: string }[] = [
-  { id: 'dawn', label: 'Dawn', icon: '🌅', time: '06:00', desc: 'Soft morning horizon light' },
-  { id: 'day', label: 'Daylight', icon: '☀️', time: '12:00', desc: 'Crisp high-contrast solar light (Default)' },
-  { id: 'dusk', label: 'Dusk', icon: '🌆', time: '18:30', desc: 'Atmospheric golden hour & twilight' },
-  { id: 'night', label: 'Night', icon: '🌙', time: '00:00', desc: 'Illuminated 3D cityscape & stars' }
+function formatMinutesToTime(minutes: number): string {
+  const m = ((minutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(m / 60);
+  const mins = Math.floor(m % 60);
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
+
+const MILESTONES = [
+  { minutes: 360, label: 'Dawn', icon: '🌅', time: '06:00' },
+  { minutes: 720, label: 'Day', icon: '☀️', time: '12:00' },
+  { minutes: 1110, label: 'Dusk', icon: '🌆', time: '18:30' },
+  { minutes: 0, label: 'Night', icon: '🌙', time: '00:00' }
 ];
 
 export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTabProps) {
-  const isMidnightLocked = settings.presetId === 'tron' || settings.presetId === 'matrix';
-  const effectivePreset = isMidnightLocked ? 'night' : settings.lightPreset;
+  const isLive = settings.syncWithRealTime !== false;
+  const currentMinutes = isLive
+    ? getCurrentLocalMinutes()
+    : typeof settings.timeMinutes === 'number'
+    ? settings.timeMinutes
+    : settings.lightPreset === 'dawn'
+    ? 360
+    : settings.lightPreset === 'dusk'
+    ? 1110
+    : settings.lightPreset === 'night'
+    ? 0
+    : 720;
 
-  const currentStepIndex = Math.max(
-    0,
-    LIGHT_CHECKPOINTS.findIndex((cp) => cp.id === effectivePreset)
-  );
+  const solar = calculateSolarState(currentMinutes, settings.lightPreset);
+  const formattedTime = formatMinutesToTime(currentMinutes);
+  const sunriseTime = solar.solarTimes ? formatMinutesToTime(solar.solarTimes.sunriseMinutes) : '06:14';
+  const sunsetTime = solar.solarTimes ? formatMinutesToTime(solar.solarTimes.sunsetMinutes) : '18:14';
+  const isDaytime = !solar.isNight;
+  const shadowIntensity = typeof settings.shadowIntensity === 'number' ? settings.shadowIntensity : 0.85;
 
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isMidnightLocked) return;
-    const index = parseInt(e.target.value, 10);
-    const selected = LIGHT_CHECKPOINTS[index];
-    if (selected) {
-      onChange({ lightPreset: selected.id });
+  const handleTimeChange = (newMinutes: number) => {
+    const updatedSolar = calculateSolarState(newMinutes);
+    onChange({
+      timeMinutes: newMinutes,
+      lightPreset: updatedSolar.lightPreset,
+      syncWithRealTime: false
+    });
+  };
+
+  const handleToggleLive = () => {
+    if (isLive) {
+      onChange({
+        syncWithRealTime: false
+      });
+    } else {
+      const local = getCurrentLocalMinutes();
+      const updatedSolar = calculateSolarState(local);
+      onChange({
+        timeMinutes: local,
+        lightPreset: updatedSolar.lightPreset,
+        syncWithRealTime: true
+      });
     }
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* 1. TOP: Time-Based 3D Atmosphere & Diurnal Sunlight Slider */}
-      <div className="flex flex-col gap-3.5 rounded-2xl border border-subtle bg-[rgba(5,7,13,0.6)] p-4 shadow-sm">
-        <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-5">
+      {/* 1. Time of Day & Dynamic Solar Shadow Slider */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-subtle bg-[rgba(5,7,13,0.6)] p-4 shadow-xs">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex flex-col">
-            <label className="text-[0.74rem] font-bold tracking-wider text-muted uppercase">
-              Time of Day & Sunlight Atmosphere
-            </label>
-            <span className="text-[0.76rem] font-medium text-secondary">
-              {isMidnightLocked
-                ? 'Always locked to Midnight (00:00) in Tron & Matrix'
-                : 'Drag or click checkpoints to simulate real-time diurnal sunlight'}
+            <span className="text-[0.74rem] font-bold tracking-wider text-muted uppercase">
+              Daylight & Building Shadows
             </span>
-          </div>
-
-          <span className="flex items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-cyan/10 px-3 py-1 font-mono text-[0.76rem] font-bold text-accent-cyan">
-            <span>{LIGHT_CHECKPOINTS[currentStepIndex].icon}</span>
-            <span>{LIGHT_CHECKPOINTS[currentStepIndex].label}</span>
-            <span className="text-secondary/70">
-              ({LIGHT_CHECKPOINTS[currentStepIndex].time}{isMidnightLocked ? ' • Lock' : ''})
-            </span>
-          </span>
-        </div>
-
-        {/* Stepped Slider Track with 4 checkpoints */}
-        <div className="flex flex-col gap-3 pt-2">
-          <div className="relative flex items-center">
-            {/* Background Track Line */}
-            <div className="absolute h-2 w-full rounded-full bg-[rgba(15,23,42,0.9)] border border-subtle" />
-
-            {/* Glowing Active Track Fill */}
-            <div
-              className="absolute h-2 rounded-full bg-linear-to-r from-accent-cyan to-accent-indigo shadow-[0_0_12px_var(--color-glow)] transition-all duration-200"
-              style={{ width: `${(currentStepIndex / 3) * 100}%` }}
-            />
-
-            {/* Native Slider Input for smooth drag */}
-            <input
-              type="range"
-              min="0"
-              max="3"
-              step="1"
-              value={currentStepIndex}
-              onChange={handleSliderChange}
-              aria-label="3D Atmosphere Sunlight Checkpoint"
-              className="relative z-10 h-6 w-full cursor-pointer opacity-0"
-            />
-
-            {/* Checkpoint Dots */}
-            <div className="pointer-events-none absolute left-0 right-0 flex justify-between px-1">
-              {LIGHT_CHECKPOINTS.map((cp, idx) => {
-                const isActive = idx <= currentStepIndex;
-                const isCurrent = idx === currentStepIndex;
-                return (
-                  <div
-                    key={cp.id}
-                    className={`flex h-4 w-4 items-center justify-center rounded-full border transition-all duration-200 ${isCurrent
-                        ? 'border-white bg-accent-cyan shadow-[0_0_12px_var(--color-glow)] scale-125'
-                        : isActive
-                          ? 'border-accent-cyan/80 bg-accent-cyan/40'
-                          : 'border-muted/50 bg-[rgba(10,15,29,0.9)]'
-                      }`}
-                  />
-                );
-              })}
+            <div className="flex items-center gap-2 text-[0.72rem] text-secondary">
+              <span>Continuously adjust time of day</span>
+              <span className="text-muted">•</span>
+              <span className="text-primary/80 font-mono text-[0.66rem]">
+                🌅 {sunriseTime} • 🌇 {sunsetTime}
+              </span>
             </div>
           </div>
 
-          {/* Interactive Checkpoint Labels */}
-          <div className="grid grid-cols-4 gap-1.5 pt-1">
-            {LIGHT_CHECKPOINTS.map((cp) => {
-              const isSelected = cp.id === effectivePreset;
-              return (
-                <button
-                  key={cp.id}
-                  type="button"
-                  disabled={isMidnightLocked}
-                  onClick={() => !isMidnightLocked && onChange({ lightPreset: cp.id })}
-                  className={`flex flex-col items-center gap-0.5 rounded-xl border p-2 text-center transition-all ${
-                    isMidnightLocked && cp.id !== 'night'
-                      ? 'cursor-not-allowed opacity-35 border-transparent bg-transparent text-secondary'
-                      : isSelected
-                      ? 'border-accent-cyan/50 bg-surface-elevated text-accent-cyan shadow-[0_0_10px_var(--color-glow)]'
-                      : 'border-transparent bg-transparent text-secondary hover:border-subtle hover:bg-surface-hover'
-                  }`}
-                >
-                  <span className="text-lg">{cp.icon}</span>
-                  <span className="font-display text-[0.78rem] font-bold">{cp.label}</span>
-                  <span className="font-mono text-[0.66rem] text-muted">{cp.time}</span>
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-2">
+            {/* Live Sync / Unsync Button */}
+            <button
+              type="button"
+              onClick={handleToggleLive}
+              title={isLive ? 'Live sync active. Click to unsync / pause.' : `Unsynced. Click to sync with your current local time (${formatMinutesToTime(getCurrentLocalMinutes())})`}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.68rem] font-bold transition-all cursor-pointer border ${
+                isLive
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-xs hover:bg-emerald-500/30'
+                  : 'bg-white/10 text-secondary hover:text-primary hover:bg-white/20 border-white/15'
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${isLive ? 'bg-emerald-400 animate-pulse' : 'bg-secondary/60'}`} />
+              <span>Live</span>
+            </button>
+
+            <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[0.72rem] font-bold text-primary">
+              <span>{solar.isNight ? '🌙' : solar.lightPreset === 'dawn' ? '🌅' : solar.lightPreset === 'dusk' ? '🌆' : '☀️'}</span>
+              <span>{formattedTime}</span>
+            </span>
           </div>
         </div>
+
+        {/* Diurnal Interactive Range Track */}
+        <div className="flex flex-col gap-2 rounded-xl border border-subtle bg-black/40 p-4">
+          <input
+            type="range"
+            min={0}
+            max={1440}
+            step={2}
+            value={currentMinutes}
+            onChange={(e) => handleTimeChange(parseInt(e.target.value, 10))}
+            className="diurnal-slider w-full"
+            aria-label="Solar time slider"
+          />
+        </div>
+
+        {/* 3D Shadows Slider (active during daytime) */}
+        {isDaytime ? (
+          <div className="flex flex-col gap-1.5 rounded-xl border border-subtle bg-black/30 p-3 mt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[0.74rem] font-semibold text-primary">3D Building Shadow Depth</span>
+              <span className="font-mono text-[0.72rem] text-primary font-bold">
+                {Math.round(shadowIntensity * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.0"
+              max="1.0"
+              step="0.05"
+              value={shadowIntensity}
+              onChange={(e) => onChange({ shadowIntensity: parseFloat(e.target.value) })}
+              className="h-1.5 w-full cursor-pointer accent-white"
+              aria-label="3D Building Shadow Depth"
+            />
+            <div className="flex justify-between text-[0.62rem] text-muted">
+              <span>Subtle / Soft</span>
+              <span>Deep Cinematic</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[0.72rem] text-secondary mt-1">
+            <span>🌌</span>
+            <span>Night Mode: Dark monochrome basemap with 3D illuminated windows & starlight.</span>
+          </div>
+        )}
       </div>
 
-      {/* 2. Seasonal Themes & Color Aesthetics */}
+      {/* 2. Map Basemap Style Selection */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <label className="text-[0.74rem] font-bold tracking-wider text-muted uppercase">
-              Seasonal Themes & Color Aesthetics
-            </label>
+            <span className="text-[0.74rem] font-bold tracking-wider text-muted uppercase">
+              Mapbox Basemap Style
+            </span>
             <span className="text-[0.72rem] text-secondary">
-              Dynamically transforms HUD gradients, brand emblems, and radar telemetry
+              Select 3D architectural, satellite, or vector styles
             </span>
           </div>
-          <span className="rounded-full border border-accent-cyan/30 bg-accent-cyan/10 px-2.5 py-0.5 text-[0.7rem] font-bold text-accent-cyan">
-            Reactive HUD
-          </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {Object.values(THEME_PRESETS).map((preset) => {
-            const isSelected = settings.presetId === preset.id;
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {Object.values(MAPBOX_STYLES).map((style) => {
+            const isSelected = (settings.mapStyle || 'monochrome') === style.id;
             return (
               <button
-                key={preset.id}
+                key={style.id}
                 type="button"
-                onClick={() => {
-                  const isNightLocked = preset.id === 'tron' || preset.id === 'matrix';
-                  onChange({
-                    presetId: preset.id,
-                    lightPreset: isNightLocked ? 'night' : (preset.defaultLightPreset || settings.lightPreset)
-                  });
-                }}
-                className={`group relative flex flex-col gap-2 rounded-2xl border p-3.5 text-left transition-all duration-250 ${isSelected
-                    ? 'border-accent-cyan bg-surface-hover shadow-[0_0_20px_var(--color-glow)] ring-1 ring-accent-cyan/40'
-                    : 'border-subtle bg-[rgba(5,7,13,0.5)] hover:border-subtle/80 hover:bg-surface-elevated'
-                  }`}
+                onClick={() => onChange({ mapStyle: style.id as MapStyleId })}
+                className={`flex items-center justify-between rounded-xl border p-3 text-left transition-all ${
+                  isSelected
+                    ? 'border-white/40 bg-surface-elevated text-primary shadow-[0_0_12px_rgba(255,255,255,0.15)] ring-1 ring-white/30'
+                    : 'border-subtle bg-[rgba(5,7,13,0.5)] hover:border-subtle/80 hover:bg-surface-hover text-secondary'
+                }`}
               >
-                {/* Header row: Palette badge + Swatch & Title */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {/* Swatch circle / Icon */}
-                    {preset.id === 'tron' ? (
-                      <div
-                        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[#00f3ff] bg-[#01050a] shadow-[0_0_12px_rgba(0,243,255,0.6)]"
-                        title="Tron Identity Disc"
-                      >
-                        <div className="flex h-4.5 w-4.5 items-center justify-center rounded-full border border-[#00f3ff]/70 bg-[#041224]">
-                          <div className="h-1.5 w-1.5 rounded-full bg-[#00f3ff] shadow-[0_0_6px_#00f3ff]" />
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 shadow-sm"
-                        style={{ backgroundColor: preset.deepBg }}
-                      >
-                        <div
-                          className="h-4.5 w-4.5 rounded-full border border-white/30 shadow-xs"
-                          style={{ backgroundColor: preset.accentCyan }}
-                        />
-                        <div
-                          className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border border-white/30"
-                          style={{ backgroundColor: preset.accentIndigo }}
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex flex-col">
-                      <span className="font-display text-[0.88rem] font-bold text-primary group-hover:text-white">
-                        {preset.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {preset.seasonBadge && (
-                      <span
-                        className={`rounded-full border px-2.5 py-0.5 text-[0.66rem] font-bold ${
-                          preset.id === 'tron'
-                            ? 'border-[#00f3ff]/50 bg-[#00f3ff]/15 text-[#00f3ff] shadow-[0_0_8px_rgba(0,243,255,0.3)]'
-                            : preset.id === 'cyberpunk'
-                            ? 'border-accent-cyan/40 bg-accent-cyan/15 text-accent-cyan shadow-[0_0_8px_rgba(56,189,248,0.2)]'
-                            : isSelected
-                            ? 'border-accent-cyan/30 bg-surface-elevated text-accent-cyan'
-                            : 'border-subtle bg-surface-elevated text-secondary'
-                        }`}
-                      >
-                        {preset.seasonBadge}
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-[0.84rem] font-bold text-primary">
+                      {style.label}
+                    </span>
+                    {style.badge && (
+                      <span className="rounded-full border border-subtle bg-white/5 px-2 py-0.2 text-[0.62rem] font-semibold text-muted">
+                        {style.badge}
                       </span>
                     )}
-                    {isSelected && (
-                      <span className="flex h-2.5 w-2.5 rounded-full bg-accent-cyan shadow-[0_0_8px_var(--color-glow)]" />
-                    )}
                   </div>
-                </div>
-
-                {/* Live Brand Preview Bar */}
-                <div className="flex items-center justify-between rounded-lg border border-white/5 bg-black/40 px-2.5 py-1.5">
-                  <span className="font-mono text-[0.66rem] text-muted uppercase">Brand Title</span>
-                  <span
-                    className="bg-clip-text font-display text-[0.82rem] font-extrabold tracking-widest text-transparent"
-                    style={{ backgroundImage: preset.brandGradient }}
-                  >
-                    MOTION
+                  <span className="text-[0.68rem] text-secondary truncate max-w-[240px]">
+                    {style.tagline}
                   </span>
                 </div>
-
-                {/* Subtitle description */}
-                <p className="text-[0.73rem] leading-snug text-secondary group-hover:text-primary/90">
-                  {preset.subtitle}
-                </p>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 3. HUD Glass & Effects */}
+      {/* 3. Glass & HUD Visual Effects */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Glass Intensity */}
-        <div className="flex flex-col gap-2 rounded-2xl border border-subtle bg-[rgba(5,7,13,0.5)] p-3.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[0.82rem] font-semibold text-primary">Glass Blur Intensity</span>
-            <span className="text-[0.72rem] text-accent-cyan capitalize">{settings.glassIntensity}</span>
-          </div>
-          <div className="flex gap-1.5 rounded-full border border-subtle bg-[rgba(5,7,13,0.8)] p-1">
+        {/* Glass Blur */}
+        <div className="flex items-center justify-between rounded-xl border border-subtle bg-[rgba(5,7,13,0.5)] p-3">
+          <span className="text-[0.78rem] font-semibold text-primary">Glass Blur</span>
+          <div className="flex gap-1 rounded-full border border-subtle bg-[rgba(5,7,13,0.8)] p-0.5">
             {(['subtle', 'standard', 'high'] as const).map((level) => (
               <button
                 key={level}
                 type="button"
                 onClick={() => onChange({ glassIntensity: level })}
-                className={`flex-1 rounded-full py-1 text-[0.72rem] font-bold transition-all ${settings.glassIntensity === level
-                    ? 'border border-accent-cyan/40 bg-surface-elevated text-accent-cyan shadow-[0_0_8px_var(--color-glow)]'
+                className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold transition-all ${
+                  settings.glassIntensity === level
+                    ? 'bg-surface-elevated text-primary border border-white/30 shadow-xs'
                     : 'text-secondary hover:text-primary'
-                  }`}
+                }`}
               >
                 {level.charAt(0).toUpperCase() + level.slice(1)}
               </button>
@@ -267,11 +225,11 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
           </div>
         </div>
 
-        {/* Neon Glow Toggle */}
-        <div className="flex items-center justify-between rounded-2xl border border-subtle bg-[rgba(5,7,13,0.5)] p-3.5">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.82rem] font-semibold text-primary">Neon Glow Accents</span>
-            <span className="text-[0.72rem] text-secondary">Luminous borders & marker radiance</span>
+        {/* HUD Glow Toggle */}
+        <div className="flex items-center justify-between rounded-xl border border-subtle bg-[rgba(5,7,13,0.5)] p-3">
+          <div className="flex flex-col">
+            <span className="text-[0.78rem] font-semibold text-primary">HUD Glow</span>
+            <span className="text-[0.68rem] text-secondary">Luminous subtle accents</span>
           </div>
 
           <button
@@ -279,12 +237,14 @@ export default function ThemeSettingsTab({ settings, onChange }: ThemeSettingsTa
             role="switch"
             aria-checked={settings.showGlow}
             onClick={() => onChange({ showGlow: !settings.showGlow })}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${settings.showGlow ? 'bg-accent-cyan' : 'bg-subtle'
-              }`}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+              settings.showGlow ? 'bg-primary' : 'bg-subtle'
+            }`}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${settings.showGlow ? 'translate-x-5' : 'translate-x-0'
-                }`}
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-black shadow-xs transition duration-200 ease-in-out ${
+                settings.showGlow ? 'translate-x-4' : 'translate-x-0'
+              }`}
             />
           </button>
         </div>

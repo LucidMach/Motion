@@ -56,7 +56,7 @@ export class MotionMapController {
         this.map.setStyle(targetStyleUrl);
       } else {
         this.currentStyleUrl = targetStyleUrl;
-        configureDefault3DAtmosphere(this.map, settings.lightPreset);
+        configureDefault3DAtmosphere(this.map, settings);
       }
     }
   };

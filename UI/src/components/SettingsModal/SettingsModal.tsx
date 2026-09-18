@@ -5,7 +5,7 @@ import GestureSettingsTab from './GestureSettingsTab';
 import TokenSettingsTab from './TokenSettingsTab';
 import type { GestureSettings, ThemeSettings } from '../../types/settings';
 import { DEFAULT_GESTURE_SETTINGS, DEFAULT_THEME_SETTINGS } from '../../types/settings';
-import { getThemeSettings, saveThemeSettings } from '../../scripts/settings/themeManager';
+import { getThemeSettings, saveThemeSettings, getCurrentLocalMinutes } from '../../scripts/settings/themeManager';
 import { getGestureSettings, saveGestureSettings } from '../../scripts/settings/gestureManager';
 
 export default function SettingsModal() {
@@ -57,8 +57,13 @@ export default function SettingsModal() {
 
   const handleResetDefaults = () => {
     if (activeTab === 'theme') {
-      setThemeSettings(DEFAULT_THEME_SETTINGS);
-      saveThemeSettings(DEFAULT_THEME_SETTINGS);
+      const resetTheme: ThemeSettings = {
+        ...DEFAULT_THEME_SETTINGS,
+        timeMinutes: getCurrentLocalMinutes(),
+        syncWithRealTime: true
+      };
+      setThemeSettings(resetTheme);
+      saveThemeSettings(resetTheme, { persistImmediate: true });
     } else if (activeTab === 'gestures') {
       setGestureSettings(DEFAULT_GESTURE_SETTINGS);
       saveGestureSettings(DEFAULT_GESTURE_SETTINGS);

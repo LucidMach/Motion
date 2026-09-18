@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import BrandGroup from './BrandGroup';
+import DaylightSlider from './DaylightSlider';
 import GpsLocationCard from './GpsLocationCard';
 import type { LocationTelemetry, RegionChangeEventDetail, StatusEventDetail } from '../../types/events';
 
@@ -41,7 +42,6 @@ export default function HeaderHUD() {
       });
     };
 
-
     window.addEventListener('motion:location', onLocation);
     window.addEventListener('motion:status', onStatus);
     window.addEventListener('motion:region-change', onRegionChange);
@@ -61,12 +61,20 @@ export default function HeaderHUD() {
   return (
     <header
       aria-label="Navigation & Region Status Bar"
-      className="pointer-events-auto absolute left-5 right-5 top-5 z-10 flex h-16 items-center justify-between rounded-full border border-subtle bg-surface p-2.5 shadow-glass backdrop-blur-lg transition-colors hover:border-subtle max-[768px]:left-3 max-[768px]:right-3 max-[768px]:top-3 max-[768px]:h-14 max-[768px]:px-4"
+      className="pointer-events-auto absolute left-5 right-5 top-5 z-10 flex h-16 items-center justify-between gap-2.5 rounded-full border border-subtle bg-surface p-2.5 shadow-glass backdrop-blur-lg transition-colors hover:border-subtle max-[768px]:left-3 max-[768px]:right-3 max-[768px]:top-3 max-[768px]:h-14 max-[768px]:px-3"
     >
-      <BrandGroup regionLabel={regionLabel} regionUpdated={regionUpdated} />
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center">
+        <BrandGroup regionLabel={regionLabel} regionUpdated={regionUpdated} />
+      </div>
+
+      <div className="flex flex-1 items-center justify-center px-1 sm:px-2">
+        <DaylightSlider />
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
         <GpsLocationCard locationName={locationName} accuracyText={accuracyText} onRecenter={handleRecenter} />
       </div>
     </header>
   );
 }
+
