@@ -148,7 +148,7 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
       className="fixed inset-0 z-100 flex items-center justify-center bg-[rgba(3,7,18,0.78)] backdrop-blur-sm transition-all duration-300"
     >
       <div className="flex w-[90%] max-w-125 animate-modal-in flex-col gap-6 rounded-4xl border border-glow bg-surface-elevated p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(56,189,248,0.15)] max-[768px]:rounded-2xl max-[768px]:p-6">
-        
+
         {/* Header matching TokenModal and SettingsModal */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3.5">
@@ -189,7 +189,7 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
         {/* Content Box matching Motion's form & telemetry card styling */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 rounded-2xl border border-subtle bg-[rgba(5,7,13,0.8)] p-4">
-            
+
             {/* Status text row */}
             <div className="flex items-center justify-between text-[0.82rem]">
               <span className="font-sans font-medium text-primary flex items-center gap-2">
@@ -208,13 +208,12 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
             {/* Glowing progress bar matching Motion theme */}
             <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface border border-subtle">
               <div
-                className={`absolute bottom-0 top-0 transition-all duration-500 rounded-full ${
-                  gateState === 'ready'
+                className={`absolute bottom-0 top-0 transition-all duration-500 rounded-full ${gateState === 'ready'
                     ? 'w-full bg-accent-emerald shadow-[0_0_10px_rgba(16,185,129,0.5)]'
                     : gateState === 'waking'
-                    ? 'w-3/4 bg-linear-to-r from-accent-cyan via-accent-indigo to-accent-amber animate-pulse'
-                    : 'w-1/3 bg-linear-to-r from-accent-cyan to-accent-indigo animate-pulse'
-                }`}
+                      ? 'w-3/4 bg-linear-to-r from-accent-cyan via-accent-indigo to-accent-amber animate-pulse'
+                      : 'w-1/3 bg-linear-to-r from-accent-cyan to-accent-indigo animate-pulse'
+                  }`}
               />
             </div>
 
@@ -279,7 +278,7 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
             {/* Target Host Info */}
             <div className="flex items-center justify-between border-t border-subtle pt-2 text-[0.72rem] text-muted">
               <span>Target Host:</span>
-              <code className="font-mono text-secondary text-[0.70rem] truncate max-w-[200px]">{resolvedUrl}</code>
+              <code className="font-mono text-secondary text-[0.70rem] truncate max-w-50">{resolvedUrl}</code>
             </div>
           </div>
 
