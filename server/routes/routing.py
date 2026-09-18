@@ -20,7 +20,7 @@ def get_transit_line_color(mode: Optional[str], route_name: Optional[str], is_re
     - Train line group colors (Navy, Cyan, Green, Pink, Gold, Red, Blue)
     - Tram green (#78BE20)
     - Bus / Replacement Bus orange (#FF8200)
-    - Walk cyan (#38BDF8)
+    - Walk grey (#9CA3AF)
     """
     if is_replacement:
         return "#FF8200"
@@ -29,7 +29,7 @@ def get_transit_line_color(mode: Optional[str], route_name: Optional[str], is_re
     r_name = (route_name or "").strip()
 
     if "walk" in mode_str:
-        return "#38BDF8"
+        return "#9CA3AF"
 
     if "bus" in mode_str:
         return "#FF8200"
