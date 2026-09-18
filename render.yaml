@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: motion-backend
+    runtime: python
+    region: singapore # Closest Render region to Australia / Victoria
+    plan: free
+    buildCommand: "./render_build.sh"
+    startCommand: "uvicorn server.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PTVOpenDataAPIKey
+        sync: false
+      - key: GTFS_DB_URL
+        sync: false
