@@ -28,7 +28,7 @@ export function getLegColor(leg: RouteLeg): string {
   }
 
   if (mode.includes('walk')) {
-    return '#38BDF8'; // Glowing Neon Cyan
+    return '#9CA3AF'; // Grey
   }
 
   if (mode.includes('bus')) {
