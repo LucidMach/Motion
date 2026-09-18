@@ -4,7 +4,9 @@
 */*/*/__pycache__
 
 /gtfs_schedule.db
+/gtfs_schedule.db.gz
 /gtfs
+/gtfs.zip
 
 .env
 .env.*

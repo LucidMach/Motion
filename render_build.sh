@@ -8,11 +8,19 @@ pip install -r requirements.txt
 
 echo "=== [Motion Render Build] Step 2: Preparing GTFS Schedule Database ==="
 if [ -n "$GTFS_DB_URL" ]; then
-    echo "Fetching prebuilt database from GTFS_DB_URL..."
-    curl -fSL -o gtfs_schedule.db "$GTFS_DB_URL"
-    echo "✓ Prebuilt database downloaded successfully ($(du -h gtfs_schedule.db | cut -f1))."
+    echo "Fetching prebuilt database from GTFS_DB_URL: $GTFS_DB_URL"
+    if [[ "$GTFS_DB_URL" == *.gz* ]]; then
+        curl -fSL "$GTFS_DB_URL" | gunzip > gtfs_schedule.db
+    elif [[ "$GTFS_DB_URL" == *.zip* ]]; then
+        curl -fSL -o gtfs_db.zip "$GTFS_DB_URL"
+        unzip -o gtfs_db.zip
+        rm -f gtfs_db.zip
+    else
+        curl -fSL -o gtfs_schedule.db "$GTFS_DB_URL"
+    fi
+    echo "✓ Prebuilt database downloaded and extracted successfully ($(du -h gtfs_schedule.db | cut -f1))."
 elif [ -f "gtfs_schedule.db" ] && [ -s "gtfs_schedule.db" ]; then
-    echo "✓ Existing gtfs_schedule.db found in workspace."
+    echo "✓ Existing gtfs_schedule.db found in workspace ($(du -h gtfs_schedule.db | cut -f1))."
 else
     echo "⚠️ No GTFS_DB_URL specified and no local database found."
     echo "Generating mock transit database and spatial graph for demo/testing mode..."
