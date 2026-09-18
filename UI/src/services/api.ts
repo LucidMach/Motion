@@ -145,7 +145,7 @@ const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined' && (window as any).__MOTION_API_URL__) {
     return (window as any).__MOTION_API_URL__;
   }
-  return import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+  return import.meta.env.PUBLIC_API_URL || 'https://motionapi.onrender.com';
 };
 
 class MotionApiClient {
