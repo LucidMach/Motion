@@ -6,15 +6,15 @@ interface HealthCheckGateProps {
   onReady?: () => void;
 }
 
-type GateState = 'checking' | 'waking' | 'verifying_db' | 'ready' | 'offline_prompt';
+type GateState = 'connecting' | 'waking' | 'synchronizing' | 'ready' | 'offline_available';
 
 export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGateProps) {
-  const [gateState, setGateState] = useState<GateState>('checking');
-  const [statusMessage, setStatusMessage] = useState('Connecting to Motion Transit API...');
+  const [gateState, setGateState] = useState<GateState>('connecting');
+  const [statusText, setStatusText] = useState('Connecting to transit backend cluster...');
   const [systemTelemetry, setSystemTelemetry] = useState<SystemStatus | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isDismissed, setIsDismissed] = useState(false);
-  const [showSkipButton, setShowSkipButton] = useState(false);
+  const [showBypass, setShowBypass] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState('');
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -22,73 +22,65 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
   const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    // Check session cache for fast reload
-    const cachedHealthy = sessionStorage.getItem('motion_api_ready');
+    const cachedReady = sessionStorage.getItem('motion_api_ready');
     const targetUrl = apiBaseUrl || import.meta.env.PUBLIC_API_URL || 'https://motionapi.onrender.com';
     setResolvedUrl(targetUrl);
 
-    // Start elapsed timer
+    // Elapsed timer to detect Render free-tier cold sleep
     timerRef.current = setInterval(() => {
       const sec = Math.floor((Date.now() - startTimeRef.current) / 1000);
       setElapsedSeconds(sec);
 
-      // If backend takes longer than 2.5s, it is waking up from Render cold sleep
-      if (sec >= 3 && gateState === 'checking') {
+      if (sec >= 3 && gateState === 'connecting') {
         setGateState('waking');
-        setStatusMessage('Waking up backend on Render (free-tier cold start, ~20-30s)...');
+        setStatusText('Waking Render service (free tier cold start, ~20-30s)...');
       }
 
-      // Show manual skip button after 4s so user is never stuck
       if (sec >= 4) {
-        setShowSkipButton(true);
+        setShowBypass(true);
       }
     }, 1000);
 
     let isMounted = true;
 
-    const performHealthCheck = async (attempt = 1) => {
+    const checkBackendHealth = async () => {
       try {
         const health = await motionApi.getHealth();
         if (health && health.status === 'ok') {
           if (!isMounted) return;
-          
-          setGateState('verifying_db');
-          setStatusMessage('Synchronizing timetable database & spatial graph...');
 
-          // Fetch full system telemetry if available
+          setGateState('synchronizing');
+          setStatusText('Synchronizing timetable graphs and live alerts...');
+
           try {
-            const status = await motionApi.getStatus();
-            if (isMounted && status) {
-              setSystemTelemetry(status);
+            const telemetry = await motionApi.getStatus();
+            if (isMounted && telemetry) {
+              setSystemTelemetry(telemetry);
             }
-          } catch (e) {
+          } catch {
             // Non-blocking telemetry fetch
           }
 
           if (!isMounted) return;
           setGateState('ready');
-          setStatusMessage('Connected to Motion Transit Engine');
+          setStatusText('Motion Transit Engine Online');
           sessionStorage.setItem('motion_api_ready', 'true');
 
-          // Smooth exit transition
           setTimeout(() => {
             if (isMounted) {
               setIsDismissed(true);
               if (onReady) onReady();
             }
-          }, cachedHealthy ? 300 : 900);
+          }, cachedReady ? 350 : 850);
           return;
         }
-      } catch (err) {
+      } catch {
         if (!isMounted) return;
-        // Render cold start or network latency: retry every 2.5s
-        pollRef.current = setTimeout(() => {
-          if (isMounted) performHealthCheck(attempt + 1);
-        }, 2500);
+        pollRef.current = setTimeout(checkBackendHealth, 2500);
       }
     };
 
-    performHealthCheck();
+    checkBackendHealth();
 
     return () => {
       isMounted = false;
@@ -97,7 +89,7 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
     };
   }, []);
 
-  const handleSkipOrProceed = () => {
+  const handleDismiss = () => {
     setIsDismissed(true);
     if (onReady) onReady();
   };
@@ -106,126 +98,182 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
     return null;
   }
 
+  const getStatusBadge = () => {
+    switch (gateState) {
+      case 'ready':
+        return {
+          label: 'ONLINE',
+          className: 'border-accent-emerald/40 bg-accent-emerald/10 text-accent-emerald',
+          dot: 'bg-accent-emerald animate-ping',
+        };
+      case 'waking':
+        return {
+          label: `WAKING +${elapsedSeconds}s`,
+          className: 'border-accent-amber/40 bg-accent-amber/10 text-accent-amber',
+          dot: 'bg-accent-amber animate-pulse',
+        };
+      case 'synchronizing':
+        return {
+          label: 'SYNCING',
+          className: 'border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan',
+          dot: 'bg-accent-cyan animate-pulse',
+        };
+      default:
+        return {
+          label: 'INITIALIZING',
+          className: 'border-subtle bg-surface text-secondary',
+          dot: 'bg-accent-cyan animate-ping',
+        };
+    }
+  };
+
+  const badge = getStatusBadge();
+
   return (
     <div
-      id="motion-startup-gate"
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-deep/95 p-6 backdrop-blur-2xl transition-all duration-700 ease-out ${
-        gateState === 'ready' ? 'opacity-90 scale-[1.01]' : 'opacity-100 scale-100'
-      }`}
-      style={{
-        background: 'radial-gradient(circle at 50% 40%, rgba(14, 23, 42, 0.95) 0%, #030712 100%)',
-      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Motion Backend Health Check"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-[rgba(3,7,18,0.78)] backdrop-blur-sm transition-all duration-300"
     >
-      {/* Subtle Ambient Radial Glows */}
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl animate-pulse" />
-      <div className="pointer-events-none absolute -bottom-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-indigo-500/10 blur-3xl" />
-
-      {/* Main Glassmorphic Gateway Container */}
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center rounded-3xl border border-white/10 bg-surface/80 p-8 shadow-2xl backdrop-blur-xl text-center">
+      <div className="flex w-[90%] max-w-125 animate-modal-in flex-col gap-6 rounded-4xl border border-glow bg-surface-elevated p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(56,189,248,0.15)] max-[768px]:rounded-2xl max-[768px]:p-6">
         
-        {/* Animated Brand Pulse Radar */}
-        <div className="relative mb-6 flex h-20 w-20 items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-cyan-400/20 blur-md animate-ping" style={{ animationDuration: '3s' }} />
-          <div className="absolute inset-2 rounded-full border border-cyan-400/40 bg-gradient-to-tr from-cyan-500/20 to-indigo-500/20 backdrop-blur-md" />
-          
-          {/* Central Logo Icon */}
-          <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-white shadow-glow-cyan">
-            {gateState === 'ready' ? (
-              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg className="h-6 w-6 animate-pulse text-white" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="12 2 19 21 12 17 5 21 12 2" />
-              </svg>
-            )}
-          </div>
-        </div>
-
-        {/* Title & Badge */}
-        <div className="mb-1 flex items-center gap-2">
-          <span className="font-display text-2xl font-bold tracking-wider text-white">MOTION</span>
-          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-cyan-400">
-            {gateState === 'ready' ? 'READY' : gateState === 'waking' ? 'WAKING UP' : 'INITIALIZING'}
-          </span>
-        </div>
-        <p className="font-sans text-xs text-slate-400 mb-6">
-          Victorian Multi-Modal Transit Routing Engine
-        </p>
-
-        {/* Dynamic Status Display */}
-        <div className="w-full rounded-2xl border border-white/5 bg-black/30 p-4 backdrop-blur-md text-left mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[11px] font-medium text-slate-400">STATUS CHECK</span>
-            {gateState !== 'ready' && (
-              <span className="font-mono text-[11px] text-cyan-400 font-semibold animate-pulse">
-                {elapsedSeconds > 0 ? `+${elapsedSeconds}s` : 'Checking...'}
-              </span>
-            )}
-            {gateState === 'ready' && (
-              <span className="font-mono text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                ONLINE
-              </span>
-            )}
-          </div>
-
-          <p className="font-sans text-sm font-medium text-slate-200 flex items-center gap-2">
-            {gateState === 'ready' ? (
-              <span className="text-emerald-400 font-bold">✓</span>
-            ) : (
-              <span className="inline-block h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-            )}
-            {statusMessage}
-          </p>
-
-          {/* Connected Telemetry Highlights */}
-          {systemTelemetry && systemTelemetry.stops_count > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/5 pt-3 font-mono text-[10px] text-slate-300">
-              <div>Stops: <span className="text-cyan-300 font-semibold">{systemTelemetry.stops_count.toLocaleString()}</span></div>
-              <div>Routes: <span className="text-cyan-300 font-semibold">{systemTelemetry.routes_count.toLocaleString()}</span></div>
-              <div>Edges: <span className="text-cyan-300 font-semibold">{(systemTelemetry.transit_edges_count + systemTelemetry.transfer_edges_count).toLocaleString()}</span></div>
-              <div>Live PTV: <span className={systemTelemetry.ptv_api_configured ? 'text-emerald-400 font-semibold' : 'text-slate-400'}>{systemTelemetry.ptv_api_configured ? 'ACTIVE' : 'SIMULATED'}</span></div>
+        {/* Header matching TokenModal and SettingsModal */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3.5">
+            <div
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent-cyan/40 bg-linear-to-br from-accent-cyan/20 to-accent-indigo/20 text-accent-cyan shadow-[0_0_12px_var(--color-glow)]"
+            >
+              {gateState === 'ready' ? (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg
+                  className="h-5 w-5 animate-float-slight"
+                  style={{ filter: 'drop-shadow(0 0 6px var(--color-accent-cyan))' }}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="12 2 19 21 12 17 5 21 12 2" />
+                </svg>
+              )}
             </div>
+            <div>
+              <h2 className="font-display text-[1.15rem] font-bold text-primary">Transit Engine System</h2>
+              <p className="text-[0.78rem] text-secondary">Multi-modal Victorian routing & live disruption node</p>
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[0.72rem] font-bold tracking-wider ${badge.className}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+            <span>{badge.label}</span>
+          </div>
+        </div>
+
+        {/* Content Box matching Motion's form & telemetry card styling */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 rounded-2xl border border-subtle bg-[rgba(5,7,13,0.8)] p-4">
+            
+            {/* Status text row */}
+            <div className="flex items-center justify-between text-[0.82rem]">
+              <span className="font-sans font-medium text-primary flex items-center gap-2">
+                {gateState === 'ready' ? (
+                  <span className="text-accent-emerald font-bold">✓</span>
+                ) : (
+                  <span className="inline-block h-2 w-2 rounded-full bg-accent-cyan animate-ping" />
+                )}
+                {statusText}
+              </span>
+              <span className="font-mono text-[0.72rem] text-muted">
+                {elapsedSeconds > 0 ? `+${elapsedSeconds}s` : 'active'}
+              </span>
+            </div>
+
+            {/* Glowing progress bar matching Motion theme */}
+            <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface border border-subtle">
+              <div
+                className={`absolute bottom-0 top-0 transition-all duration-500 rounded-full ${
+                  gateState === 'ready'
+                    ? 'w-full bg-accent-emerald shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                    : gateState === 'waking'
+                    ? 'w-3/4 bg-linear-to-r from-accent-cyan via-accent-indigo to-accent-amber animate-pulse'
+                    : 'w-1/3 bg-linear-to-r from-accent-cyan to-accent-indigo animate-pulse'
+                }`}
+              />
+            </div>
+
+            {/* Telemetry metadata rows */}
+            {systemTelemetry && systemTelemetry.stops_count > 0 ? (
+              <div className="mt-1 grid grid-cols-2 gap-2 border-t border-subtle pt-2.5 font-mono text-[0.74rem]">
+                <div className="flex justify-between text-secondary">
+                  <span>Stops:</span>
+                  <span className="font-semibold text-primary">{systemTelemetry.stops_count.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-secondary">
+                  <span>Routes:</span>
+                  <span className="font-semibold text-primary">{systemTelemetry.routes_count.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-secondary">
+                  <span>Edges:</span>
+                  <span className="font-semibold text-accent-cyan">{(systemTelemetry.transit_edges_count + systemTelemetry.transfer_edges_count).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-secondary">
+                  <span>Live GTFS-R:</span>
+                  <span className={systemTelemetry.ptv_api_configured ? 'font-semibold text-accent-emerald' : 'text-muted'}>
+                    {systemTelemetry.ptv_api_configured ? 'CONNECTED' : 'STANDALONE'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-[0.74rem] text-muted">
+                <span>API Endpoint</span>
+                <code className="font-mono text-secondary text-[0.72rem]">{resolvedUrl}</code>
+              </div>
+            )}
+          </div>
+
+          {/* Render cold boot helper note */}
+          {gateState === 'waking' && (
+            <p className="text-[0.78rem] leading-relaxed text-secondary animate-fade-in">
+              Render free instances hibernate after 15 minutes of inactivity. The container is booting and loading the GTFS graph into memory.
+            </p>
           )}
 
-          {/* Target Host Information */}
-          <div className="mt-2 truncate font-mono text-[10px] text-slate-500">
-            Target: <span className="text-slate-400">{resolvedUrl}</span>
+          {/* Action Footer */}
+          <div className="mt-2 flex items-center justify-between gap-3">
+            {showBypass && gateState !== 'ready' ? (
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="rounded-full border border-subtle bg-surface px-5 py-2.5 font-sans text-[0.82rem] font-semibold text-secondary transition-all hover:border-glow hover:bg-surface-hover hover:text-primary active:scale-[0.98]"
+              >
+                Continue in Offline Mode
+              </button>
+            ) : (
+              <div className="text-[0.72rem] text-muted font-mono">
+                Motion Transit OS • Victoria
+              </div>
+            )}
+
+            {gateState === 'ready' ? (
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="flex items-center gap-2 rounded-full border border-accent-cyan/50 bg-linear-to-br from-[#0284c7] to-[#4f46e5] px-6 py-2.5 font-sans text-[0.85rem] font-semibold text-white shadow-[0_0_16px_rgba(56,189,248,0.3)] transition-all hover:-translate-y-px hover:shadow-[0_0_22px_rgba(56,189,248,0.5)] active:translate-y-0"
+              >
+                <span>Enter Map</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            ) : null}
           </div>
         </div>
-
-        {/* Progress Bar */}
-        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/10 mb-5">
-          <div
-            className={`absolute bottom-0 top-0 transition-all duration-500 rounded-full ${
-              gateState === 'ready'
-                ? 'w-full bg-emerald-400 shadow-glow-cyan'
-                : gateState === 'waking'
-                ? 'w-3/4 bg-gradient-to-r from-cyan-400 to-indigo-500 animate-pulse'
-                : 'w-1/3 bg-cyan-400 animate-pulse'
-            }`}
-          />
-        </div>
-
-        {/* Helper Note for Render Free Tier */}
-        {gateState === 'waking' && (
-          <p className="font-sans text-[11px] leading-relaxed text-slate-400 mb-4 animate-fade-in">
-            Render free servers spin down after 15 minutes of inactivity. First boot takes ~20–30s to load the GTFS graph.
-          </p>
-        )}
-
-        {/* Skip / Offline Button */}
-        {showSkipButton && gateState !== 'ready' && (
-          <button
-            type="button"
-            onClick={handleSkipOrProceed}
-            className="group flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 font-sans text-xs font-medium text-slate-300 transition-all hover:border-cyan-400/50 hover:bg-white/10 hover:text-white"
-          >
-            <span>Continue to 3D Map</span>
-            <span className="font-mono text-cyan-400 transition-transform group-hover:translate-x-0.5">→</span>
-          </button>
-        )}
       </div>
     </div>
   );
