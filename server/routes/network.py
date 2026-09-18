@@ -6,6 +6,7 @@ from server.services.network_service import (
     get_all_routes_metadata,
     generate_metro_geojson
 )
+from server.services.train_simulation_service import get_active_train_positions_geojson
 
 router = APIRouter(prefix="/api/network", tags=["Network & Geometries"])
 
@@ -32,6 +33,16 @@ def get_routes() -> List[Dict[str, Any]]:
     Returns list of all available train routes with their PTV hex color codes and line groups.
     """
     return get_all_routes_metadata()
+
+
+@router.get("/trains/live")
+def get_live_trains() -> Dict[str, Any]:
+    """
+    Returns GeoJSON FeatureCollection of every Metro train currently in service,
+    with positions simulated by interpolating the static GTFS timetable against
+    the current time (no live GPS feed involved yet).
+    """
+    return get_active_train_positions_geojson()
 
 
 @router.post("/metro/regenerate")
