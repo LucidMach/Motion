@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "pnpm --dir UI dev",
     "build": "pnpm --dir UI build",
+    "build:db": "./build_gtfs_db.sh",
     "preview": "pnpm --dir UI preview"
   }
 }
