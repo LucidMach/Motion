@@ -12,7 +12,15 @@ from server.main import app
 class TestFastAPIBackend(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        # Enter the TestClient as a context manager so FastAPI's lifespan
+        # (KDTree + DB init in server/main.py) actually runs - without this,
+        # startup never fires and /api/health's readiness checks never pass.
+        cls._client_ctx = TestClient(app)
+        cls.client = cls._client_ctx.__enter__()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._client_ctx.__exit__(None, None, None)
 
     def test_01_root_and_health(self):
         """Test root index and health endpoints."""

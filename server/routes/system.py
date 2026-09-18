@@ -1,7 +1,7 @@
 import os
 import time
 import sqlite3
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from server.models.schemas import SystemStatus
 from directional_routing import DB_NAME
 from server.services.spatial_service import get_spatial_tree_status
@@ -11,18 +11,35 @@ _SERVER_BOOT_TIME = time.time()
 
 
 @router.get("/health")
-def health_check():
-    """Liveness check endpoint. Returns immediately when server is not in cold starting."""
+def health_check(response: Response):
+    """
+    Liveness + readiness check. Returns 200/"ok" only once the KDTree and
+    database are both actually loaded; otherwise returns 503 so callers
+    (like the frontend's HealthCheckGate) can tell "still starting up" apart
+    from "responding but broken" instead of trusting an always-200 status.
+    """
     uptime = round(time.time() - _SERVER_BOOT_TIME, 2)
     tree_status = get_spatial_tree_status()
+    kdtree_ready = tree_status.get("is_in_memory", False)
     db_exists = os.path.exists(DB_NAME) and os.path.getsize(DB_NAME) > 0
-    
+
+    is_ready = kdtree_ready and db_exists
+    if is_ready:
+        status = "ok"
+    elif not db_exists:
+        status = "degraded"
+    else:
+        status = "starting"
+
+    if not is_ready:
+        response.status_code = 503
+
     return {
-        "status": "ok",
+        "status": status,
         "service": "Motion Transit Engine API",
         "uptime_seconds": uptime,
-        "cold_starting": False,
-        "kdtree_in_memory": tree_status.get("is_in_memory", False),
+        "cold_starting": not is_ready,
+        "kdtree_in_memory": kdtree_ready,
         "db_loaded": db_exists
     }
 

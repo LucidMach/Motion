@@ -146,9 +146,20 @@ export interface SystemStatus {
   ptv_api_configured: boolean;
   checks?: {
     '1_server_up'?: { status: string; message: string; uptime_seconds?: number };
-    '2_kdtree_in_memory'?: { status: string; message: string; total_nodes?: number; kdtree_ready?: boolean };
-    '3_precomputed_database_loaded'?: { status: string; message: string; stops_count?: number; transit_edges_count?: number; transfer_edges_count?: number };
+    '2_kdtree_in_memory'?: { status: string; message: string; total_nodes?: number; kdtree_ready?: boolean; load_time_ms?: number };
+    '3_precomputed_database_loaded'?: { status: string; message: string; db_exists?: boolean; stops_count?: number; routes_count?: number; transit_edges_count?: number; transfer_edges_count?: number };
+    '4_ptv_realtime_api'?: { status: string; message: string; configured?: boolean };
+    '5_mapbox_token'?: { status: string; message: string; configured?: boolean };
   };
+}
+
+export interface HealthCheckResponse {
+  status: string;
+  service: string;
+  uptime_seconds: number;
+  cold_starting: boolean;
+  kdtree_in_memory: boolean;
+  db_loaded: boolean;
 }
 
 export const getApiBaseUrl = (): string => {
@@ -189,8 +200,8 @@ class MotionApiClient {
     }
   }
 
-  async getHealth(): Promise<{ status: string; service: string }> {
-    return this.request<{ status: string; service: string }>('/api/health');
+  async getHealth(): Promise<HealthCheckResponse> {
+    return this.request<HealthCheckResponse>('/api/health');
   }
 
   async getStatus(): Promise<SystemStatus> {

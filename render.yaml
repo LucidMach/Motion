@@ -6,10 +6,13 @@ services:
     plan: free
     buildCommand: "./render_build.sh"
     startCommand: "uvicorn server.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: PTVOpenDataAPIKey
         sync: false
       - key: GTFS_DB_URL
+        sync: false
+      - key: PUBLIC_MAPBOX_TOKEN
         sync: false

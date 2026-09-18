@@ -4,9 +4,40 @@ import time
 import sys
 import sqlite3
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import os
 import argparse
 from geopy.geocoders import Nominatim
+
+# The backend is deployed on Render, whose containers run in UTC - but all
+# GTFS schedule times (arrival_time_secs/departure_time_secs) are naive
+# Melbourne wall-clock time. Every "what time is it right now" calculation
+# must go through melbourne_now()/melbourne_fromtimestamp() below rather than
+# datetime.now()/datetime.fromtimestamp(), or it silently computes against
+# the server's local (UTC) clock instead - off by 10-11 hours from Melbourne.
+MELBOURNE_TZ = ZoneInfo("Australia/Melbourne")
+
+
+def melbourne_now() -> datetime:
+    """Current Melbourne wall-clock time, as a naive datetime (matching GTFS's naive local schedule times)."""
+    return datetime.now(MELBOURNE_TZ).replace(tzinfo=None)
+
+
+def melbourne_fromtimestamp(epoch_seconds) -> datetime:
+    """Converts a unix epoch timestamp to naive Melbourne wall-clock time."""
+    return datetime.fromtimestamp(epoch_seconds, tz=MELBOURNE_TZ).replace(tzinfo=None)
+
+
+def melbourne_naive_to_epoch(dt: datetime) -> int:
+    """
+    Converts a datetime to a real unix epoch. If naive (the norm throughout
+    this codebase), it's assumed to be Melbourne wall-clock time - calling
+    dt.timestamp() directly on a naive datetime would instead interpret it as
+    the server's local time (UTC on Render), producing a wrong epoch.
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=MELBOURNE_TZ)
+    return int(dt.timestamp())
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -51,44 +82,44 @@ def parse_arrival_datetime(destination_arrival_time):
     - datetime object
     """
     if not destination_arrival_time:
-        return datetime.now() + timedelta(minutes=60)
+        return melbourne_now() + timedelta(minutes=60)
 
     if isinstance(destination_arrival_time, datetime):
         return destination_arrival_time
-        
+
     if isinstance(destination_arrival_time, (int, float)):
-        return datetime.fromtimestamp(destination_arrival_time)
-        
+        return melbourne_fromtimestamp(destination_arrival_time)
+
     if isinstance(destination_arrival_time, str):
         val = destination_arrival_time.strip()
         if not val or val.lower() in ("none", "null", "undefined", "latest", "now", "asap"):
-            return datetime.now() + timedelta(minutes=60)
+            return melbourne_now() + timedelta(minutes=60)
 
         # Check if numeric unix timestamp string
         if val.isdigit():
-            return datetime.fromtimestamp(int(val))
-            
+            return melbourne_fromtimestamp(int(val))
+
         # Try ISO format 'YYYY-MM-DD HH:MM' or 'YYYY-MM-DDTHH:MM:SS'
         for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
             try:
                 return datetime.strptime(val, fmt)
             except ValueError:
                 pass
-                
+
         # Try 'HH:MM'
         if ":" in val:
             try:
                 parts = val.split(":")
                 hour, minute = int(parts[0]), int(parts[1])
-                now = datetime.now()
+                now = melbourne_now()
                 target_dt = datetime(now.year, now.month, now.day, hour, minute, 0)
                 if target_dt < now:
                     target_dt += timedelta(days=1)
                 return target_dt
             except (ValueError, IndexError):
                 pass
-                
-    return datetime.now() + timedelta(minutes=60)
+
+    return melbourne_now() + timedelta(minutes=60)
 
 def is_alert_active_at_time(active_periods, target_arrival_dt, lookback_window_mins=120):
     """
@@ -98,7 +129,7 @@ def is_alert_active_at_time(active_periods, target_arrival_dt, lookback_window_m
     if not active_periods:
         return True # Default to active if unconstrained
         
-    target_ts = int(target_arrival_dt.timestamp())
+    target_ts = melbourne_naive_to_epoch(target_arrival_dt)
     window_start_ts = target_ts - (lookback_window_mins * 60)
     
     for period in active_periods:
@@ -277,7 +308,7 @@ def calculate_recommended_departure(start_address, destination_address, destinat
     print("=" * 70)
     
     target_arrival_dt = parse_arrival_datetime(destination_arrival_time)
-    target_arrival_epoch = int(target_arrival_dt.timestamp())
+    target_arrival_epoch = melbourne_naive_to_epoch(target_arrival_dt)
     
     print(f"Origin Address       : {start_address}")
     print(f"Destination Address  : {destination_address}")

@@ -52,12 +52,26 @@ echo "📦 Extracting GTFS sub-feeds into ./gtfs/ ..."
 mkdir -p "${GTFS_DIR}"
 unzip -q -o "${GTFS_ZIP}" -d "${GTFS_DIR}/"
 FEED_COUNT=$(find "${GTFS_DIR}" -name "google_transit.zip" | wc -l | tr -d ' ')
-echo "✓ Extracted ${FEED_COUNT} GTFS feeds (Trains, Trams, Buses, Regional, SkyBus)."
+echo "✓ Extracted ${FEED_COUNT} GTFS feeds."
 
 # Step 3: Run GTFS Database Ingestion
+# Motion is a Melbourne-metro app, so we only ingest the metro feeds:
+#   2  = Metro Train
+#   3  = Metro Tram
+#   4  = Metro Bus + regional Bendigo-area town bus bundled in the same zip
+#        (route_type 3 vs 701) - filtered to route_type 3 only
+#   11 = SkyBus airport shuttle (tiny, 5 routes, metro-area service)
+# Feeds 1 (Regional Train), 5 (Regional Coach), 6 (Regional Bus) and 10
+# (Interstate) are intentionally excluded to keep the deployed DB small
+# enough for Render's free tier (512MB RAM).
 echo ""
-echo "⚙️  Ingesting feeds and building SQLite database..."
-$PYTHON_CMD gtfs_db_builder/gtfs_db_builder.py "${GTFS_DIR}"/*/google_transit.zip
+echo "⚙️  Ingesting metro feeds (Train, Tram, Bus, SkyBus) and building SQLite database..."
+$PYTHON_CMD gtfs_db_builder/gtfs_db_builder.py \
+    "${GTFS_DIR}/2/google_transit.zip" \
+    "${GTFS_DIR}/3/google_transit.zip" \
+    "${GTFS_DIR}/4/google_transit.zip" \
+    "${GTFS_DIR}/11/google_transit.zip" \
+    --filter "${GTFS_DIR}/4/google_transit.zip:3"
 
 # Step 4: Precompute Directional & Spatial Graph Edges
 echo ""

@@ -8,10 +8,31 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 import geocoding
-from geocoding.adapter import FakeGeocodingAdapter
+from geocoding.adapter import FakeGeocodingAdapter, NominatimAdapter
 
 
 class TestGeocodingSearch(unittest.TestCase):
+
+    def test_nominatim_adapter_cache_is_bounded(self):
+        """
+        Regression test: NominatimAdapter._cache used to be an unbounded dict
+        that grew for the life of the process (fed on every keystroke from
+        the frontend search box), a slow memory leak on the long-lived
+        single-worker Render deployment. It must now evict the least
+        recently used entries once past its max size.
+        """
+        adapter = NominatimAdapter()
+        adapter._throttle = lambda: None  # skip the real 1 req/sec live-API throttle
+        adapter._fetch = lambda query, limit: [{"name": query}]
+
+        max_entries = adapter._MAX_CACHE_ENTRIES
+        for i in range(max_entries + 10):
+            adapter.search_places(f"query {i}", limit=5)
+
+        self.assertLessEqual(len(adapter._cache), max_entries)
+        self.assertIn(f"query {max_entries + 9}::5", adapter._cache)
+        self.assertNotIn("query 0::5", adapter._cache)
+
     def test_search_prefers_gtfs_then_landmark_then_nominatim(self):
         import tempfile
         fd, path = tempfile.mkstemp(suffix=".db")

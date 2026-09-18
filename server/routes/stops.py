@@ -35,7 +35,14 @@ def get_nearby_stops(
     try:
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
-        c.execute("SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops")
+        # Pre-filter with a generous bounding box before the precise haversine
+        # check below, instead of pulling every row in the stops table.
+        pad_deg = (radius_km / 111.0) * 1.5
+        c.execute(
+            "SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops "
+            "WHERE stop_lat BETWEEN ? AND ? AND stop_lon BETWEEN ? AND ?",
+            (lat - pad_deg, lat + pad_deg, lon - pad_deg, lon + pad_deg)
+        )
 
         candidates = []
         for row in c.fetchall():

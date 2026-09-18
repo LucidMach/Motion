@@ -1,0 +1,40 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Generate mock GTFS database
+        # Mirrors render_build.sh's fallback path (no GTFS_DB_URL) - a small
+        # synthetic dataset, just enough for the test suite to exercise
+        # real DB-backed code paths without needing the real ~GB feeds.
+        run: |
+          python gtfs_db_builder/gtfs_db_builder.py
+          python precompute_graph/precompute_graph.py
+
+      - name: Run tests
+        # tests/test_api.py's stop-search/routing/geojson tests are written
+        # against real Melbourne station and line names (Richmond, Belgrave,
+        # Sandringham, ...) and the real extracted gtfs/2 feed for the metro
+        # GeoJSON overlay - neither exists against the synthetic mock DB used
+        # here. Everything else (directional_routing, geocoding, ptv_realtime,
+        # server/services, server/routes, the render.yaml sanity check) is
+        # self-contained and runs for real. To also run tests/test_api.py in
+        # CI, add a GTFS_DB_URL repository secret and fetch the real database
+        # the same way render_build.sh does before this step.
+        run: pytest -v --ignore=tests/test_api.py

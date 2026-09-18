@@ -6,7 +6,12 @@ interface HealthCheckGateProps {
   onReady?: () => void;
 }
 
-type GateState = 'connecting' | 'waking' | 'synchronizing' | 'ready' | 'offline_available';
+type GateState = 'connecting' | 'waking' | 'synchronizing' | 'ready';
+
+const RETRY_DELAY_START_MS = 2500;
+const RETRY_DELAY_MAX_MS = 8000;
+const RETRY_DELAY_BACKOFF = 1.5;
+const LIKELY_DOWN_AFTER_SECONDS = 60;
 
 export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGateProps) {
   const [gateState, setGateState] = useState<GateState>('connecting');
@@ -21,6 +26,15 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
+  // Mirrors gateState for use inside the setInterval callback below, whose
+  // closure is captured once (empty deps array) and would otherwise always
+  // see the 'connecting' state it started with.
+  const gateStateRef = useRef<GateState>('connecting');
+  const retryDelayRef = useRef<number>(RETRY_DELAY_START_MS);
+
+  useEffect(() => {
+    gateStateRef.current = gateState;
+  }, [gateState]);
 
   useEffect(() => {
     const cachedReady = sessionStorage.getItem('motion_api_ready');
@@ -31,19 +45,24 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
     const token = (typeof window !== 'undefined' ? localStorage.getItem('motion_mapbox_token') : null) || import.meta.env.PUBLIC_MAPBOX_TOKEN || '';
     setMapboxConfigured(Boolean(token && token.startsWith('pk.') && token.length > 20));
 
+    const isLocal = currentBaseUrl.includes('localhost') || currentBaseUrl.includes('127.0.0.1');
+
     // Elapsed timer to detect Render free-tier cold sleep
     timerRef.current = setInterval(() => {
       const sec = Math.floor((Date.now() - startTimeRef.current) / 1000);
       setElapsedSeconds(sec);
 
-      if (sec >= 3 && gateState === 'connecting') {
+      if (sec >= 3 && gateStateRef.current === 'connecting') {
         setGateState('waking');
-        const isLocal = currentBaseUrl.includes('localhost') || currentBaseUrl.includes('127.0.0.1');
         setStatusText(
           isLocal
             ? 'Connecting to local Motion API server (:8000)...'
             : 'Waking Render service (free tier cold start, ~20-30s)...'
         );
+      }
+
+      if (sec >= LIKELY_DOWN_AFTER_SECONDS && gateStateRef.current === 'waking' && !isLocal) {
+        setStatusText('Taking longer than expected - the backend may be down. You can keep waiting or skip ahead.');
       }
 
       if (sec >= 4) {
@@ -58,6 +77,7 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
         const health = await motionApi.getHealth();
         if (health && health.status === 'ok') {
           if (!isMounted) return;
+          retryDelayRef.current = RETRY_DELAY_START_MS;
 
           setGateState('synchronizing');
           setStatusText('Synchronizing timetable graphs and live alerts...');
@@ -85,9 +105,15 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
           return;
         }
       } catch (err: any) {
+        // Covers both network failures and the backend honestly responding
+        // 503 while it's still starting/degraded (motionApi.getHealth()
+        // throws on any non-2xx) - either way, keep polling with a bounded
+        // exponential backoff instead of hammering the backend forever at a
+        // fixed interval.
         if (!isMounted) return;
-        console.warn(`[HealthCheckGate] Backend check to ${currentBaseUrl} failed:`, err?.message || err);
-        pollRef.current = setTimeout(checkBackendHealth, 2500);
+        console.warn(`[HealthCheckGate] Backend not ready at ${currentBaseUrl}:`, err?.message || err);
+        pollRef.current = setTimeout(checkBackendHealth, retryDelayRef.current);
+        retryDelayRef.current = Math.min(RETRY_DELAY_MAX_MS, retryDelayRef.current * RETRY_DELAY_BACKOFF);
       }
     };
 
@@ -237,7 +263,9 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
                   2. In-Memory KDTree:
                 </span>
                 <span className={`font-semibold ${systemTelemetry?.kdtree_in_memory ? 'text-accent-cyan' : 'text-muted'}`}>
-                  {systemTelemetry?.kdtree_in_memory ? `${systemTelemetry.kdtree_nodes_count?.toLocaleString() || systemTelemetry.stops_count.toLocaleString()} Nodes` : 'Loading RAM tree...'}
+                  {systemTelemetry?.kdtree_in_memory
+                    ? `${systemTelemetry.kdtree_nodes_count?.toLocaleString() || systemTelemetry.stops_count.toLocaleString()} Nodes`
+                    : systemTelemetry?.checks?.['2_kdtree_in_memory']?.message || 'Loading RAM tree...'}
                 </span>
               </div>
 
@@ -248,7 +276,9 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
                   3. Precomputed Database:
                 </span>
                 <span className={`font-semibold ${(systemTelemetry?.transit_edges_count ?? 0) > 0 ? 'text-primary' : 'text-muted'}`}>
-                  {(systemTelemetry?.transit_edges_count ?? 0) > 0 ? `${(systemTelemetry?.transit_edges_count ?? 0).toLocaleString()} Transit Edges` : 'Verifying SQLite DB...'}
+                  {(systemTelemetry?.transit_edges_count ?? 0) > 0
+                    ? `${(systemTelemetry?.transit_edges_count ?? 0).toLocaleString()} Transit Edges`
+                    : systemTelemetry?.checks?.['3_precomputed_database_loaded']?.message || 'Verifying SQLite DB...'}
                 </span>
               </div>
 
@@ -295,9 +325,10 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
               <button
                 type="button"
                 onClick={handleDismiss}
+                title="Proceeds without waiting for the backend to finish starting - map data and routing may not work yet"
                 className="rounded-full border border-subtle bg-surface px-5 py-2.5 font-sans text-[0.82rem] font-semibold text-secondary transition-all hover:border-glow hover:bg-surface-hover hover:text-primary active:scale-[0.98]"
               >
-                Continue in Offline Mode
+                Skip Waiting
               </button>
             ) : (
               <div className="text-[0.72rem] text-muted font-mono">

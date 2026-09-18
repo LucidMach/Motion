@@ -27,6 +27,35 @@ TRANSFER_PENALTY_MINS = 7.0
 REPLACEMENT_BUS_SPEED_KMH = 28.0
 REPLACEMENT_BUS_DWELL_MINS = 1.0
 
+# Motion is a Melbourne-metro app (see the metro-only GTFS build). A
+# geocoding mismatch or bogus input can still resolve to coordinates far
+# outside the metro area - and unlike the bbox padding below, there's no way
+# to keep the corridor bbox small for a genuinely distant origin/destination
+# pair, since the bbox has to span both points to have any chance of finding
+# a path. For a bogus multi-hundred-km "trip", that means the bbox ends up
+# covering nearly the entire dataset regardless of padding. Reject clearly
+# out-of-area requests outright instead of trying to build a graph across
+# that whole span. 100km comfortably covers the farthest real metro trips
+# (e.g. CBD to Pakenham/Cranbourne, ~60-70km) while excluding anything
+# regional/interstate.
+MAX_TRIP_DISTANCE_KM = 100.0
+
+# Hard ceiling on the origin/destination corridor bounding box, in degrees
+# (~0.35 deg ~= 40km). Without this cap, a long-distance query pads the bbox
+# proportionally to trip distance with no upper bound, which can pull a huge
+# fraction of the network into a single request's in-memory graph.
+#
+# Note: an earlier version of this fix also added a row-count LIMIT to the
+# bbox queries below as a second safety net. That was reverted - an
+# unordered SQL LIMIT truncates arbitrary rows, and for a legitimately dense
+# corridor (e.g. a ~20km cross-metro trip through central Melbourne, which
+# routinely needs 5000+ stops and 20000+ transfer edges) it silently dropped
+# rows near the actual origin/destination and produced wrong routes instead
+# of just using more memory. The bbox pad cap plus the metro-only dataset
+# scope are the real bounds here; don't reintroduce a row LIMIT without an
+# ORDER BY that prioritizes proximity to origin/destination.
+MAX_BBOX_PAD_DEG = 0.35
+
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
@@ -160,43 +189,38 @@ def get_directional_nearby_stops(conn, lat, lon, target_bearing=None, radius=1.5
     all_stops.sort(key=lambda x: x['distance_km'])
     return all_stops
 
-def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest_lon, 
-                                   disruptions=None, cancelled_routes=None, prefer_replacement_bus=True):
+def fetch_spatial_bbox_data(conn, origin_lat, origin_lon, dest_lat, dest_lon):
     """
-    Builds a spatial NetworkX corridor graph in memory.
-    Dynamically prunes cancelled/disrupted transit edges and injects prioritized replacement buses.
+    Runs the bounded corridor bounding-box queries once and returns the raw
+    rows (stops, transit edges, transfer edges). Split out from graph
+    construction so a single request that needs to rebuild the graph multiple
+    times (e.g. ASAP re-target, disruption recompute) can reuse one bounded
+    fetch instead of re-querying the database on every rebuild.
     """
-    G = nx.DiGraph()
     c = conn.cursor()
-    
-    normalized_disruptions = normalize_disruptions(disruptions, cancelled_routes)
-    
-    # 1. Macro Origin-Destination corridor bounding box with generous padding
+
+    # Macro Origin-Destination corridor bounding box with generous but capped padding
     dist_total_km = haversine(origin_lat, origin_lon, dest_lat, dest_lon)
-    pad = max(0.06, (dist_total_km * 0.15) / 111.0)
+    pad = min(MAX_BBOX_PAD_DEG, max(0.06, (dist_total_km * 0.15) / 111.0))
 
     min_lat = min(origin_lat, dest_lat) - pad
     max_lat = max(origin_lat, dest_lat) + pad
     min_lon = min(origin_lon, dest_lon) - pad
     max_lon = max(origin_lon, dest_lon) + pad
-    
-    c.execute("SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops WHERE stop_lat BETWEEN ? AND ? AND stop_lon BETWEEN ? AND ?", 
+
+    c.execute("SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops WHERE stop_lat BETWEEN ? AND ? AND stop_lon BETWEEN ? AND ?",
               (min_lat, max_lat, min_lon, max_lon))
-    
     stops_in_bbox = {}
     for row in c.fetchall():
         stop_id, stop_name, stop_lat, stop_lon = row
-        G.add_node(stop_id, name=stop_name, lat=stop_lat, lon=stop_lon, type='transit_stop')
         stops_in_bbox[stop_id] = {'lat': stop_lat, 'lon': stop_lon, 'name': stop_name}
-        
-    if not stops_in_bbox:
-        return G
-        
-    # Check if precomputed tables exist
+
     has_precomputed = c.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='transit_network_edges'").fetchone()[0]
-    
-    if has_precomputed:
-        # Load precomputed transit edges within spatial bounding box
+
+    transit_edge_rows = []
+    transfer_edge_rows = []
+
+    if stops_in_bbox and has_precomputed:
         c.execute("""
             SELECT tne.from_stop_id, tne.to_stop_id, tne.route_type, tne.route_short_name, tne.avg_travel_time
             FROM transit_network_edges tne
@@ -205,8 +229,45 @@ def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest
             WHERE s1.stop_lat BETWEEN ? AND ? AND s1.stop_lon BETWEEN ? AND ?
               AND s2.stop_lat BETWEEN ? AND ? AND s2.stop_lon BETWEEN ? AND ?
         """, (min_lat, max_lat, min_lon, max_lon, min_lat, max_lat, min_lon, max_lon))
+        transit_edge_rows = c.fetchall()
 
-        for row in c.fetchall():
+        c.execute("""
+            SELECT te.from_stop_id, te.to_stop_id, te.distance_km, te.walk_time_mins
+            FROM transfer_edges te
+            JOIN stops s1 ON te.from_stop_id = s1.stop_id
+            JOIN stops s2 ON te.to_stop_id = s2.stop_id
+            WHERE s1.stop_lat BETWEEN ? AND ? AND s1.stop_lon BETWEEN ? AND ?
+              AND s2.stop_lat BETWEEN ? AND ? AND s2.stop_lon BETWEEN ? AND ?
+        """, (min_lat, max_lat, min_lon, max_lon, min_lat, max_lat, min_lon, max_lon))
+        transfer_edge_rows = c.fetchall()
+
+    return {
+        'stops_in_bbox': stops_in_bbox,
+        'has_precomputed': bool(has_precomputed),
+        'transit_edge_rows': transit_edge_rows,
+        'transfer_edge_rows': transfer_edge_rows,
+    }
+
+
+def build_graph_from_bbox_data(bbox_data, disruptions=None, cancelled_routes=None, prefer_replacement_bus=True):
+    """
+    Builds a spatial NetworkX corridor graph in memory from data already
+    fetched via fetch_spatial_bbox_data(). Dynamically prunes
+    cancelled/disrupted transit edges and injects prioritized replacement
+    buses.
+    """
+    G = nx.DiGraph()
+    normalized_disruptions = normalize_disruptions(disruptions, cancelled_routes)
+
+    stops_in_bbox = bbox_data['stops_in_bbox']
+    for stop_id, s in stops_in_bbox.items():
+        G.add_node(stop_id, name=s['name'], lat=s['lat'], lon=s['lon'], type='transit_stop')
+
+    if not stops_in_bbox:
+        return G
+
+    if bbox_data['has_precomputed']:
+        for row in bbox_data['transit_edge_rows']:
             u, v, route_type, route_name, avg_time = row
             if u in stops_in_bbox and v in stops_in_bbox:
                 if avg_time < 0:
@@ -274,16 +335,7 @@ def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest
                     G.add_edge(u, v, weight=weight, type='transit', mode=mode, route=route_name, is_replacement=False)
 
         # Load precomputed transfer walking edges with TRANSFER_PENALTY_MINS within corridor
-        c.execute("""
-            SELECT te.from_stop_id, te.to_stop_id, te.distance_km, te.walk_time_mins
-            FROM transfer_edges te
-            JOIN stops s1 ON te.from_stop_id = s1.stop_id
-            JOIN stops s2 ON te.to_stop_id = s2.stop_id
-            WHERE s1.stop_lat BETWEEN ? AND ? AND s1.stop_lon BETWEEN ? AND ?
-              AND s2.stop_lat BETWEEN ? AND ? AND s2.stop_lon BETWEEN ? AND ?
-        """, (min_lat, max_lat, min_lon, max_lon, min_lat, max_lat, min_lon, max_lon))
-
-        for row in c.fetchall():
+        for row in bbox_data['transfer_edge_rows']:
             u, v, dist, walk_time = row
             if u in stops_in_bbox and v in stops_in_bbox:
                 # Add transfer penalty so changing lines requires significant time savings
@@ -294,7 +346,21 @@ def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest
 
     return G
 
-def get_latest_transit_leg_backward(conn, start_stop_id, end_stop_id, target_arrival_secs, 
+
+def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest_lon,
+                                   disruptions=None, cancelled_routes=None, prefer_replacement_bus=True):
+    """
+    Builds a spatial NetworkX corridor graph in memory for a single
+    origin/destination pair. Thin wrapper kept for callers that don't need to
+    reuse the bounded fetch across multiple graph rebuilds - see
+    fetch_spatial_bbox_data() + build_graph_from_bbox_data() for that.
+    """
+    bbox_data = fetch_spatial_bbox_data(conn, origin_lat, origin_lon, dest_lat, dest_lon)
+    return build_graph_from_bbox_data(bbox_data, disruptions=disruptions,
+                                       cancelled_routes=cancelled_routes,
+                                       prefer_replacement_bus=prefer_replacement_bus)
+
+def get_latest_transit_leg_backward(conn, start_stop_id, end_stop_id, target_arrival_secs,
                                     cancelled_trips=None, cancelled_routes=None, disruptions=None):
     """
     Finds the latest possible departure from start_stop that arrives at end_stop by target_arrival_secs.
@@ -391,10 +457,15 @@ def format_secs(s):
 
 def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_path=DB_NAME,
                                    disruptions=None, cancelled_routes=None, cancelled_trips=None,
-                                   prefer_replacement_bus=True):
+                                   prefer_replacement_bus=True, bbox_cache=None):
     """
     Calculates a transfer-optimized multi-modal itinerary with dynamic in-memory graph recomputation
     for service cancellations and disruptions (with prioritized replacement buses).
+
+    bbox_cache: optional dict the caller can pass in and reuse across
+    multiple calls for the same origin/destination (e.g. ASAP re-target,
+    disruption recompute) so the bounded spatial fetch only runs once per
+    request instead of once per rebuild.
     """
     start_perf = time.perf_counter()
     
@@ -409,7 +480,17 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
     if not dest_coords:
         return {"status": "Error", "message": f"Could not geocode dest address: {dest_address}"}
     dest_lat, dest_lon = dest_coords
-        
+
+    trip_distance_km = haversine(origin_lat, origin_lon, dest_lat, dest_lon)
+    if trip_distance_km > MAX_TRIP_DISTANCE_KM:
+        return {
+            "status": "Error",
+            "message": (
+                f"Origin and destination are {trip_distance_km:.0f}km apart, which is "
+                f"outside Motion's Melbourne-metro service area (max {MAX_TRIP_DISTANCE_KM:.0f}km)."
+            )
+        }
+
     overall_bearing = calculate_bearing(origin_lat, origin_lon, dest_lat, dest_lon)
     target_arrival_secs = int(arrival_dt.hour * 3600 + arrival_dt.minute * 60 + arrival_dt.second)
     
@@ -420,12 +501,21 @@ def calculate_directional_itinerary(start_address, dest_address, arrival_dt, db_
             print(f"  ⚡ Disruption: {d.get('route_name', 'General')} - {d.get('description', d.get('effect', 'NO_SERVICE'))}")
             
     conn = sqlite3.connect(db_path)
-    
+
     print("Building spatial graph...")
-    G = build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest_lon,
-                                        disruptions=normalized_disruptions, 
-                                        cancelled_routes=cancelled_routes, 
-                                        prefer_replacement_bus=prefer_replacement_bus)
+    bbox_key = (origin_lat, origin_lon, dest_lat, dest_lon)
+    if bbox_cache is not None and bbox_cache.get('key') == bbox_key:
+        bbox_data = bbox_cache['data']
+    else:
+        bbox_data = fetch_spatial_bbox_data(conn, origin_lat, origin_lon, dest_lat, dest_lon)
+        if bbox_cache is not None:
+            bbox_cache['key'] = bbox_key
+            bbox_cache['data'] = bbox_data
+
+    G = build_graph_from_bbox_data(bbox_data,
+                                    disruptions=normalized_disruptions,
+                                    cancelled_routes=cancelled_routes,
+                                    prefer_replacement_bus=prefer_replacement_bus)
     
     # Connect Origin directly to candidate stops
     G.add_node('ORIGIN', type='location', lat=origin_lat, lon=origin_lon, name=start_address)

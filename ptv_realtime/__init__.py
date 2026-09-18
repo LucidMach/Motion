@@ -6,6 +6,9 @@ from .ptv_realtime import (
     fetch_realtime_delays_and_cancellations,
     calculate_recommended_departure,
     parse_cli_args,
+    melbourne_now,
+    melbourne_fromtimestamp,
+    melbourne_naive_to_epoch,
 )
 
 __all__ = [
@@ -16,4 +19,7 @@ __all__ = [
     'fetch_realtime_delays_and_cancellations',
     'calculate_recommended_departure',
     'parse_cli_args',
+    'melbourne_now',
+    'melbourne_fromtimestamp',
+    'melbourne_naive_to_epoch',
 ]

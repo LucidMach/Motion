@@ -8,6 +8,7 @@ import json
 import time
 import urllib.parse
 import urllib.request
+from collections import OrderedDict
 from typing import Dict, List, Optional, Protocol
 
 
@@ -25,23 +26,29 @@ class NominatimAdapter:
 
     Interface cost: at most 1 request/second, shared across every caller in
     the process (Nominatim's usage policy), a 5s socket timeout per request,
-    and results memoized in-process per exact (query, limit) for the life of
-    the server - repeated lookups of the same text are free.
+    and results memoized in-process per exact (query, limit), bounded to the
+    most recently used entries - repeated lookups of the same text are free
+    without letting the cache grow unbounded for the life of the server.
     """
 
     _MIN_INTERVAL_SECS = 1.0
+    _MAX_CACHE_ENTRIES = 500
 
     def __init__(self):
         self._last_request_at = 0.0
-        self._cache: Dict[str, List[Dict]] = {}
+        self._cache: "OrderedDict[str, List[Dict]]" = OrderedDict()
 
     def search_places(self, query: str, limit: int = 5) -> List[Dict]:
         cache_key = f"{query.strip().lower()}::{limit}"
         if cache_key in self._cache:
+            self._cache.move_to_end(cache_key)
             return self._cache[cache_key]
         self._throttle()
         results = self._fetch(query, limit)
         self._cache[cache_key] = results
+        self._cache.move_to_end(cache_key)
+        if len(self._cache) > self._MAX_CACHE_ENTRIES:
+            self._cache.popitem(last=False)
         return results
 
     def _throttle(self):

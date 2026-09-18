@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Query
 from ptv_realtime import ptv_realtime
@@ -13,7 +12,7 @@ def get_live_disruptions(
     """
     Fetches and parses live PTV GTFS-Realtime service alerts across Trains, Trams, and Buses.
     """
-    now = datetime.now()
+    now = ptv_realtime.melbourne_now()
     try:
         alerts = ptv_realtime.fetch_live_service_alerts(
             target_arrival_dt=now,

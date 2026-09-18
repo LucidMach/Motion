@@ -57,8 +57,11 @@ def compute_route(req: RouteRequest) -> RouteResponse:
     start_time_exec = time.time()
 
     # 1. Parse target arrival datetime
+    # Render's containers run in UTC, but GTFS schedule times are naive
+    # Melbourne wall-clock time - melbourne_now() (not datetime.now()) is the
+    # only correct source of "now" here.
     is_asap_mode = (not req.arrival_timestamp and not req.arrival_time)
-    now_dt = datetime.now()
+    now_dt = ptv_realtime.melbourne_now()
 
     if req.arrival_timestamp:
         target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_timestamp)
@@ -68,7 +71,7 @@ def compute_route(req: RouteRequest) -> RouteResponse:
         # Default to 60 minutes from now if unspecified
         target_arrival_dt = now_dt + timedelta(minutes=60)
 
-    target_arrival_epoch = int(target_arrival_dt.timestamp())
+    target_arrival_epoch = ptv_realtime.melbourne_naive_to_epoch(target_arrival_dt)
 
     # 2. Collect disruptions
     all_disruptions = list(req.disruptions or [])
@@ -81,6 +84,10 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             print(f"[RoutingRoute] Notice fetching live alerts: {e}")
 
     # 3. Execute directional itinerary computation
+    # Reused across every recompute below (ASAP re-target, disruption
+    # reconciliation) so the bounded spatial bbox fetch only runs once per
+    # request instead of once per rebuild.
+    bbox_cache = {}
     try:
         raw_itinerary = directional_routing.calculate_directional_itinerary(
             start_address=req.origin,
@@ -89,7 +96,8 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             disruptions=all_disruptions,
             cancelled_routes=req.cancelled_routes,
             cancelled_trips=req.cancelled_trips,
-            prefer_replacement_bus=req.prefer_replacement_bus
+            prefer_replacement_bus=req.prefer_replacement_bus,
+            bbox_cache=bbox_cache
         )
 
         # In ASAP/Leave Now mode, if the earliest leg departs before now,
@@ -104,7 +112,7 @@ def compute_route(req: RouteRequest) -> RouteResponse:
                 travel_mins = raw_itinerary.get("total_travel_time_mins", 30)
                 # Advance target arrival so departure is at or after min_dep_dt
                 target_arrival_dt = min_dep_dt + timedelta(minutes=int(travel_mins) + 15)
-                target_arrival_epoch = int(target_arrival_dt.timestamp())
+                target_arrival_epoch = ptv_realtime.melbourne_naive_to_epoch(target_arrival_dt)
                 raw_itinerary = directional_routing.calculate_directional_itinerary(
                     start_address=req.origin,
                     dest_address=req.destination,
@@ -112,7 +120,8 @@ def compute_route(req: RouteRequest) -> RouteResponse:
                     disruptions=all_disruptions,
                     cancelled_routes=req.cancelled_routes,
                     cancelled_trips=req.cancelled_trips,
-                    prefer_replacement_bus=req.prefer_replacement_bus
+                    prefer_replacement_bus=req.prefer_replacement_bus,
+                    bbox_cache=bbox_cache
                 )
     except Exception as e:
         print(f"[RoutingRoute] Routing calculation note: {e}")
@@ -137,7 +146,8 @@ def compute_route(req: RouteRequest) -> RouteResponse:
             disruptions=all_disruptions,
             cancelled_routes=req.cancelled_routes,
             cancelled_trips=all_cancelled_trips,
-            prefer_replacement_bus=req.prefer_replacement_bus
+            prefer_replacement_bus=req.prefer_replacement_bus,
+            bbox_cache=bbox_cache
         )
 
     disruption_check = reconcile_with_live_disruptions(

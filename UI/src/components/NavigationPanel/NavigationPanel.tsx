@@ -27,6 +27,7 @@ export default function NavigationPanel() {
   const [telemetry, setTelemetry] = useState<LocationTelemetry | null>(null);
 
   const originInputRef = useRef<HTMLInputElement>(null);
+  const originSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Helper to format Date to HH:MM (24-hr)
   const formatTimeHHMM = (d: Date): string => {
@@ -237,22 +238,32 @@ export default function NavigationPanel() {
     };
   }, [originText, originCoords, telemetry, computeRoute]);
 
-  // 4. Handle origin search autocomplete
-  const handleOriginSearch = async (val: string) => {
+  // 4. Handle origin search autocomplete (debounced so we don't fire a
+  // lookup - and grow the backend's geocoding cache - on every keystroke)
+  const handleOriginSearch = (val: string) => {
     setOriginText(val);
+
+    if (originSearchDebounceRef.current) {
+      clearTimeout(originSearchDebounceRef.current);
+      originSearchDebounceRef.current = null;
+    }
+
     if (!val.trim() || val === 'My Location') {
       setOriginSuggestions([]);
       return;
     }
-    setIsSearchingOrigin(true);
-    try {
-      const results = await motionApi.searchStops(val, 5);
-      setOriginSuggestions(results);
-    } catch {
-      setOriginSuggestions([]);
-    } finally {
-      setIsSearchingOrigin(false);
-    }
+
+    originSearchDebounceRef.current = setTimeout(async () => {
+      setIsSearchingOrigin(true);
+      try {
+        const results = await motionApi.searchStops(val, 5);
+        setOriginSuggestions(results);
+      } catch {
+        setOriginSuggestions([]);
+      } finally {
+        setIsSearchingOrigin(false);
+      }
+    }, 300);
   };
 
   // 5. Select origin from suggestions or reset to My Location

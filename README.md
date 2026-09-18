@@ -79,11 +79,11 @@ gtfs/
 │   └── google_transit.zip
 ├── 3/   # Metropolitan Tram (Yarra Trams)
 │   └── google_transit.zip
-├── 4/   # Metropolitan Bus
+├── 4/   # Metropolitan Bus (bundled with some regional town-bus routes)
 │   └── google_transit.zip
-├── 5/   # Regional Bus
+├── 5/   # Regional Coach
 │   └── google_transit.zip
-├── 6/   # Regional Coach
+├── 6/   # Regional Bus
 │   └── google_transit.zip
 ├── 10/  # Interstate
 │   └── google_transit.zip
@@ -99,24 +99,33 @@ gtfs/
 
 The database builder parses the GTFS feeds, normalizes timestamps into seconds past midnight (`arrival_time_secs`, `departure_time_secs`), and creates optimized B-tree indexes.
 
-### 3.1 Build Full Production Database
-To ingest all available GTFS transit modes:
+### 3.1 Build Production Database (Metro-Only)
+Motion is a Melbourne-metro app, and the deployed Render instance runs on the
+free tier (512MB RAM), so `build_gtfs_db.sh` only ingests the metro feeds -
+Metro Train (2), Metro Tram (3), Metro Bus (4, filtered to `route_type=3` to
+drop the regional town-bus routes bundled into the same zip), and SkyBus
+(11):
 
 ```bash
-python gtfs_db_builder/gtfs_db_builder.py ./gtfs/*/google_transit.zip
+./build_gtfs_db.sh
 ```
 
-Or specify individual feeds explicitly:
+which runs the equivalent of:
 ```bash
 python gtfs_db_builder/gtfs_db_builder.py \
-  ./gtfs/1/google_transit.zip \
   ./gtfs/2/google_transit.zip \
   ./gtfs/3/google_transit.zip \
   ./gtfs/4/google_transit.zip \
-  ./gtfs/5/google_transit.zip \
-  ./gtfs/6/google_transit.zip \
-  ./gtfs/10/google_transit.zip \
-  ./gtfs/11/google_transit.zip
+  ./gtfs/11/google_transit.zip \
+  --filter ./gtfs/4/google_transit.zip:3
+```
+
+To include the regional feeds too (Regional Train `1`, Regional Coach `5`,
+Regional Bus `6`, Interstate `10`), pass all of them explicitly - but note
+this multiplies the database size and undoes the memory-footprint reasoning
+behind the metro-only default:
+```bash
+python gtfs_db_builder/gtfs_db_builder.py ./gtfs/*/google_transit.zip
 ```
 
 ### 3.2 Quick / Minimal Build (Metro Train & Tram Only)

@@ -93,58 +93,120 @@ def time_to_secs(time_str):
     except Exception:
         return -1
 
-def import_csv_to_table(conn, table_name, csv_file_obj, expected_columns, transform_func=None):
+def import_csv_to_table(conn, table_name, csv_file_obj, expected_columns, transform_func=None, row_filter=None):
     c = conn.cursor()
     reader = csv.DictReader(io.TextIOWrapper(csv_file_obj, encoding='utf-8-sig'))
-    
+
     insert_sql = f"INSERT OR IGNORE INTO {table_name} ({', '.join(expected_columns)}) VALUES ({', '.join(['?'] * len(expected_columns))})"
-    
+
     batch = []
     for row in reader:
+        if row_filter and not row_filter(row):
+            continue
+
         if transform_func:
             row = transform_func(row)
-        
+
         values = [row.get(col, '') for col in expected_columns]
         batch.append(values)
-        
+
         if len(batch) >= 10000:
             c.executemany(insert_sql, batch)
             batch = []
-    
+
     if batch:
         c.executemany(insert_sql, batch)
-    
+
     conn.commit()
 
-def build_db_from_zips(zip_paths, db_path=DB_NAME):
+
+def collect_allowed_ids_for_route_types(zip_path, allowed_route_types):
+    """
+    Two-pass scan of a GTFS zip to find the route/trip/stop ids that belong
+    to the given route_type values. Used for feeds that bundle multiple modes
+    into one zip (e.g. PTV's bus feed mixes Melbourne metro bus routes,
+    route_type '3', with regional town-bus routes, route_type '701') so the
+    unwanted mode's routes/trips/stops/stop_times can all be excluded
+    together rather than just dropping rows from routes.txt.
+    """
+    allowed_route_ids = set()
+    allowed_trip_ids = set()
+    allowed_stop_ids = set()
+
+    with zipfile.ZipFile(zip_path, 'r') as z:
+        files = z.namelist()
+
+        if 'routes.txt' in files:
+            with z.open('routes.txt') as f:
+                for row in csv.DictReader(io.TextIOWrapper(f, encoding='utf-8-sig')):
+                    if row.get('route_type', '').strip() in allowed_route_types:
+                        allowed_route_ids.add(row.get('route_id'))
+
+        if 'trips.txt' in files:
+            with z.open('trips.txt') as f:
+                for row in csv.DictReader(io.TextIOWrapper(f, encoding='utf-8-sig')):
+                    if row.get('route_id') in allowed_route_ids:
+                        allowed_trip_ids.add(row.get('trip_id'))
+
+        if 'stop_times.txt' in files:
+            with z.open('stop_times.txt') as f:
+                for row in csv.DictReader(io.TextIOWrapper(f, encoding='utf-8-sig')):
+                    if row.get('trip_id') in allowed_trip_ids:
+                        allowed_stop_ids.add(row.get('stop_id'))
+
+    return allowed_route_ids, allowed_trip_ids, allowed_stop_ids
+
+
+def build_db_from_zips(zip_paths, db_path=DB_NAME, route_type_filters=None):
+    """
+    route_type_filters: optional {zip_path: {allowed route_type strings}}.
+    Zips not present in this mapping are imported unfiltered (all routes/
+    trips/stops/stop_times kept).
+    """
+    route_type_filters = route_type_filters or {}
     print(f"Building GTFS database from {len(zip_paths)} zip file(s)...")
     # Remove existing DB if it exists so we start fresh
     if os.path.exists(db_path):
         os.remove(db_path)
-        
+
     conn = sqlite3.connect(db_path)
     init_db(conn)
-    
+
     for zip_path in zip_paths:
         print(f"\nProcessing {zip_path}...")
+
+        allowed_route_ids = allowed_trip_ids = allowed_stop_ids = None
+        allowed_types = route_type_filters.get(zip_path)
+        if allowed_types:
+            print(f"  Filtering to route_type in {sorted(allowed_types)}...")
+            allowed_route_ids, allowed_trip_ids, allowed_stop_ids = collect_allowed_ids_for_route_types(zip_path, allowed_types)
+            print(f"    -> keeping {len(allowed_route_ids)} routes, {len(allowed_trip_ids)} trips, {len(allowed_stop_ids)} stops")
+
+        stop_row_filter = (lambda row: row.get('stop_id') in allowed_stop_ids) if allowed_stop_ids is not None else None
+        route_row_filter = (lambda row: row.get('route_id') in allowed_route_ids) if allowed_route_ids is not None else None
+        trip_row_filter = (lambda row: row.get('trip_id') in allowed_trip_ids) if allowed_trip_ids is not None else None
+
         with zipfile.ZipFile(zip_path, 'r') as z:
             files = z.namelist()
-            
+
             if 'stops.txt' in files:
                 print("Importing stops...")
                 with z.open('stops.txt') as f:
-                    import_csv_to_table(conn, 'stops', f, ['stop_id', 'stop_name', 'stop_lat', 'stop_lon', 'location_type', 'parent_station'])
-        
+                    import_csv_to_table(conn, 'stops', f, ['stop_id', 'stop_name', 'stop_lat', 'stop_lon', 'location_type', 'parent_station'],
+                                        row_filter=stop_row_filter)
+
             if 'routes.txt' in files:
                 print("Importing routes...")
                 with z.open('routes.txt') as f:
-                    import_csv_to_table(conn, 'routes', f, ['route_id', 'route_short_name', 'route_long_name', 'route_type'])
-                    
+                    import_csv_to_table(conn, 'routes', f, ['route_id', 'route_short_name', 'route_long_name', 'route_type'],
+                                        row_filter=route_row_filter)
+
             if 'trips.txt' in files:
                 print("Importing trips...")
                 with z.open('trips.txt') as f:
-                    import_csv_to_table(conn, 'trips', f, ['route_id', 'service_id', 'trip_id', 'direction_id'])
-                    
+                    import_csv_to_table(conn, 'trips', f, ['route_id', 'service_id', 'trip_id', 'direction_id'],
+                                        row_filter=trip_row_filter)
+
             if 'stop_times.txt' in files:
                 print("Importing stop_times (this may take a while)...")
                 def transform_st(row):
@@ -152,9 +214,9 @@ def build_db_from_zips(zip_paths, db_path=DB_NAME):
                     row['departure_time_secs'] = time_to_secs(row.get('departure_time', ''))
                     return row
                 with z.open('stop_times.txt') as f:
-                    import_csv_to_table(conn, 'stop_times', f, 
+                    import_csv_to_table(conn, 'stop_times', f,
                                         ['trip_id', 'arrival_time', 'departure_time', 'stop_id', 'stop_sequence', 'arrival_time_secs', 'departure_time_secs'],
-                                        transform_func=transform_st)
+                                        transform_func=transform_st, row_filter=trip_row_filter)
                     
             if 'calendar.txt' in files:
                 print("Importing calendar...")
@@ -228,11 +290,32 @@ def build_mock_gtfs():
     return zip_path
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1:
-        gtfs_zips = sys.argv[1:]
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Build the Motion GTFS SQLite database from one or more feed zips.")
+    parser.add_argument('zips', nargs='*', help="GTFS feed zip paths to ingest")
+    parser.add_argument(
+        '--filter', action='append', default=[], metavar='ZIP_PATH:TYPE1,TYPE2',
+        help=(
+            "Restrict a zip to only these GTFS route_type values, dropping "
+            "everything else (routes/trips/stops/stop_times) not reachable "
+            "from them. Useful for feeds that bundle multiple modes into one "
+            "zip, e.g. --filter gtfs/4/google_transit.zip:3 keeps only "
+            "metro bus (route_type 3) and drops the regional town-bus "
+            "routes (route_type 701) bundled in the same feed. Repeatable."
+        )
+    )
+    args = parser.parse_args()
+
+    if args.zips:
+        gtfs_zips = args.zips
     else:
         print("No GTFS zip provided, building mock GTFS data for testing...")
         gtfs_zips = [build_mock_gtfs()]
-        
-    build_db_from_zips(gtfs_zips)
+
+    route_type_filters = {}
+    for spec in args.filter:
+        zip_path, _, types_str = spec.partition(':')
+        route_type_filters[zip_path] = {t.strip() for t in types_str.split(',') if t.strip()}
+
+    build_db_from_zips(gtfs_zips, route_type_filters=route_type_filters)

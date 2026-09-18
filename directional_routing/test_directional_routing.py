@@ -229,5 +229,108 @@ class TestDirectionalRouting(unittest.TestCase):
         self.assertFalse(G.has_edge('S1', 'S2'))
         conn.close()
 
+    def test_bbox_padding_is_capped_for_long_distance_queries(self):
+        """
+        Regression test for the OOM bug: a single request's corridor bbox
+        must not scale unboundedly with trip distance. Without the cap, a
+        long-distance query (e.g. a geocoding mismatch resolving far apart)
+        could pull a huge slice of the network into one request's in-memory
+        graph.
+        """
+        conn = sqlite3.connect(":memory:")
+        c = conn.cursor()
+        c.executescript("""
+            CREATE TABLE stops (stop_id TEXT PRIMARY KEY, stop_name TEXT, stop_lat REAL, stop_lon REAL);
+            CREATE TABLE transit_network_edges (
+                from_stop_id TEXT, to_stop_id TEXT, route_type INTEGER, route_short_name TEXT, avg_travel_time REAL
+            );
+            CREATE TABLE transfer_edges (from_stop_id TEXT, to_stop_id TEXT, distance_km REAL, walk_time_mins REAL);
+        """)
+        # Origin/destination ~1111km apart (10 degrees of latitude) - the old
+        # uncapped formula (dist_km * 0.15 / 111) would pad the bbox by
+        # ~1.5 degrees; capped, it's clamped to MAX_BBOX_PAD_DEG (0.35).
+        origin_lat, origin_lon = 0.0, 0.0
+        dest_lat, dest_lon = 10.0, 0.0
+
+        # Within the capped bbox (min_lat ~= -0.35)
+        c.execute("INSERT INTO stops VALUES ('NEAR', 'Near Stop', -0.1, 0.1)")
+        # Outside the capped bbox but would have been inside the old
+        # uncapped one (~-1.5 to 11.5)
+        c.execute("INSERT INTO stops VALUES ('FAR', 'Far Stop', -1.0, 0.1)")
+        conn.commit()
+
+        bbox_data = directional_routing.fetch_spatial_bbox_data(conn, origin_lat, origin_lon, dest_lat, dest_lon)
+
+        self.assertIn('NEAR', bbox_data['stops_in_bbox'])
+        self.assertNotIn('FAR', bbox_data['stops_in_bbox'])
+        conn.close()
+
+    def test_bbox_fetch_returns_all_stops_within_the_capped_corridor(self):
+        """
+        Companion to the padding-cap test above: within the (capped) bbox,
+        every matching stop must be returned - no row-count LIMIT should
+        truncate results, since an unordered LIMIT would silently drop
+        arbitrary rows (including ones near the actual origin/destination)
+        rather than the least relevant ones. This was a real bug: a LIMIT
+        added here broke a legitimate ~20km cross-metro route by cutting off
+        stops near the destination.
+        """
+        conn = sqlite3.connect(":memory:")
+        c = conn.cursor()
+        c.executescript("""
+            CREATE TABLE stops (stop_id TEXT PRIMARY KEY, stop_name TEXT, stop_lat REAL, stop_lon REAL);
+            CREATE TABLE transit_network_edges (
+                from_stop_id TEXT, to_stop_id TEXT, route_type INTEGER, route_short_name TEXT, avg_travel_time REAL
+            );
+            CREATE TABLE transfer_edges (from_stop_id TEXT, to_stop_id TEXT, distance_km REAL, walk_time_mins REAL);
+        """)
+        count = 5200  # comfortably more than any single old row-count cap would have allowed
+        # Small enough increment that all `count` stops land within the
+        # actual (~0.06 deg pad) bbox for two nearby origin/destination points.
+        c.executemany(
+            "INSERT INTO stops VALUES (?, ?, ?, ?)",
+            [(f"S{i}", f"Stop {i}", -37.8 + (i * 0.000001), 144.9 + (i * 0.000001)) for i in range(count)]
+        )
+        conn.commit()
+
+        bbox_data = directional_routing.fetch_spatial_bbox_data(conn, -37.8, 144.9, -37.81, 144.91)
+        self.assertEqual(len(bbox_data['stops_in_bbox']), count)
+        conn.close()
+
+    def test_itinerary_rejects_out_of_area_trips_instead_of_loading_the_whole_dataset(self):
+        """
+        Regression test for the real OOM scenario: for a genuinely distant
+        origin/destination pair, the corridor bbox has to span both points
+        regardless of padding, so it ends up covering nearly the entire
+        dataset. calculate_directional_itinerary must reject clearly
+        out-of-area trips outright rather than attempt to build a graph
+        across that whole span.
+        """
+        fd, path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        try:
+            conn = sqlite3.connect(path)
+            conn.executescript("""
+                CREATE TABLE stops (stop_id TEXT PRIMARY KEY, stop_name TEXT, stop_lat REAL, stop_lon REAL);
+                CREATE TABLE transit_network_edges (
+                    from_stop_id TEXT, to_stop_id TEXT, route_type INTEGER, route_short_name TEXT, avg_travel_time REAL
+                );
+                CREATE TABLE transfer_edges (from_stop_id TEXT, to_stop_id TEXT, distance_km REAL, walk_time_mins REAL);
+            """)
+            conn.commit()
+            conn.close()
+
+            # Melbourne CBD -> roughly Sydney (~700km+ apart)
+            result = directional_routing.calculate_directional_itinerary(
+                start_address="-37.8136,144.9631",
+                dest_address="-33.8688,151.2093",
+                arrival_dt=datetime(2026, 1, 1, 9, 0, 0),
+                db_path=path,
+            )
+            self.assertEqual(result["status"], "Error")
+            self.assertIn("service area", result["message"])
+        finally:
+            os.remove(path)
+
 if __name__ == '__main__':
     unittest.main()
