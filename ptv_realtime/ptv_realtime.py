@@ -50,6 +50,9 @@ def parse_arrival_datetime(destination_arrival_time):
     - Unix epoch integer/float or timestamp string
     - datetime object
     """
+    if not destination_arrival_time:
+        return datetime.now() + timedelta(minutes=60)
+
     if isinstance(destination_arrival_time, datetime):
         return destination_arrival_time
         
@@ -58,6 +61,9 @@ def parse_arrival_datetime(destination_arrival_time):
         
     if isinstance(destination_arrival_time, str):
         val = destination_arrival_time.strip()
+        if not val or val.lower() in ("none", "null", "undefined", "latest", "now", "asap"):
+            return datetime.now() + timedelta(minutes=60)
+
         # Check if numeric unix timestamp string
         if val.isdigit():
             return datetime.fromtimestamp(int(val))
@@ -70,18 +76,19 @@ def parse_arrival_datetime(destination_arrival_time):
                 pass
                 
         # Try 'HH:MM'
-        try:
-            parts = val.split(":")
-            hour, minute = int(parts[0]), int(parts[1])
-            now = datetime.now()
-            target_dt = datetime(now.year, now.month, now.day, hour, minute, 0)
-            if target_dt < now:
-                target_dt += timedelta(days=1)
-            return target_dt
-        except Exception:
-            raise ValueError(f"Invalid time format '{destination_arrival_time}'. Expected 'HH:MM', 'YYYY-MM-DD HH:MM', or Unix timestamp.")
-            
-    raise ValueError("destination_arrival_time must be a string 'HH:MM', 'YYYY-MM-DD HH:MM', Unix timestamp, or datetime object.")
+        if ":" in val:
+            try:
+                parts = val.split(":")
+                hour, minute = int(parts[0]), int(parts[1])
+                now = datetime.now()
+                target_dt = datetime(now.year, now.month, now.day, hour, minute, 0)
+                if target_dt < now:
+                    target_dt += timedelta(days=1)
+                return target_dt
+            except (ValueError, IndexError):
+                pass
+                
+    return datetime.now() + timedelta(minutes=60)
 
 def is_alert_active_at_time(active_periods, target_arrival_dt, lookback_window_mins=120):
     """

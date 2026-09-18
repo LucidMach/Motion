@@ -109,24 +109,26 @@ export default function NavigationPanel() {
 
       // Determine origin string for API: coordinates or address name
       let originParam = origStr;
-      if (origStr === 'My Location') {
-        if (origCoord) {
+      if (origStr === 'My Location' || !origStr) {
+        if (origCoord && !isNaN(origCoord[0]) && !isNaN(origCoord[1])) {
           originParam = `${origCoord[1]},${origCoord[0]}`; // "lat,lon"
-        } else if (telemetry) {
+        } else if (telemetry && !isNaN(telemetry.latitude)) {
           originParam = `${telemetry.latitude},${telemetry.longitude}`;
         } else {
           originParam = '-37.8180,144.9671'; // Default Melbourne CBD Hub
         }
       }
 
-      const destParam = `${dest.stop_lat},${dest.stop_lon}`;
+      const destParam = (dest.stop_lat !== undefined && dest.stop_lon !== undefined && !isNaN(dest.stop_lat))
+        ? `${dest.stop_lat},${dest.stop_lon}`
+        : (dest.stop_name || dest.stop_id);
 
       // Resolve arrival time:
       let arrivalTimeToSend: string | undefined = undefined;
-      if (targetTimeParam !== undefined) {
-        arrivalTimeToSend = targetTimeParam || undefined;
-      } else if (arriveByMode === 'custom' && customArrivalTime) {
-        arrivalTimeToSend = customArrivalTime;
+      if (targetTimeParam !== undefined && targetTimeParam && targetTimeParam.trim()) {
+        arrivalTimeToSend = targetTimeParam.trim();
+      } else if (arriveByMode === 'custom' && customArrivalTime && customArrivalTime.trim()) {
+        arrivalTimeToSend = customArrivalTime.trim();
       }
 
       try {

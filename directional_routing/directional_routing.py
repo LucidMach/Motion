@@ -172,10 +172,13 @@ def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest
     normalized_disruptions = normalize_disruptions(disruptions, cancelled_routes)
     
     # 1. Macro Origin-Destination corridor bounding box with generous padding
-    min_lat = min(origin_lat, dest_lat) - 0.06
-    max_lat = max(origin_lat, dest_lat) + 0.06
-    min_lon = min(origin_lon, dest_lon) - 0.06
-    max_lon = max(origin_lon, dest_lon) + 0.06
+    dist_total_km = haversine(origin_lat, origin_lon, dest_lat, dest_lon)
+    pad = max(0.06, (dist_total_km * 0.15) / 111.0)
+
+    min_lat = min(origin_lat, dest_lat) - pad
+    max_lat = max(origin_lat, dest_lat) + pad
+    min_lon = min(origin_lon, dest_lon) - pad
+    max_lon = max(origin_lon, dest_lon) + pad
     
     c.execute("SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops WHERE stop_lat BETWEEN ? AND ? AND stop_lon BETWEEN ? AND ?", 
               (min_lat, max_lat, min_lon, max_lon))
@@ -193,8 +196,16 @@ def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest
     has_precomputed = c.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='transit_network_edges'").fetchone()[0]
     
     if has_precomputed:
-        # Load precomputed transit edges
-        c.execute("SELECT from_stop_id, to_stop_id, route_type, route_short_name, avg_travel_time FROM transit_network_edges")
+        # Load precomputed transit edges within spatial bounding box
+        c.execute("""
+            SELECT tne.from_stop_id, tne.to_stop_id, tne.route_type, tne.route_short_name, tne.avg_travel_time
+            FROM transit_network_edges tne
+            JOIN stops s1 ON tne.from_stop_id = s1.stop_id
+            JOIN stops s2 ON tne.to_stop_id = s2.stop_id
+            WHERE s1.stop_lat BETWEEN ? AND ? AND s1.stop_lon BETWEEN ? AND ?
+              AND s2.stop_lat BETWEEN ? AND ? AND s2.stop_lon BETWEEN ? AND ?
+        """, (min_lat, max_lat, min_lon, max_lon, min_lat, max_lat, min_lon, max_lon))
+
         for row in c.fetchall():
             u, v, route_type, route_name, avg_time = row
             if u in stops_in_bbox and v in stops_in_bbox:
@@ -262,8 +273,16 @@ def build_directional_spatial_graph(conn, origin_lat, origin_lon, dest_lat, dest
                 else:
                     G.add_edge(u, v, weight=weight, type='transit', mode=mode, route=route_name, is_replacement=False)
 
-        # Load precomputed transfer walking edges with TRANSFER_PENALTY_MINS
-        c.execute("SELECT from_stop_id, to_stop_id, distance_km, walk_time_mins FROM transfer_edges")
+        # Load precomputed transfer walking edges with TRANSFER_PENALTY_MINS within corridor
+        c.execute("""
+            SELECT te.from_stop_id, te.to_stop_id, te.distance_km, te.walk_time_mins
+            FROM transfer_edges te
+            JOIN stops s1 ON te.from_stop_id = s1.stop_id
+            JOIN stops s2 ON te.to_stop_id = s2.stop_id
+            WHERE s1.stop_lat BETWEEN ? AND ? AND s1.stop_lon BETWEEN ? AND ?
+              AND s2.stop_lat BETWEEN ? AND ? AND s2.stop_lon BETWEEN ? AND ?
+        """, (min_lat, max_lat, min_lon, max_lon, min_lat, max_lat, min_lon, max_lon))
+
         for row in c.fetchall():
             u, v, dist, walk_time = row
             if u in stops_in_bbox and v in stops_in_bbox:

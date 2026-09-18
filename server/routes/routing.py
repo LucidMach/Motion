@@ -62,7 +62,7 @@ def compute_route(req: RouteRequest) -> RouteResponse:
 
     if req.arrival_timestamp:
         target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_timestamp)
-    elif req.arrival_time:
+    elif req.arrival_time and req.arrival_time.strip() and req.arrival_time.strip().lower() not in ("none", "null", "undefined"):
         target_arrival_dt = ptv_realtime.parse_arrival_datetime(req.arrival_time)
     else:
         # Default to 60 minutes from now if unspecified
