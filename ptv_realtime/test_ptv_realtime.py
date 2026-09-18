@@ -29,7 +29,10 @@ class TestPtvRealtime(unittest.TestCase):
         self.assertEqual(res_dt.minute, 15)
 
         # 3. Unix epoch timestamp
-        epoch = int(dt_obj.timestamp())
+        # Built explicitly as a Melbourne-local instant (not dt_obj.timestamp(),
+        # which is machine-local-timezone-dependent and would only round-trip
+        # correctly on a machine already set to Melbourne time).
+        epoch = int(dt_obj.replace(tzinfo=ZoneInfo("Australia/Melbourne")).timestamp())
         res_epoch = ptv_realtime.parse_arrival_datetime(epoch)
         self.assertEqual(res_epoch.year, 2026)
         self.assertEqual(res_epoch.hour, 9)
@@ -42,7 +45,12 @@ class TestPtvRealtime(unittest.TestCase):
 
     def test_is_alert_active_at_time(self):
         target_arrival_dt = datetime(2026, 8, 20, 10, 0, 0)
-        target_ts = int(target_arrival_dt.timestamp())  # 10:00 AM
+        # Built explicitly as a Melbourne-local instant (not
+        # target_arrival_dt.timestamp(), which is machine-local-timezone-
+        # dependent) to match what is_alert_active_at_time computes
+        # internally via melbourne_naive_to_epoch, regardless of what
+        # timezone the test runner's machine clock is in.
+        target_ts = int(target_arrival_dt.replace(tzinfo=ZoneInfo("Australia/Melbourne")).timestamp())  # 10:00 AM Melbourne
 
         # Case 1: Alert active during the window (08:00 AM to 12:00 PM)
         periods_active = [{"start": target_ts - 7200, "end": target_ts + 7200}]
