@@ -62,3 +62,9 @@ export interface ClearRouteEventDetail {
   source?: string;
 }
 
+export interface HighlightRouteEventDetail {
+  geojson: GeoJSON.FeatureCollection;
+  color: string;
+  skipCameraFit?: boolean;
+}
+

@@ -10,7 +10,8 @@ if PROJECT_ROOT not in sys.path:
 
 from directional_routing.directional_routing import DB_NAME, calculate_bearing
 from ptv_realtime.ptv_realtime import melbourne_now
-from server.services.network_service import get_all_routes_metadata
+from server.services.network_service import get_all_routes_metadata, get_trip_shape_map, get_shape_polylines
+from server.services.geometry_utils import project_point_to_polyline, point_at_arc_length
 
 METRO_TRAIN_ROUTE_TYPE = 400
 DEFAULT_TRAIN_COLOR = "#0072CE"
@@ -98,6 +99,48 @@ def _bracketing_segments(cur: sqlite3.Cursor, active_service_ids: set, now_secs:
     return cur.fetchall()
 
 
+def _interpolate_position(
+    trip_id: str,
+    from_lat: float, from_lon: float,
+    to_lat: float, to_lon: float,
+    progress: float,
+    trip_shape_map: Dict[str, str],
+    shape_polylines: Dict[str, List[List[float]]],
+) -> tuple:
+    """
+    Snaps a train's position (and heading) to its actual rail shape when the
+    trip's shape can be resolved, instead of a straight chord between its two
+    bracketing stops - the naive chord visibly cuts across curves on long or
+    curved inter-station gaps (e.g. the Sunbury line, the Caulfield loop curve).
+    Falls back to the straight-line lerp (this module's original behavior) on
+    ANY lookup miss or failure - an external dataset plus new geometry math
+    must never drop a train or crash the endpoint over one bad shape.
+    """
+    try:
+        shape_id = trip_shape_map.get(trip_id)
+        polyline = shape_polylines.get(shape_id) if shape_id else None
+        if not polyline or len(polyline) < 2:
+            raise ValueError("no shape")
+
+        from_proj = project_point_to_polyline((from_lon, from_lat), polyline)
+        to_proj = project_point_to_polyline((to_lon, to_lat), polyline)
+        if not from_proj or not to_proj:
+            raise ValueError("projection failed")
+
+        target_km = from_proj["arc_length_km"] + (to_proj["arc_length_km"] - from_proj["arc_length_km"]) * progress
+        result = point_at_arc_length(polyline, target_km)
+        if not result:
+            raise ValueError("arc-length lookup failed")
+
+        snapped_lon, snapped_lat = result["point"]
+        return snapped_lat, snapped_lon, result["bearing_deg"]
+    except Exception:
+        lat = from_lat + (to_lat - from_lat) * progress
+        lon = from_lon + (to_lon - from_lon) * progress
+        bearing = calculate_bearing(from_lat, from_lon, to_lat, to_lon)
+        return lat, lon, bearing
+
+
 def get_active_train_positions(now: Optional[datetime] = None, db_path: str = DB_NAME) -> List[Dict[str, Any]]:
     """
     Returns the simulated (schedule-interpolated) position of every Melbourne Metro
@@ -107,6 +150,8 @@ def get_active_train_positions(now: Optional[datetime] = None, db_path: str = DB
     """
     now = now or melbourne_now()
     colors = _route_colors()
+    trip_shape_map = get_trip_shape_map()
+    shape_polylines = get_shape_polylines()
 
     conn = sqlite3.connect(db_path)
     try:
@@ -135,9 +180,10 @@ def get_active_train_positions(now: Optional[datetime] = None, db_path: str = DB
                 progress = (now_secs - from_secs) / span if span > 0 else 0.0
                 progress = max(0.0, min(1.0, progress))
 
-                lat = from_lat + (to_lat - from_lat) * progress
-                lon = from_lon + (to_lon - from_lon) * progress
-                bearing = calculate_bearing(from_lat, from_lon, to_lat, to_lon)
+                lat, lon, bearing = _interpolate_position(
+                    trip_id, from_lat, from_lon, to_lat, to_lon, progress,
+                    trip_shape_map, shape_polylines,
+                )
 
                 # Rows are consumed in from_secs order, so a later (larger
                 # from_secs) match for the same trip_id - possible only when

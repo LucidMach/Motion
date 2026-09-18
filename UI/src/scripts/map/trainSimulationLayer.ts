@@ -118,7 +118,8 @@ export class TrainSimulationLayer {
         'fill-extrusion-height': TRAIN_HEIGHT_M,
         'fill-extrusion-base': 0,
         'fill-extrusion-opacity': 0.96,
-        'fill-extrusion-vertical-gradient': false
+        'fill-extrusion-vertical-gradient': false,
+        'fill-extrusion-emissive-strength': 0.9
       }
     });
 

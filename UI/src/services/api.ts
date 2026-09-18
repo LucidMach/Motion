@@ -244,6 +244,16 @@ class MotionApiClient {
     return this.request<GeoJSON.FeatureCollection>('/api/network/trains/live');
   }
 
+  async getRoutesByMode(mode: 'train' | 'tram' | 'bus'): Promise<RouteMetadata[]> {
+    return this.request<RouteMetadata[]>(`/api/network/routes/${mode}`);
+  }
+
+  async getRouteShape(mode: 'train' | 'tram' | 'bus', routeShortName: string): Promise<GeoJSON.FeatureCollection> {
+    return this.request<GeoJSON.FeatureCollection>(
+      `/api/network/route-shape?mode=${mode}&route_short_name=${encodeURIComponent(routeShortName)}`
+    );
+  }
+
   async getLiveDisruptions(windowMins: number = 60): Promise<any[]> {
     return this.request<any[]>(`/api/disruptions/live?window_mins=${windowMins}`);
   }

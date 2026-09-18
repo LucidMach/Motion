@@ -6,6 +6,7 @@ import { UserMarkerManager } from './userMarker';
 import { SearchMarkerManager } from './searchMarker';
 import { RouteLayerManager } from './routeLayer';
 import { TrainSimulationLayer } from './trainSimulationLayer';
+import { RouteHighlightLayer } from './routeHighlightLayer';
 import { GeolocationTracker } from './geolocationTracker';
 import { LocationCoordinator } from './locationCoordinator';
 import { CameraController } from './cameraController';
@@ -28,6 +29,7 @@ export class MotionMapController {
   private searchMarkerManager: SearchMarkerManager | null = null;
   private routeManager: RouteLayerManager | null = null;
   private trainSimLayer: TrainSimulationLayer | null = null;
+  private routeHighlightLayer: RouteHighlightLayer | null = null;
   private lastSearchCoords: [number, number] | null = null;
   private camera = new CameraController(() => this.map);
   private geocoder = new ReverseGeocodingService();
@@ -111,6 +113,7 @@ export class MotionMapController {
       this.routeManager = new RouteLayerManager(this.map);
       this.trainSimLayer = new TrainSimulationLayer(this.map);
       this.trainSimLayer.start();
+      this.routeHighlightLayer = new RouteHighlightLayer(this.map);
 
       window.addEventListener('motion:theme-change', this.onThemeChange);
       window.addEventListener('motion:gesture-change', this.onGestureChange);
@@ -214,6 +217,15 @@ export class MotionMapController {
     this.routeManager?.clear();
   }
 
+  highlightRoute(featureCollection: GeoJSON.FeatureCollection, color: string, skipCameraFit = false): void {
+    if (!this.map) return;
+    this.routeHighlightLayer?.render(featureCollection, color, skipCameraFit);
+  }
+
+  clearRouteHighlight(): void {
+    this.routeHighlightLayer?.clear();
+  }
+
   toggle3D(): boolean {
     return this.camera.toggle();
   }
@@ -232,6 +244,7 @@ export class MotionMapController {
     this.searchMarkerManager?.remove();
     this.routeManager?.clear();
     this.trainSimLayer?.destroy();
+    this.routeHighlightLayer?.destroy();
     this.map?.remove();
     this.map = null;
   }

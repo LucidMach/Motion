@@ -192,6 +192,43 @@ class TrainSimulationServiceTestCase(unittest.TestCase):
         positions = self._positions_at(0, 17, 30)
         self.assertEqual(positions[0]["color"], "#0072CE")
 
+    @patch("server.services.train_simulation_service.get_shape_polylines")
+    @patch("server.services.train_simulation_service.get_trip_shape_map")
+    def test_position_snaps_to_rail_shape_when_resolvable(self, mock_trip_shapes, mock_polylines):
+        # A->B is a straight north segment in the fixture (naive lerp midpoint
+        # would be lon=0.0, lat=0.005) - inject a shape that bows east between
+        # them, so a correct snap should land on the bow's own midpoint instead.
+        mock_trip_shapes.return_value = {"T1": "SHAPE1"}
+        mock_polylines.return_value = {"SHAPE1": [[0.0, 0.0], [0.005, 0.005], [0.0, 0.01]]}
+
+        positions = self._positions_at(0, 17, 30)  # midway through the A->B leg
+        self.assertEqual(len(positions), 1)
+        p = positions[0]
+        self.assertNotAlmostEqual(p["lon"], 0.0, places=3)
+        self.assertAlmostEqual(p["lon"], 0.005, places=3)
+        self.assertAlmostEqual(p["lat"], 0.005, places=3)
+
+    @patch("server.services.train_simulation_service.get_trip_shape_map")
+    def test_falls_back_to_straight_line_lerp_when_shape_unresolvable(self, mock_trip_shapes):
+        mock_trip_shapes.return_value = {}  # no trip -> shape_id mapping available
+        positions = self._positions_at(0, 17, 30)
+        self.assertEqual(len(positions), 1)
+        p = positions[0]
+        self.assertAlmostEqual(p["lat"], 0.005, places=6)
+        self.assertAlmostEqual(p["lon"], 0.0, places=6)
+
+    @patch("server.services.train_simulation_service.get_shape_polylines")
+    @patch("server.services.train_simulation_service.get_trip_shape_map")
+    def test_malformed_shape_falls_back_without_dropping_the_train(self, mock_trip_shapes, mock_polylines):
+        mock_trip_shapes.return_value = {"T1": "SHAPE1"}
+        mock_polylines.return_value = {"SHAPE1": [[0.0, 0.0]]}  # too short to project onto
+
+        positions = self._positions_at(0, 17, 30)
+        self.assertEqual(len(positions), 1)
+        p = positions[0]
+        self.assertAlmostEqual(p["lat"], 0.005, places=6)
+        self.assertAlmostEqual(p["lon"], 0.0, places=6)
+
     def test_geojson_wrapper_shapes_features_correctly(self):
         now = datetime(2026, 9, 21, 0, 17, 30)
         fc = get_active_train_positions_geojson(now=now, db_path=self.db_path)

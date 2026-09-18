@@ -34,6 +34,7 @@ LINE_METADATA = {
 
 _CACHED_LINES_GEOJSON: Optional[Dict[str, Any]] = None
 _CACHED_STATIONS_GEOJSON: Optional[Dict[str, Any]] = None
+_CACHED_TRIP_SHAPE_MAP: Optional[Dict[str, str]] = None
 
 # City Loop interchange stations, keyed by clean name (suffix already stripped)
 # so "Flagstaff Station" and "Flagstaff Railway Station" both match regardless
@@ -62,27 +63,42 @@ def is_city_loop_station(clean_name: str) -> bool:
     return clean_name in CITY_LOOP_STATIONS
 
 
+def _resolve_line_color(short_name: str, zip_color: str) -> str:
+    """Curated LINE_METADATA wins when present - the GTFS zip's own route_color
+    field is sometimes wrong (e.g. it duplicates Sandringham's pink for Werribee)
+    and is only trustworthy as a fallback for lines we haven't curated."""
+    curated = LINE_METADATA.get(short_name, {}).get("color")
+    if curated:
+        return curated
+    return f"#{zip_color}" if zip_color else "#0072CE"
+
+
 def ensure_geojson_dir():
     os.makedirs(GEOJSON_DIR, exist_ok=True)
 
 
-def generate_metro_geojson() -> tuple[Dict[str, Any], Dict[str, Any]]:
+def generate_metro_geojson(force: bool = False) -> tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Extracts high-precision train shapes, routes, and stations from GTFS Feed 2 (gtfs/2/google_transit.zip).
-    Returns (lines_geojson, stations_geojson).
+    Returns (lines_geojson, stations_geojson). Pass force=True to bypass the
+    disk cache and always re-parse the zip (used by POST /metro/regenerate -
+    without this, "regenerating" was a no-op whenever cache files already existed).
     """
-    global _CACHED_LINES_GEOJSON, _CACHED_STATIONS_GEOJSON
+    global _CACHED_LINES_GEOJSON, _CACHED_STATIONS_GEOJSON, _CACHED_TRIP_SHAPE_MAP
 
     lines_file = os.path.join(GEOJSON_DIR, "ptv_metro_trains.geojson")
     stations_file = os.path.join(GEOJSON_DIR, "ptv_metro_stations.geojson")
+    trip_shape_file = os.path.join(GEOJSON_DIR, "ptv_trip_shape_map.json")
 
     # If cached files already exist on disk, load and cache in memory
-    if os.path.exists(lines_file) and os.path.exists(stations_file):
+    if not force and os.path.exists(lines_file) and os.path.exists(stations_file) and os.path.exists(trip_shape_file):
         try:
             with open(lines_file, "r", encoding="utf-8") as f:
                 _CACHED_LINES_GEOJSON = json.load(f)
             with open(stations_file, "r", encoding="utf-8") as f:
                 _CACHED_STATIONS_GEOJSON = json.load(f)
+            with open(trip_shape_file, "r", encoding="utf-8") as f:
+                _CACHED_TRIP_SHAPE_MAP = json.load(f)
             if _CACHED_LINES_GEOJSON and _CACHED_STATIONS_GEOJSON:
                 return _CACHED_LINES_GEOJSON, _CACHED_STATIONS_GEOJSON
         except Exception as e:
@@ -107,7 +123,7 @@ def generate_metro_geojson() -> tuple[Dict[str, Any], Dict[str, Any]]:
                 if not s_name or s_name == "Replacement Bus":
                     continue
                 color = r.get("route_color", "")
-                hex_color = f"#{color}" if color else LINE_METADATA.get(s_name, {}).get("color", "#0072CE")
+                hex_color = _resolve_line_color(s_name, color)
                 routes[r_id] = {
                     "route_id": r_id,
                     "route_short_name": s_name,
@@ -116,13 +132,19 @@ def generate_metro_geojson() -> tuple[Dict[str, Any], Dict[str, Any]]:
                     "group": LINE_METADATA.get(s_name, {}).get("group", "Metro Network")
                 }
 
-        # 2. Map trip shape IDs to routes
+        # 2. Map trip shape IDs to routes, and trip_id -> shape_id (the latter
+        # lets a live train's trip_id be resolved to its exact rail alignment
+        # for position/bearing snapping - see train_simulation_service.py)
         shape_to_route = {}
+        trip_to_shape: Dict[str, str] = {}
         with z.open("trips.txt") as f:
             reader = csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig"))
             for t in reader:
                 r_id = t["route_id"]
                 s_id = t.get("shape_id")
+                trip_id = t.get("trip_id")
+                if s_id and trip_id:
+                    trip_to_shape[trip_id] = s_id
                 if s_id and r_id in routes:
                     if s_id not in shape_to_route:
                         shape_to_route[s_id] = routes[r_id]
@@ -218,11 +240,14 @@ def generate_metro_geojson() -> tuple[Dict[str, Any], Dict[str, Any]]:
                 json.dump(lines_geojson, f)
             with open(stations_file, "w", encoding="utf-8") as f:
                 json.dump(stations_geojson, f)
+            with open(trip_shape_file, "w", encoding="utf-8") as f:
+                json.dump(trip_to_shape, f)
         except Exception as e:
             print(f"[NetworkService] Error saving GeoJSON to disk: {e}")
 
         _CACHED_LINES_GEOJSON = lines_geojson
         _CACHED_STATIONS_GEOJSON = stations_geojson
+        _CACHED_TRIP_SHAPE_MAP = trip_to_shape
 
         return lines_geojson, stations_geojson
 
@@ -233,6 +258,26 @@ def get_metro_lines_geojson() -> Dict[str, Any]:
         lines, _ = generate_metro_geojson()
         return lines
     return _CACHED_LINES_GEOJSON
+
+
+def get_trip_shape_map() -> Dict[str, str]:
+    """trip_id -> shape_id, for resolving a live train's exact rail alignment."""
+    global _CACHED_TRIP_SHAPE_MAP
+    if _CACHED_TRIP_SHAPE_MAP is None:
+        generate_metro_geojson()
+    return _CACHED_TRIP_SHAPE_MAP or {}
+
+
+def get_shape_polylines() -> Dict[str, List[List[float]]]:
+    """shape_id -> ordered [lon, lat] polyline, derived from the cached metro
+    lines GeoJSON - cheap enough to recompute per call rather than caching
+    separately, which keeps it impossible to go stale on its own."""
+    lines = get_metro_lines_geojson()
+    return {
+        f["properties"]["shape_id"]: f["geometry"]["coordinates"]
+        for f in lines.get("features", [])
+        if f.get("properties", {}).get("shape_id") and f.get("geometry", {}).get("type") == "LineString"
+    }
 
 
 def get_metro_stations_geojson() -> Dict[str, Any]:

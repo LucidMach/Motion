@@ -6,7 +6,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from server.services.network_service import clean_station_name, is_city_loop_station
+from server.services.network_service import clean_station_name, is_city_loop_station, _resolve_line_color
 
 
 class TestStationNameMatching(unittest.TestCase):
@@ -37,6 +37,20 @@ class TestStationNameMatching(unittest.TestCase):
         for name in expected:
             with self.subTest(name=name):
                 self.assertTrue(is_city_loop_station(name))
+
+
+class TestLineColorPrecedence(unittest.TestCase):
+    def test_curated_metadata_overrides_wrong_gtfs_color(self):
+        """Regression test: the GTFS zip's route_color for Werribee is F178AF
+        (pink, wrongly duplicating Sandringham's color) - LINE_METADATA's
+        curated #028430 green must win."""
+        self.assertEqual(_resolve_line_color("Werribee", "F178AF"), "#028430")
+
+    def test_uncurated_line_falls_back_to_gtfs_color(self):
+        self.assertEqual(_resolve_line_color("SomeUnlistedLine", "AABBCC"), "#AABBCC")
+
+    def test_uncurated_line_with_no_gtfs_color_falls_back_to_default(self):
+        self.assertEqual(_resolve_line_color("SomeUnlistedLine", ""), "#0072CE")
 
 
 if __name__ == "__main__":

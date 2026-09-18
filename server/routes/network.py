@@ -7,6 +7,7 @@ from server.services.network_service import (
     generate_metro_geojson
 )
 from server.services.train_simulation_service import get_active_train_positions_geojson
+from server.services.route_shape_service import get_routes_for_mode, get_route_shape
 
 router = APIRouter(prefix="/api/network", tags=["Network & Geometries"])
 
@@ -35,6 +36,24 @@ def get_routes() -> List[Dict[str, Any]]:
     return get_all_routes_metadata()
 
 
+@router.get("/routes/{mode}")
+def get_routes_by_mode(mode: str) -> List[Dict[str, Any]]:
+    """
+    Lists every route for a transit mode ("train", "tram", or "bus"), for
+    populating a route picker. Unknown modes return an empty list.
+    """
+    return get_routes_for_mode(mode)
+
+
+@router.get("/route-shape")
+def get_route_shape_endpoint(mode: str, route_short_name: str) -> Dict[str, Any]:
+    """
+    Returns a GeoJSON FeatureCollection tracing the given route's physical
+    path, for highlighting it on the map.
+    """
+    return get_route_shape(mode, route_short_name)
+
+
 @router.get("/trains/live")
 def get_live_trains() -> Dict[str, Any]:
     """
@@ -50,7 +69,7 @@ def regenerate_geojson():
     """
     Forces regeneration and caching of GeoJSON datasets from the GTFS zip archive.
     """
-    lines, stations = generate_metro_geojson()
+    lines, stations = generate_metro_geojson(force=True)
     return {
         "status": "success",
         "lines_count": len(lines.get("features", [])),

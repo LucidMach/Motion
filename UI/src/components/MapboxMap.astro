@@ -84,6 +84,17 @@ const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || "" } =
     window.addEventListener("motion:cmd:clear-route", () => {
       mapController?.clearRoute();
     });
+
+    window.addEventListener("motion:cmd:highlight-route", (e: Event) => {
+      const detail = (e as CustomEvent<import('../types/events').HighlightRouteEventDetail>).detail;
+      if (detail?.geojson) {
+        mapController?.highlightRoute(detail.geojson, detail.color, detail.skipCameraFit ?? false);
+      }
+    });
+
+    window.addEventListener("motion:cmd:clear-route-highlight", () => {
+      mapController?.clearRouteHighlight();
+    });
   }
 
   if (document.readyState === "loading") {

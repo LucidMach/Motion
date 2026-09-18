@@ -3,6 +3,7 @@
 import '../styles/global.css';
 import MapboxMap from '../components/MapboxMap.astro';
 import HeaderHUD from '../components/HeaderHUD/HeaderHUD';
+import TransitDock from '../components/TransitDock/TransitDock';
 import SettingsButton from '../components/SettingsButton/SettingsButton';
 import SettingsModal from '../components/SettingsModal/SettingsModal';
 import TokenModal from '../components/TokenModal/TokenModal';
@@ -86,6 +87,9 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
 
       <!-- Top Navigation and Region Status HUD -->
       <HeaderHUD client:load />
+
+      <!-- Transit Dock: Train/Tram/Bus route picker -->
+      <TransitDock client:load />
 
       <!-- Bottom-Left Settings Button -->
       <SettingsButton client:load />
