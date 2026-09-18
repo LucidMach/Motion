@@ -1,3 +1,7 @@
 -r requirements.txt
 pytest>=8.0.0
 pyyaml>=6.0
+# Newer starlette (pulled in transitively via fastapi) hard-requires this for
+# TestClient - without it, any test importing fastapi.testclient fails to
+# even collect.
+httpx2>=0.28.0
