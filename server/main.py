@@ -11,17 +11,25 @@ if PROJECT_ROOT not in sys.path:
 
 from server.routes import system, stops, network, disruptions, routing
 from server.services.network_service import generate_metro_geojson
+from server.services.spatial_service import initialize_in_memory_spatial_tree
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Preloads network GeoJSON and verifies database integrity on startup."""
+    """Preloads network GeoJSON and initializes in-memory spatial KDTree on startup."""
     print("[MotionAPI] Initializing Motion Transit API...")
     try:
         lines, stations = generate_metro_geojson()
         print(f"[MotionAPI] Loaded {len(lines.get('features', []))} metro lines and {len(stations.get('features', []))} stations.")
     except Exception as e:
         print(f"[MotionAPI] Notice initializing network cache: {e}")
+
+    try:
+        tree_info = initialize_in_memory_spatial_tree()
+        print(f"[MotionAPI] Spatial KDTree in-memory: {tree_info.get('stops_count', 0)} stops indexed ({tree_info.get('load_time_ms', 0)}ms).")
+    except Exception as e:
+        print(f"[MotionAPI] Notice initializing spatial tree: {e}")
+
     yield
     print("[MotionAPI] Shutting down Motion Transit API.")
 
@@ -33,16 +41,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS configuration for Astro & React UI
+# CORS configuration for Astro & React UI (supports localhost, Vercel, and production domains)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:4321",
-        "http://127.0.0.1:4321",
-        "*"
-    ],
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

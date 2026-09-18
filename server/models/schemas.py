@@ -110,10 +110,19 @@ class LiveDisruptionItem(BaseModel):
 
 class SystemStatus(BaseModel):
     status: str
+    server_online: bool = True
+    uptime_seconds: float = 0.0
+    kdtree_in_memory: bool = False
+    kdtree_nodes_count: int = 0
     db_path: str
     db_exists: bool
-    stops_count: int
-    routes_count: int
-    transit_edges_count: int
-    transfer_edges_count: int
-    ptv_api_configured: bool
+    db_loaded: bool = False
+    stops_count: int = 0
+    routes_count: int = 0
+    transit_edges_count: int = 0
+    transfer_edges_count: int = 0
+    ptv_api_configured: bool = False
+    checks: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Structured verification for 1. Server Online, 2. KDTree in Memory, 3. Precomputed DB Loaded"
+    )

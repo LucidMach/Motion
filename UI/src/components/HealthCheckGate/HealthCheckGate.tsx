@@ -23,8 +23,8 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
 
   useEffect(() => {
     const cachedReady = sessionStorage.getItem('motion_api_ready');
-    const targetUrl = apiBaseUrl || import.meta.env.PUBLIC_API_URL || 'https://motionapi.onrender.com';
-    setResolvedUrl(targetUrl);
+    const currentBaseUrl = apiBaseUrl || motionApi.baseUrl;
+    setResolvedUrl(currentBaseUrl);
 
     // Elapsed timer to detect Render free-tier cold sleep
     timerRef.current = setInterval(() => {
@@ -33,7 +33,12 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
 
       if (sec >= 3 && gateState === 'connecting') {
         setGateState('waking');
-        setStatusText('Waking Render service (free tier cold start, ~20-30s)...');
+        const isLocal = currentBaseUrl.includes('localhost') || currentBaseUrl.includes('127.0.0.1');
+        setStatusText(
+          isLocal
+            ? 'Connecting to local Motion API server (:8000)...'
+            : 'Waking Render service (free tier cold start, ~20-30s)...'
+        );
       }
 
       if (sec >= 4) {
@@ -74,8 +79,9 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
           }, cachedReady ? 350 : 850);
           return;
         }
-      } catch {
+      } catch (err: any) {
         if (!isMounted) return;
+        console.warn(`[HealthCheckGate] Backend check to ${currentBaseUrl} failed:`, err?.message || err);
         pollRef.current = setTimeout(checkBackendHealth, 2500);
       }
     };
@@ -207,40 +213,53 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
               />
             </div>
 
-            {/* Telemetry metadata rows */}
-            {systemTelemetry && systemTelemetry.stops_count > 0 ? (
-              <div className="mt-1 grid grid-cols-2 gap-2 border-t border-subtle pt-2.5 font-mono text-[0.74rem]">
-                <div className="flex justify-between text-secondary">
-                  <span>Stops:</span>
-                  <span className="font-semibold text-primary">{systemTelemetry.stops_count.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-secondary">
-                  <span>Routes:</span>
-                  <span className="font-semibold text-primary">{systemTelemetry.routes_count.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-secondary">
-                  <span>Edges:</span>
-                  <span className="font-semibold text-accent-cyan">{(systemTelemetry.transit_edges_count + systemTelemetry.transfer_edges_count).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-secondary">
-                  <span>Live GTFS-R:</span>
-                  <span className={systemTelemetry.ptv_api_configured ? 'font-semibold text-accent-emerald' : 'text-muted'}>
-                    {systemTelemetry.ptv_api_configured ? 'CONNECTED' : 'STANDALONE'}
-                  </span>
-                </div>
+            {/* 3-Point System Verification Checklist */}
+            <div className="flex flex-col gap-2 border-t border-subtle pt-2.5 font-mono text-[0.74rem]">
+              {/* Check 1: Server Status (Render Awake) */}
+              <div className="flex items-center justify-between">
+                <span className="text-secondary flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${gateState === 'connecting' || gateState === 'waking' ? 'bg-accent-amber animate-pulse' : 'bg-accent-emerald'}`} />
+                  1. Server Process:
+                </span>
+                <span className={`font-semibold ${gateState === 'waking' ? 'text-accent-amber' : gateState === 'connecting' ? 'text-secondary' : 'text-accent-emerald'}`}>
+                  {gateState === 'waking' ? `Waking (+${elapsedSeconds}s)` : gateState === 'connecting' ? 'Pinging...' : `Awake (${systemTelemetry?.uptime_seconds || 0}s)`}
+                </span>
               </div>
-            ) : (
-              <div className="flex items-center justify-between text-[0.74rem] text-muted">
-                <span>API Endpoint</span>
-                <code className="font-mono text-secondary text-[0.72rem]">{resolvedUrl}</code>
+
+              {/* Check 2: In-Memory Spatial KDTree */}
+              <div className="flex items-center justify-between">
+                <span className="text-secondary flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${systemTelemetry?.kdtree_in_memory ? 'bg-accent-emerald' : 'bg-muted'}`} />
+                  2. In-Memory KDTree:
+                </span>
+                <span className={`font-semibold ${systemTelemetry?.kdtree_in_memory ? 'text-accent-cyan' : 'text-muted'}`}>
+                  {systemTelemetry?.kdtree_in_memory ? `${systemTelemetry.kdtree_nodes_count?.toLocaleString() || systemTelemetry.stops_count.toLocaleString()} Nodes` : 'Loading RAM tree...'}
+                </span>
               </div>
-            )}
+
+              {/* Check 3: Precomputed Database Loaded */}
+              <div className="flex items-center justify-between">
+                <span className="text-secondary flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${systemTelemetry?.db_loaded || (systemTelemetry?.transit_edges_count ?? 0) > 0 ? 'bg-accent-emerald' : 'bg-muted'}`} />
+                  3. Precomputed Database:
+                </span>
+                <span className={`font-semibold ${(systemTelemetry?.transit_edges_count ?? 0) > 0 ? 'text-primary' : 'text-muted'}`}>
+                  {(systemTelemetry?.transit_edges_count ?? 0) > 0 ? `${(systemTelemetry?.transit_edges_count ?? 0).toLocaleString()} Transit Edges` : 'Verifying SQLite DB...'}
+                </span>
+              </div>
+            </div>
+
+            {/* Target Host Info */}
+            <div className="flex items-center justify-between border-t border-subtle pt-2 text-[0.72rem] text-muted">
+              <span>Target Host:</span>
+              <code className="font-mono text-secondary text-[0.70rem] truncate max-w-[200px]">{resolvedUrl}</code>
+            </div>
           </div>
 
           {/* Render cold boot helper note */}
           {gateState === 'waking' && (
             <p className="text-[0.78rem] leading-relaxed text-secondary animate-fade-in">
-              Render free instances hibernate after 15 minutes of inactivity. The container is booting and loading the GTFS graph into memory.
+              Render free instances hibernate after 15 minutes of inactivity. Initial container spin-up takes ~20–30s.
             </p>
           )}
 

@@ -132,24 +132,38 @@ export interface RouteMetadata {
 
 export interface SystemStatus {
   status: string;
+  server_online: boolean;
+  uptime_seconds: number;
+  kdtree_in_memory: boolean;
+  kdtree_nodes_count: number;
   db_path: string;
   db_exists: boolean;
+  db_loaded: boolean;
   stops_count: number;
   routes_count: number;
   transit_edges_count: number;
   transfer_edges_count: number;
   ptv_api_configured: boolean;
+  checks?: {
+    '1_server_up'?: { status: string; message: string; uptime_seconds?: number };
+    '2_kdtree_in_memory'?: { status: string; message: string; total_nodes?: number; kdtree_ready?: boolean };
+    '3_precomputed_database_loaded'?: { status: string; message: string; stops_count?: number; transit_edges_count?: number; transfer_edges_count?: number };
+  };
 }
 
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined' && (window as any).__MOTION_API_URL__) {
     return (window as any).__MOTION_API_URL__;
+  }
+  // If running locally in browser (localhost / 127.0.0.1) without an explicit remote override:
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://127.0.0.1:8000';
   }
   return import.meta.env.PUBLIC_API_URL || 'https://motionapi.onrender.com';
 };
 
 class MotionApiClient {
-  private get baseUrl(): string {
+  get baseUrl(): string {
     return getApiBaseUrl();
   }
 

@@ -1,22 +1,44 @@
 import os
+import time
 import sqlite3
 from fastapi import APIRouter
 from server.models.schemas import SystemStatus
 from directional_routing import DB_NAME
+from server.services.spatial_service import get_spatial_tree_status
 
 router = APIRouter(prefix="/api", tags=["System"])
+_SERVER_BOOT_TIME = time.time()
 
 
 @router.get("/health")
 def health_check():
-    """Liveness check endpoint."""
-    return {"status": "ok", "service": "Motion Transit Engine API"}
+    """Liveness check endpoint. Returns immediately when server is not in cold starting."""
+    uptime = round(time.time() - _SERVER_BOOT_TIME, 2)
+    tree_status = get_spatial_tree_status()
+    db_exists = os.path.exists(DB_NAME) and os.path.getsize(DB_NAME) > 0
+    
+    return {
+        "status": "ok",
+        "service": "Motion Transit Engine API",
+        "uptime_seconds": uptime,
+        "cold_starting": False,
+        "kdtree_in_memory": tree_status.get("is_in_memory", False),
+        "db_loaded": db_exists
+    }
 
 
 @router.get("/status", response_model=SystemStatus)
 def get_system_status():
-    """Returns database telemetry, stop counts, and precomputed edge counts."""
-    db_exists = os.path.exists(DB_NAME)
+    """
+    Returns verified diagnostics for:
+    1. Server Up (Not Cold Starting)
+    2. In-Memory KDTree Spatial Index
+    3. Precomputed Timetable Database (transit & transfer edges)
+    """
+    uptime = round(time.time() - _SERVER_BOOT_TIME, 2)
+    tree_status = get_spatial_tree_status()
+    db_exists = os.path.exists(DB_NAME) and os.path.getsize(DB_NAME) > 0
+    
     stops_count = 0
     routes_count = 0
     transit_edges_count = 0
@@ -42,14 +64,45 @@ def get_system_status():
 
     api_key = os.getenv("PTV_API_KEY") or os.getenv("PTVOpenDataAPIKey", "")
     ptv_configured = bool(api_key and "replace_me" not in api_key.lower())
+    db_loaded = stops_count > 0 and (transit_edges_count > 0 or transfer_edges_count > 0)
+
+    checks = {
+        "1_server_up": {
+            "status": "pass",
+            "message": "Render backend is awake and actively accepting requests",
+            "uptime_seconds": uptime
+        },
+        "2_kdtree_in_memory": {
+            "status": "pass" if tree_status.get("is_in_memory") else "warn",
+            "message": "In-memory spatial KDTree ready for sub-millisecond lookup" if tree_status.get("is_in_memory") else "Spatial KDTree pending initialization",
+            "total_nodes": tree_status.get("total_nodes", 0),
+            "kdtree_ready": tree_status.get("kdtree_ready", False),
+            "load_time_ms": tree_status.get("load_time_ms", 0.0)
+        },
+        "3_precomputed_database_loaded": {
+            "status": "pass" if db_loaded else "fail",
+            "message": "Precomputed timetable & transfer database loaded" if db_loaded else "Database missing or precomputation edges not generated",
+            "db_exists": db_exists,
+            "stops_count": stops_count,
+            "routes_count": routes_count,
+            "transit_edges_count": transit_edges_count,
+            "transfer_edges_count": transfer_edges_count
+        }
+    }
 
     return SystemStatus(
-        status="ready" if db_exists else "needs_database",
+        status="ready" if (db_loaded and tree_status.get("is_in_memory")) else "initializing",
+        server_online=True,
+        uptime_seconds=uptime,
+        kdtree_in_memory=tree_status.get("is_in_memory", False),
+        kdtree_nodes_count=tree_status.get("total_nodes", 0),
         db_path=DB_NAME,
         db_exists=db_exists,
+        db_loaded=db_loaded,
         stops_count=stops_count,
         routes_count=routes_count,
         transit_edges_count=transit_edges_count,
         transfer_edges_count=transfer_edges_count,
-        ptv_api_configured=ptv_configured
+        ptv_api_configured=ptv_configured,
+        checks=checks
     )
