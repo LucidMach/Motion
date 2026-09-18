@@ -72,6 +72,7 @@ def root():
             "/api/network/metro/lines",
             "/api/network/metro/stations",
             "/api/network/routes",
+            "/api/network/trains/live",
             "/api/disruptions/live",
             "/api/route"
         ]
