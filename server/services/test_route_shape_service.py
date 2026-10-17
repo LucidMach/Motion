@@ -53,18 +53,25 @@ class RouteShapeServiceTestCase(unittest.TestCase):
 
         self.db_patcher = patch("server.services.route_shape_service.DB_NAME", self.db_path)
         self.db_patcher.start()
+        from server.services import route_shape_service as rss
+        rss._CACHED_ROUTES_BY_MODE.clear()
 
     def tearDown(self):
         self.db_patcher.stop()
         os.remove(self.db_path)
+        from server.services import route_shape_service as rss
+        rss._CACHED_ROUTES_BY_MODE.clear()
 
     def test_get_routes_for_mode_filters_by_route_type(self):
         trams = get_routes_for_mode("tram")
         names = {r["route_short_name"] for r in trams}
         self.assertEqual(names, {"1", "11"})
         for r in trams:
-            self.assertEqual(r["color"], "#78BE20")
             self.assertEqual(r["mode"], "tram")
+        tram_1 = next(r for r in trams if r["route_short_name"] == "1")
+        self.assertEqual(tram_1["color"], "#B5BD00")
+        tram_11 = next(r for r in trams if r["route_short_name"] == "11")
+        self.assertEqual(tram_11["color"], "#6ECEB2")
 
     def test_get_routes_for_mode_dedups_shared_short_name_across_route_ids(self):
         trams = get_routes_for_mode("tram")
@@ -82,7 +89,7 @@ class RouteShapeServiceTestCase(unittest.TestCase):
         self.assertEqual(directions, {0, 1})
         for f in shape["features"]:
             self.assertEqual(f["geometry"]["type"], "LineString")
-            self.assertEqual(f["properties"]["color"], "#78BE20")
+            self.assertEqual(f["properties"]["color"], "#B5BD00")
 
     def test_get_route_shape_respects_mode_filter(self):
         # Bus route "1" exists too, but asking for tram "1" must not pull in the bus shape.

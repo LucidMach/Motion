@@ -68,3 +68,11 @@ export interface HighlightRouteEventDetail {
   skipCameraFit?: boolean;
 }
 
+export interface VehicleSelectedEventDetail {
+  tripId: string;
+  routeShortName: string;
+  color: string;
+  coords?: [number, number];
+  mode?: 'train' | 'tram' | 'bus';
+}
+

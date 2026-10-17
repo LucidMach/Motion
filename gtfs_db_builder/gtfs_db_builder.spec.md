@@ -45,7 +45,9 @@ CREATE TABLE routes (
     route_id TEXT PRIMARY KEY,
     route_short_name TEXT,
     route_long_name TEXT,
-    route_type INTEGER
+    route_type INTEGER,
+    route_color TEXT,
+    route_text_color TEXT
 );
 
 CREATE TABLE trips (

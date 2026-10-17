@@ -12,13 +12,13 @@ from ptv_realtime import ptv_realtime
 router = APIRouter(prefix="/api", tags=["Routing Engine"])
 
 
-from server.services.network_service import LINE_METADATA
+from server.services.network_service import LINE_METADATA, get_tram_route_color
 
 def get_transit_line_color(mode: Optional[str], route_name: Optional[str], is_replacement: bool = False) -> str:
     """
     Returns official PTV line hex color:
     - Train line group colors (Navy, Cyan, Green, Pink, Gold, Red, Blue)
-    - Tram green (#78BE20)
+    - Tram line colors (fetched per route) or Tram green (#78BE20)
     - Bus / Replacement Bus orange (#FF8200)
     - Walk grey (#9CA3AF)
     """
@@ -35,7 +35,7 @@ def get_transit_line_color(mode: Optional[str], route_name: Optional[str], is_re
         return "#FF8200"
 
     if "tram" in mode_str:
-        return "#78BE20"
+        return get_tram_route_color(r_name)
 
     if "train" in mode_str or "rail" in mode_str:
         if r_name in LINE_METADATA:

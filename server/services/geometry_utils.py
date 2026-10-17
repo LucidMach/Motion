@@ -102,3 +102,68 @@ def point_at_arc_length(polyline: List[Point], target_km: float) -> Optional[Dic
         cumulative_km += seg_len_km
 
     return None
+
+
+def slice_polyline_by_arc_length(polyline: List[Point], start_km: float, end_km: float) -> List[Point]:
+    """
+    Returns the ordered sub-polyline of `polyline` between `start_km` and `end_km`
+    (measured from polyline[0]), inclusive of all intermediate shape vertices.
+
+    The first point of the returned list is the exact coordinate at start_km,
+    followed in order by any original polyline vertices that lie strictly
+    between start_km and end_km, and the final point is the exact coordinate at end_km.
+
+    Handles forward (start_km <= end_km) and reverse (start_km > end_km) traversal.
+    Clamps distances to [0, total_length].
+    """
+    if len(polyline) < 2:
+        return [(p[0], p[1]) for p in polyline]
+
+    segment_lengths_km = [
+        _segment_length_km(polyline[i], polyline[i + 1]) for i in range(len(polyline) - 1)
+    ]
+    total_km = sum(segment_lengths_km)
+
+    is_reverse = start_km > end_km
+    if is_reverse:
+        s_km = max(0.0, min(total_km, end_km))
+        e_km = max(0.0, min(total_km, start_km))
+    else:
+        s_km = max(0.0, min(total_km, start_km))
+        e_km = max(0.0, min(total_km, end_km))
+
+    def _coord_at(target: float) -> Point:
+        cum = 0.0
+        for i, s_len in enumerate(segment_lengths_km):
+            is_last = (i == len(segment_lengths_km) - 1)
+            if target <= cum + s_len or is_last:
+                t = 0.0 if s_len == 0 else (target - cum) / s_len
+                t = max(0.0, min(1.0, t))
+                a = polyline[i]
+                b = polyline[i + 1]
+                return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+            cum += s_len
+        return (polyline[-1][0], polyline[-1][1])
+
+    if math.isclose(s_km, e_km, abs_tol=1e-7):
+        pt = _coord_at(s_km)
+        return [pt, pt]
+
+    start_pt = _coord_at(s_km)
+    end_pt = _coord_at(e_km)
+
+    points: List[Point] = [start_pt]
+    cum = 0.0
+    for i, s_len in enumerate(segment_lengths_km):
+        v_dist = cum + s_len
+        if s_km < v_dist < e_km and not math.isclose(v_dist, s_km, abs_tol=1e-7) and not math.isclose(v_dist, e_km, abs_tol=1e-7):
+            points.append((polyline[i + 1][0], polyline[i + 1][1]))
+        cum += s_len
+
+    points.append(end_pt)
+
+    if is_reverse:
+        points.reverse()
+
+    return points
+

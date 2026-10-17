@@ -82,5 +82,45 @@ class PointAtArcLengthTestCase(unittest.TestCase):
         self.assertAlmostEqual(walked_back["point"][1], projected["point"][1], places=4)
 
 
+class SlicePolylineTestCase(unittest.TestCase):
+    def setUp(self):
+        from server.services.geometry_utils import slice_polyline_by_arc_length
+        self.slice_fn = slice_polyline_by_arc_length
+
+    def test_slice_captures_intermediate_vertices(self):
+        first_leg_km = haversine(0.0, 0.0, 0.01, 0.0)
+        second_leg_km = haversine(0.01, 0.0, 0.01, 0.01)
+        # BENT_POLYLINE has vertex at (0.0, 0.01)
+        # Slice from midpoint of first leg to midpoint of second leg
+        pts = self.slice_fn(BENT_POLYLINE, first_leg_km * 0.5, first_leg_km + second_leg_km * 0.5)
+        self.assertEqual(len(pts), 3)
+        # First point: on first leg (lon=0.0, lat ~ 0.005)
+        self.assertAlmostEqual(pts[0][0], 0.0, places=4)
+        self.assertAlmostEqual(pts[0][1], 0.005, places=4)
+        # Intermediate corner vertex: (0.0, 0.01)
+        self.assertAlmostEqual(pts[1][0], 0.0, places=4)
+        self.assertAlmostEqual(pts[1][1], 0.01, places=4)
+        # End point: on second leg (lon ~ 0.005, lat=0.01)
+        self.assertAlmostEqual(pts[2][0], 0.005, places=4)
+        self.assertAlmostEqual(pts[2][1], 0.01, places=4)
+
+    def test_slice_same_start_and_end_returns_two_identical_points(self):
+        pts = self.slice_fn(BENT_POLYLINE, 0.5, 0.5)
+        self.assertEqual(len(pts), 2)
+        self.assertAlmostEqual(pts[0][0], pts[1][0], places=6)
+        self.assertAlmostEqual(pts[0][1], pts[1][1], places=6)
+
+    def test_slice_reverse_direction_orders_correctly(self):
+        first_leg_km = haversine(0.0, 0.0, 0.01, 0.0)
+        second_leg_km = haversine(0.01, 0.0, 0.01, 0.01)
+        # Slicing from second leg back to first leg
+        pts = self.slice_fn(BENT_POLYLINE, first_leg_km + second_leg_km * 0.5, first_leg_km * 0.5)
+        self.assertEqual(len(pts), 3)
+        self.assertAlmostEqual(pts[0][0], 0.005, places=4)
+        self.assertAlmostEqual(pts[1][0], 0.0, places=4)
+        self.assertAlmostEqual(pts[2][0], 0.0, places=4)
+
+
 if __name__ == "__main__":
     unittest.main()
+

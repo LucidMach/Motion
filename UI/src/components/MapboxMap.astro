@@ -60,12 +60,12 @@ const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || "" } =
     });
 
     window.addEventListener("motion:cmd:fly-to", (e: Event) => {
-      const detail = (e as CustomEvent<{ coords: [number, number]; zoom?: number; pitch?: number; title?: string; subtitle?: string }>).detail;
+      const detail = (e as CustomEvent<{ coords: [number, number]; zoom?: number; pitch?: number; title?: string; subtitle?: string; padding?: import('mapbox-gl').PaddingOptions }>).detail;
       if (detail?.coords) {
         if (detail.title) {
           mapController?.setSearchTarget(detail.coords, detail.title, detail.subtitle);
         } else {
-          mapController?.flyTo(detail.coords, detail.zoom ?? 16.5, detail.pitch ?? 60);
+          mapController?.flyTo(detail.coords, detail.zoom ?? 16.5, detail.pitch ?? 60, detail.padding);
         }
       }
     });

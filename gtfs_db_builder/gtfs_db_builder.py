@@ -40,7 +40,9 @@ def init_db(conn):
             route_id TEXT PRIMARY KEY,
             route_short_name TEXT,
             route_long_name TEXT,
-            route_type INTEGER
+            route_type INTEGER,
+            route_color TEXT,
+            route_text_color TEXT
         );
 
         DROP TABLE IF EXISTS trips;
@@ -198,7 +200,7 @@ def build_db_from_zips(zip_paths, db_path=DB_NAME, route_type_filters=None):
             if 'routes.txt' in files:
                 print("Importing routes...")
                 with z.open('routes.txt') as f:
-                    import_csv_to_table(conn, 'routes', f, ['route_id', 'route_short_name', 'route_long_name', 'route_type'],
+                    import_csv_to_table(conn, 'routes', f, ['route_id', 'route_short_name', 'route_long_name', 'route_type', 'route_color', 'route_text_color'],
                                         row_filter=route_row_filter)
 
             if 'trips.txt' in files:

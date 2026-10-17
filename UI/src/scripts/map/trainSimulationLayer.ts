@@ -6,52 +6,125 @@ const LAYER_ID = 'motion-train-sim-layer';
 
 const POLL_INTERVAL_MS = 4000;
 
-// Stylized low-poly capsule dimensions (meters) - not to scale with a real
-// train consist, sized to read clearly as a "pill" against the 3D buildings.
+// Train low-poly capsule dimensions (meters)
 const TRAIN_LENGTH_M = 40;
 const TRAIN_WIDTH_M = 9;
 const TRAIN_HEIGHT_M = 4.5;
-const CAP_SEGMENTS = 6;
 
+// Tram low-poly capsule dimensions (meters) - scaled to Melbourne street grids
+const TRAM_LENGTH_M = 26;
+const TRAM_WIDTH_M = 4.8;
+const TRAM_HEIGHT_M = 3.6;
+
+const CAP_SEGMENTS = 6;
 const METERS_PER_DEGREE_LAT = 111320;
 
-interface LiveTrainProps {
+export interface LiveVehicleProps {
   trip_id: string;
   route_short_name: string;
+  route_long_name?: string;
+  mode?: 'train' | 'tram';
   color: string;
   bearing_deg: number;
+  progress?: number;
+  path?: [number, number][];
+  status?: 'in_transit' | 'dwelling';
 }
 
-interface AnimatedTrain {
-  fromLon: number;
-  fromLat: number;
-  fromBearing: number;
-  toLon: number;
-  toLat: number;
-  toBearing: number;
-  props: LiveTrainProps;
+interface AnimatedVehicle {
+  props: LiveVehicleProps;
+  path: [number, number][];
+  segmentDistances: number[];
+  totalDistance: number;
+  lastKnownBearing: number;
 }
 
 const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
 
-/** Shortest-path interpolation between two compass bearings (handles the 350deg -> 10deg wrap). */
-function lerpBearing(a: number, b: number, t: number): number {
-  let diff = ((b - a + 540) % 360) - 180;
-  return (a + diff * t + 360) % 360;
+/** Flat-earth distance between two points in meters. */
+function segmentDistanceMeters(a: [number, number], b: [number, number]): number {
+  const avgLatRad = (((a[1] + b[1]) / 2) * Math.PI) / 180;
+  const metersPerDegLon = METERS_PER_DEGREE_LAT * Math.cos(avgLatRad);
+  const dx = (b[0] - a[0]) * metersPerDegLon;
+  const dy = (b[1] - a[1]) * METERS_PER_DEGREE_LAT;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/** Precomputes segment distances and total path distance in meters. */
+function computePathDistances(path: [number, number][]): { segmentDistances: number[]; totalDistance: number } {
+  const segmentDistances: number[] = [];
+  let totalDistance = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    const dist = segmentDistanceMeters(path[i], path[i + 1]);
+    segmentDistances.push(dist);
+    totalDistance += dist;
+  }
+  return { segmentDistances, totalDistance };
+}
+
+/**
+ * Traverses `path` by distance $t \times \text{totalDistance}$ across all
+ * intermediate vertices, computing exact coordinate and segment heading.
+ * Ensures vehicles never cut across corners or derail into buildings.
+ */
+function pointAndBearingAlongPath(
+  path: [number, number][],
+  segmentDistances: number[],
+  totalDistance: number,
+  fallbackBearing: number,
+  t: number
+): { coords: [number, number]; bearing: number } {
+  if (path.length === 0) return { coords: [0, 0], bearing: fallbackBearing };
+  if (path.length === 1 || totalDistance < 0.001) return { coords: path[0], bearing: fallbackBearing };
+
+  const targetDist = Math.max(0, Math.min(totalDistance, t * totalDistance));
+  let accumulated = 0;
+
+  for (let i = 0; i < segmentDistances.length; i++) {
+    const segDist = segmentDistances[i];
+    if (targetDist <= accumulated + segDist || i === segmentDistances.length - 1) {
+      const segT = segDist > 0 ? (targetDist - accumulated) / segDist : 0;
+      const clampedSegT = Math.max(0, Math.min(1, segT));
+      const a = path[i];
+      const b = path[i + 1];
+      const lon = a[0] + (b[0] - a[0]) * clampedSegT;
+      const lat = a[1] + (b[1] - a[1]) * clampedSegT;
+
+      let bearing = fallbackBearing;
+      const dLon = b[0] - a[0];
+      const dLat = b[1] - a[1];
+      if (Math.abs(dLon) > 1e-7 || Math.abs(dLat) > 1e-7) {
+        const rad = Math.atan2(
+          dLon * Math.cos((((a[1] + b[1]) / 2) * Math.PI) / 180),
+          dLat
+        );
+        bearing = ((rad * 180) / Math.PI + 360) % 360;
+      }
+      return { coords: [lon, lat], bearing };
+    }
+    accumulated += segDist;
+  }
+
+  return { coords: path[path.length - 1], bearing: fallbackBearing };
 }
 
 /**
  * Builds a low-poly capsule (stadium shape) footprint centered on [lon, lat],
  * oriented so its long axis points along `bearingDeg` (compass degrees).
- * Uses a flat-earth meter approximation - accurate enough at this scale.
  */
-function buildPillRing(lon: number, lat: number, bearingDeg: number): [number, number][] {
+function buildPillRing(
+  lon: number,
+  lat: number,
+  bearingDeg: number,
+  lengthM: number,
+  widthM: number
+): [number, number][] {
   const bearingRad = (bearingDeg * Math.PI) / 180;
   const forward: [number, number] = [Math.sin(bearingRad), Math.cos(bearingRad)]; // [east, north]
   const right: [number, number] = [Math.cos(bearingRad), -Math.sin(bearingRad)];
 
-  const radius = TRAIN_WIDTH_M / 2;
-  const halfStraight = Math.max(0, TRAIN_LENGTH_M / 2 - radius);
+  const radius = widthM / 2;
+  const halfStraight = Math.max(0, lengthM / 2 - radius);
   const metersPerDegreeLon = METERS_PER_DEGREE_LAT * Math.cos((lat * Math.PI) / 180);
 
   const localPoints: [number, number][] = [];
@@ -78,20 +151,14 @@ function buildPillRing(lon: number, lat: number, bearingDeg: number): [number, n
 }
 
 /**
- * Owns the network-wide low-poly train simulation layer: polls schedule-derived
- * live train positions and renders each as an extruded pill oriented along its
- * direction of travel, smoothly animating between polls.
+ * Owns the network-wide 3D vehicle simulation layer: polls schedule-derived
+ * live positions for Melbourne Metro trains and Yarra Trams.
  *
- * Positions are simulated by interpolating the static GTFS timetable against
- * the current time (see server/services/train_simulation_service.py) - there is
- * no live GPS feed wired in yet. Once a verified PTV GTFS-Realtime Vehicle
- * Positions feed URL is available, the backend endpoint this polls can start
- * returning real positions (falling back to simulation where the feed has no
- * data) without any change needed on this side - it only ever consumes the
- * GeoJSON FeatureCollection shape already returned by /api/network/trains/live.
+ * Each vehicle smoothly traverses intermediate polyline vertices along its
+ * physical track shape across curves, preventing straight-chord derailment.
  */
 export class TrainSimulationLayer {
-  private trains = new Map<string, AnimatedTrain>();
+  private vehicles = new Map<string, AnimatedVehicle>();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private rafId: number | null = null;
   private animStart = 0;
@@ -115,22 +182,47 @@ export class TrainSimulationLayer {
       source: SOURCE_ID,
       paint: {
         'fill-extrusion-color': ['get', 'color'],
-        'fill-extrusion-height': TRAIN_HEIGHT_M,
+        'fill-extrusion-height': ['coalesce', ['get', 'height'], TRAIN_HEIGHT_M],
         'fill-extrusion-base': 0,
         'fill-extrusion-opacity': 0.96,
         'fill-extrusion-vertical-gradient': false,
-        'fill-extrusion-emissive-strength': 0.9
+        'fill-extrusion-emissive-strength': 0.95
       }
     });
 
-    // If the layer is being re-added after a style swap while the simulation
-    // was already running, repaint immediately instead of waiting for the next poll.
+    this.map.on('click', LAYER_ID, (e) => {
+      (window as any).__lastVehicleClickTime = Date.now();
+      if (e.features && e.features[0]) {
+        const props = e.features[0].properties as any;
+        const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        window.dispatchEvent(
+          new CustomEvent('motion:vehicle-selected', {
+            detail: {
+              tripId: props?.trip_id,
+              routeShortName: props?.route_short_name,
+              color: props?.color,
+              coords,
+              mode: props?.mode || 'train'
+            }
+          })
+        );
+      }
+    });
+
+    this.map.on('mouseenter', LAYER_ID, () => {
+      this.map.getCanvas().style.cursor = 'pointer';
+    });
+
+    this.map.on('mouseleave', LAYER_ID, () => {
+      this.map.getCanvas().style.cursor = '';
+    });
+
     if (this.running) {
       this.render(1);
     }
   }
 
-  /** Starts polling live train positions and animating them on the map. */
+  /** Starts polling live vehicle positions and animating them on the map. */
   start(): void {
     if (this.running) return;
     this.running = true;
@@ -142,10 +234,14 @@ export class TrainSimulationLayer {
   private async poll(): Promise<void> {
     let featureCollection: GeoJSON.FeatureCollection;
     try {
-      featureCollection = await motionApi.getLiveTrains();
-    } catch (e) {
-      console.warn('[TrainSimulationLayer] Failed to fetch live train positions:', e);
-      return;
+      featureCollection = await motionApi.getLiveVehicles('all');
+    } catch {
+      try {
+        featureCollection = await motionApi.getLiveTrains();
+      } catch (e) {
+        console.warn('[TrainSimulationLayer] Failed to fetch live vehicle positions:', e);
+        return;
+      }
     }
 
     const seenTripIds = new Set<string>();
@@ -153,36 +249,37 @@ export class TrainSimulationLayer {
     for (const feature of featureCollection.features) {
       if (feature.geometry.type !== 'Point') continue;
       const [lon, lat] = feature.geometry.coordinates as [number, number];
-      const props = feature.properties as unknown as LiveTrainProps;
+      const props = feature.properties as unknown as LiveVehicleProps;
       if (!props?.trip_id) continue;
 
       seenTripIds.add(props.trip_id);
-      const existing = this.trains.get(props.trip_id);
 
-      if (existing) {
-        existing.fromLon = existing.toLon;
-        existing.fromLat = existing.toLat;
-        existing.fromBearing = existing.toBearing;
-        existing.toLon = lon;
-        existing.toLat = lat;
-        existing.toBearing = props.bearing_deg;
-        existing.props = props;
+      // Intermediate track vertices for curve-following
+      let path: [number, number][];
+      if (props.path && props.path.length >= 2) {
+        path = props.path;
       } else {
-        this.trains.set(props.trip_id, {
-          fromLon: lon,
-          fromLat: lat,
-          fromBearing: props.bearing_deg,
-          toLon: lon,
-          toLat: lat,
-          toBearing: props.bearing_deg,
-          props
-        });
+        const existing = this.vehicles.get(props.trip_id);
+        const prevPoint = existing && existing.path.length > 0
+          ? existing.path[existing.path.length - 1]
+          : [lon, lat];
+        path = [prevPoint as [number, number], [lon, lat]];
       }
+
+      const { segmentDistances, totalDistance } = computePathDistances(path);
+
+      this.vehicles.set(props.trip_id, {
+        props,
+        path,
+        segmentDistances,
+        totalDistance,
+        lastKnownBearing: props.bearing_deg || 0
+      });
     }
 
-    // Drop trains that have finished their trip (no longer in the feed).
-    for (const tripId of this.trains.keys()) {
-      if (!seenTripIds.has(tripId)) this.trains.delete(tripId);
+    // Drop vehicles that have finished their trip
+    for (const tripId of this.vehicles.keys()) {
+      if (!seenTripIds.has(tripId)) this.vehicles.delete(tripId);
     }
 
     this.animStart = performance.now();
@@ -203,19 +300,33 @@ export class TrainSimulationLayer {
     if (!source) return;
 
     const features: GeoJSON.Feature[] = [];
-    for (const train of this.trains.values()) {
-      const lon = train.fromLon + (train.toLon - train.fromLon) * t;
-      const lat = train.fromLat + (train.toLat - train.fromLat) * t;
-      const bearing = lerpBearing(train.fromBearing, train.toBearing, t);
+    for (const vehicle of this.vehicles.values()) {
+      const isTram = vehicle.props.mode === 'tram';
+      const lengthM = isTram ? TRAM_LENGTH_M : TRAIN_LENGTH_M;
+      const widthM = isTram ? TRAM_WIDTH_M : TRAIN_WIDTH_M;
+      const heightM = isTram ? TRAM_HEIGHT_M : TRAIN_HEIGHT_M;
+
+      const { coords, bearing } = pointAndBearingAlongPath(
+        vehicle.path,
+        vehicle.segmentDistances,
+        vehicle.totalDistance,
+        vehicle.lastKnownBearing,
+        t
+      );
 
       features.push({
         type: 'Feature',
         properties: {
-          trip_id: train.props.trip_id,
-          route_short_name: train.props.route_short_name,
-          color: train.props.color
+          trip_id: vehicle.props.trip_id,
+          route_short_name: vehicle.props.route_short_name,
+          color: vehicle.props.color,
+          mode: vehicle.props.mode || 'train',
+          height: heightM
         },
-        geometry: { type: 'Polygon', coordinates: [buildPillRing(lon, lat, bearing)] }
+        geometry: {
+          type: 'Polygon',
+          coordinates: [buildPillRing(coords[0], coords[1], bearing, lengthM, widthM)]
+        }
       });
     }
 
@@ -233,7 +344,7 @@ export class TrainSimulationLayer {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
-    this.trains.clear();
+    this.vehicles.clear();
 
     try {
       if (this.map.getLayer(LAYER_ID)) this.map.removeLayer(LAYER_ID);
@@ -243,3 +354,4 @@ export class TrainSimulationLayer {
     }
   }
 }
+

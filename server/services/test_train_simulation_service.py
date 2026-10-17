@@ -240,7 +240,29 @@ class TrainSimulationServiceTestCase(unittest.TestCase):
         self.assertAlmostEqual(lat, 0.005, places=6)
         self.assertAlmostEqual(lon, 0.0, places=6)
         self.assertEqual(feature["properties"]["trip_id"], "T1")
+        self.assertEqual(feature["properties"]["mode"], "train")
+        self.assertIn("path", feature["properties"])
+        self.assertGreaterEqual(len(feature["properties"]["path"]), 2)
+
+    def test_dwelling_train_remains_active_at_platform(self):
+        # Insert a station with dwell time: arr=1100s, dep=1160s (60s dwell at stop B)
+        self.conn = sqlite3.connect(self.db_path)
+        # Update stop B to dwell until 1160s, then C arrives at 1260s
+        self.conn.execute("UPDATE stop_times SET departure_time_secs = 1160 WHERE trip_id = 'T1' AND stop_id = 'B'")
+        self.conn.execute("UPDATE stop_times SET arrival_time_secs = 1260, departure_time_secs = 1260 WHERE trip_id = 'T1' AND stop_id = 'C'")
+        self.conn.commit()
+        self.conn.close()
+
+        # At 1130s (00:18:50), the train is dwelling at Stop B (lat=0.01, lon=0.0)
+        positions = self._positions_at(0, 18, 50)
+        self.assertEqual(len(positions), 1)
+        p = positions[0]
+        self.assertEqual(p["status"], "dwelling")
+        self.assertAlmostEqual(p["progress"], 1.0, places=3)
+        self.assertAlmostEqual(p["lat"], 0.01, places=6)
+        self.assertAlmostEqual(p["lon"], 0.0, places=6)
 
 
 if __name__ == "__main__":
     unittest.main()
+

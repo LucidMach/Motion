@@ -11,14 +11,31 @@ export class CameraController {
     return this.is3DActive;
   }
 
-  flyTo(coords: [number, number], zoom = 16.5, pitch = 60): void {
+  flyTo(coords: [number, number], zoom = 16.5, pitch = 60, customPadding?: mapboxgl.PaddingOptions): void {
     const map = this.getMap();
     if (!map) return;
+
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    const explorerOpen =
+      typeof document !== 'undefined' &&
+      document.getElementById('transit-explorer-panel')?.classList.contains('translate-x-0');
+    const vehiclePanelOpen =
+      typeof document !== 'undefined' &&
+      document.getElementById('vehicle-panel')?.classList.contains('translate-x-0');
+
+    const padding: mapboxgl.PaddingOptions = customPadding || {
+      top: 60,
+      bottom: 100,
+      left: isDesktop && explorerOpen ? 500 : 40,
+      right: isDesktop && vehiclePanelOpen ? 320 : 40
+    };
+
     map.flyTo({
       center: coords,
       zoom,
       pitch: this.is3DActive ? pitch : 0,
       bearing: map.getBearing(),
+      padding,
       essential: true,
       duration: 2200,
       curve: 1.35

@@ -6,8 +6,11 @@ from server.services.network_service import (
     get_all_routes_metadata,
     generate_metro_geojson
 )
-from server.services.train_simulation_service import get_active_train_positions_geojson
-from server.services.route_shape_service import get_routes_for_mode, get_route_shape
+from server.services.train_simulation_service import (
+    get_active_train_positions_geojson,
+    get_active_vehicles_geojson,
+)
+from server.services.route_shape_service import get_routes_for_mode, get_route_shape, get_route_stops
 
 router = APIRouter(prefix="/api/network", tags=["Network & Geometries"])
 
@@ -54,14 +57,42 @@ def get_route_shape_endpoint(mode: str, route_short_name: str) -> Dict[str, Any]
     return get_route_shape(mode, route_short_name)
 
 
+@router.get("/route-stops")
+def get_route_stops_endpoint(mode: str, route_short_name: str) -> List[Dict[str, Any]]:
+    """
+    Returns ordered stops along a representative trip for the given route.
+    """
+    return get_route_stops(mode, route_short_name)
+
+
+@router.get("/vehicles/live")
+def get_live_vehicles(mode: str = "all") -> Dict[str, Any]:
+    """
+    Returns GeoJSON FeatureCollection of active transit vehicles (trains, trams, or all)
+    currently in service, with positions snapped to track shapes and intermediate polyline
+    path slices for curve-following animation.
+    """
+    return get_active_vehicles_geojson(mode=mode)
+
+
 @router.get("/trains/live")
 def get_live_trains() -> Dict[str, Any]:
     """
     Returns GeoJSON FeatureCollection of every Metro train currently in service,
     with positions simulated by interpolating the static GTFS timetable against
-    the current time (no live GPS feed involved yet).
+    the current time and snapped to track shapes.
     """
     return get_active_train_positions_geojson()
+
+
+@router.get("/trams/live")
+def get_live_trams() -> Dict[str, Any]:
+    """
+    Returns GeoJSON FeatureCollection of every Yarra Tram currently in service,
+    with positions simulated by interpolating the static GTFS timetable against
+    the current time and snapped to street track shapes.
+    """
+    return get_active_vehicles_geojson(mode="tram")
 
 
 @router.post("/metro/regenerate")

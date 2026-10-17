@@ -109,8 +109,23 @@ export class RouteHighlightLayer {
     if (minLon === Infinity) return;
 
     try {
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+      const explorerOpen =
+        typeof document !== 'undefined' &&
+        document.getElementById('transit-explorer-panel')?.classList.contains('translate-x-0');
+      const vehiclePanelOpen =
+        typeof document !== 'undefined' &&
+        document.getElementById('vehicle-panel')?.classList.contains('translate-x-0');
+
+      const padding: mapboxgl.PaddingOptions = {
+        top: 100,
+        bottom: 180,
+        left: isDesktop && explorerOpen ? 520 : 60,
+        right: isDesktop && vehiclePanelOpen ? 340 : 60
+      };
+
       this.map.fitBounds(new mapboxgl.LngLatBounds([minLon, minLat], [maxLon, maxLat]), {
-        padding: { top: 100, bottom: 200, left: 60, right: 60 },
+        padding,
         pitch: 45,
         maxZoom: 15.5,
         duration: 1400,

@@ -10,11 +10,26 @@ if PROJECT_ROOT not in sys.path:
 
 from directional_routing.directional_routing import DB_NAME, calculate_bearing
 from ptv_realtime.ptv_realtime import melbourne_now
-from server.services.network_service import get_all_routes_metadata, get_trip_shape_map, get_shape_polylines
-from server.services.geometry_utils import project_point_to_polyline, point_at_arc_length
+from server.services.network_service import (
+    get_all_routes_metadata,
+    get_trip_shape_map,
+    get_shape_polylines,
+    get_tram_route_color,
+    get_tram_trip_shape_map,
+    get_tram_shape_polylines,
+    get_all_trip_shape_map,
+    get_all_shape_polylines,
+)
+from server.services.geometry_utils import (
+    project_point_to_polyline,
+    point_at_arc_length,
+    slice_polyline_by_arc_length,
+)
 
 METRO_TRAIN_ROUTE_TYPE = 400
+METRO_TRAM_ROUTE_TYPE = 0
 DEFAULT_TRAIN_COLOR = "#0072CE"
+STEP_SECONDS = 4
 
 # GTFS calendar.txt weekday column order, indexed by Python's datetime.weekday() (Monday=0).
 _WEEKDAY_COLUMNS = [
@@ -54,21 +69,25 @@ def _active_service_ids(cur: sqlite3.Cursor, service_date: datetime) -> set:
     return active
 
 
-def _bracketing_segments(cur: sqlite3.Cursor, active_service_ids: set, now_secs: int) -> List[tuple]:
-    """Finds, for every active train trip, the single pair of consecutive stops
-    (`now_secs` sits between the first stop's departure and the second's arrival)
-    that the train is currently between. Times beyond 86400s are how GTFS marks
-    a trip belonging to the previous service day that continues past midnight,
-    so `now_secs` may itself exceed 86400 when probing yesterday's service day."""
-    if not active_service_ids:
+def _bracketing_segments(
+    cur: sqlite3.Cursor,
+    active_service_ids: set,
+    now_secs: int,
+    route_types: tuple = (METRO_TRAIN_ROUTE_TYPE,),
+) -> List[tuple]:
+    """Finds, for every active trip across the requested route_types, the bracketing
+    consecutive stops and upcoming departure time. Times beyond 86400s are how GTFS marks
+    a trip belonging to the previous service day that continues past midnight."""
+    if not active_service_ids or not route_types:
         return []
 
     placeholders = ",".join("?" for _ in active_service_ids)
+    rt_placeholders = ",".join("?" for _ in route_types)
     query = f"""
-        WITH train_trips AS (
+        WITH selected_trips AS (
             SELECT trip_id FROM trips
             WHERE service_id IN ({placeholders})
-              AND route_id IN (SELECT route_id FROM routes WHERE route_type = ?)
+              AND route_id IN (SELECT route_id FROM routes WHERE route_type IN ({rt_placeholders}))
         ),
         ordered AS (
             SELECT
@@ -76,14 +95,15 @@ def _bracketing_segments(cur: sqlite3.Cursor, active_service_ids: set, now_secs:
                 st.stop_id AS from_stop_id,
                 st.departure_time_secs AS from_secs,
                 LEAD(st.stop_id) OVER (PARTITION BY st.trip_id ORDER BY st.stop_sequence) AS to_stop_id,
-                LEAD(st.arrival_time_secs) OVER (PARTITION BY st.trip_id ORDER BY st.stop_sequence) AS to_secs
+                LEAD(st.arrival_time_secs) OVER (PARTITION BY st.trip_id ORDER BY st.stop_sequence) AS to_secs,
+                LEAD(st.departure_time_secs) OVER (PARTITION BY st.trip_id ORDER BY st.stop_sequence) AS next_dep_secs
             FROM stop_times st
-            WHERE st.trip_id IN (SELECT trip_id FROM train_trips)
+            WHERE st.trip_id IN (SELECT trip_id FROM selected_trips)
         )
         SELECT
-            o.trip_id, o.from_secs, o.to_secs,
+            o.trip_id, o.from_secs, o.to_secs, o.next_dep_secs,
             sf.stop_lat, sf.stop_lon, st2.stop_lat, st2.stop_lon,
-            r.route_short_name, r.route_long_name
+            r.route_short_name, r.route_long_name, r.route_type
         FROM ordered o
         JOIN stops sf ON sf.stop_id = o.from_stop_id
         JOIN stops st2 ON st2.stop_id = o.to_stop_id
@@ -91,11 +111,11 @@ def _bracketing_segments(cur: sqlite3.Cursor, active_service_ids: set, now_secs:
         JOIN routes r ON r.route_id = t.route_id
         WHERE o.to_stop_id IS NOT NULL
           AND o.from_secs <= ?
-          AND o.to_secs >= ?
+          AND COALESCE(o.next_dep_secs, o.to_secs) >= ?
           AND r.route_short_name != 'Replacement Bus'
         ORDER BY o.from_secs ASC
     """
-    cur.execute(query, list(active_service_ids) + [METRO_TRAIN_ROUTE_TYPE, now_secs, now_secs])
+    cur.execute(query, list(active_service_ids) + list(route_types) + [now_secs, now_secs])
     return cur.fetchall()
 
 
@@ -106,16 +126,17 @@ def _interpolate_position(
     progress: float,
     trip_shape_map: Dict[str, str],
     shape_polylines: Dict[str, List[List[float]]],
+    progress_next: Optional[float] = None,
 ) -> tuple:
     """
-    Snaps a train's position (and heading) to its actual rail shape when the
-    trip's shape can be resolved, instead of a straight chord between its two
-    bracketing stops - the naive chord visibly cuts across curves on long or
-    curved inter-station gaps (e.g. the Sunbury line, the Caulfield loop curve).
-    Falls back to the straight-line lerp (this module's original behavior) on
-    ANY lookup miss or failure - an external dataset plus new geometry math
-    must never drop a train or crash the endpoint over one bad shape.
+    Snaps a vehicle's position (and heading) to its actual rail/track shape and
+    slices the intermediate polyline vertices between current progress and next
+    step progress, so the frontend client animates along intermediate curves
+    rather than cutting a straight chord across buildings.
     """
+    if progress_next is None:
+        progress_next = min(1.0, progress + 0.05) if progress < 1.0 else 1.0
+
     try:
         shape_id = trip_shape_map.get(trip_id)
         polyline = shape_polylines.get(shape_id) if shape_id else None
@@ -127,40 +148,62 @@ def _interpolate_position(
         if not from_proj or not to_proj:
             raise ValueError("projection failed")
 
-        target_km = from_proj["arc_length_km"] + (to_proj["arc_length_km"] - from_proj["arc_length_km"]) * progress
+        span_km = to_proj["arc_length_km"] - from_proj["arc_length_km"]
+        target_km = from_proj["arc_length_km"] + span_km * progress
+        target_km_next = from_proj["arc_length_km"] + span_km * progress_next
+
         result = point_at_arc_length(polyline, target_km)
         if not result:
             raise ValueError("arc-length lookup failed")
 
+        path = slice_polyline_by_arc_length(polyline, target_km, target_km_next)
         snapped_lon, snapped_lat = result["point"]
-        return snapped_lat, snapped_lon, result["bearing_deg"]
+
+        if len(path) >= 2 and (path[0][0] != path[1][0] or path[0][1] != path[1][1]):
+            bearing = calculate_bearing(path[0][1], path[0][0], path[1][1], path[1][0])
+        else:
+            bearing = result["bearing_deg"]
+
+        return snapped_lat, snapped_lon, bearing, path
     except Exception:
         lat = from_lat + (to_lat - from_lat) * progress
         lon = from_lon + (to_lon - from_lon) * progress
+        next_lat = from_lat + (to_lat - from_lat) * progress_next
+        next_lon = from_lon + (to_lon - from_lon) * progress_next
         bearing = calculate_bearing(from_lat, from_lon, to_lat, to_lon)
-        return lat, lon, bearing
+        path = [(lon, lat), (next_lon, next_lat)]
+        return lat, lon, bearing, path
 
 
-def get_active_train_positions(now: Optional[datetime] = None, db_path: str = DB_NAME) -> List[Dict[str, Any]]:
+def get_active_vehicle_positions(
+    mode: str = "all",
+    now: Optional[datetime] = None,
+    db_path: str = DB_NAME
+) -> List[Dict[str, Any]]:
     """
-    Returns the simulated (schedule-interpolated) position of every Melbourne Metro
-    train currently in service, derived purely from static GTFS timetable data -
-    no live GPS feed involved. Each train's position is linearly interpolated
-    between the two stops it's currently between, based on elapsed scheduled time.
+    Returns simulated positions for vehicles currently in service (trains, trams, or all),
+    snapped to track shapes and including intermediate path vertices for curve-following animation.
     """
     now = now or melbourne_now()
-    colors = _route_colors()
-    trip_shape_map = get_trip_shape_map()
-    shape_polylines = get_shape_polylines()
+    train_colors = _route_colors()
+
+    if mode == "train":
+        route_types = (METRO_TRAIN_ROUTE_TYPE,)
+        trip_shape_map = get_trip_shape_map()
+        shape_polylines = get_shape_polylines()
+    elif mode == "tram":
+        route_types = (METRO_TRAM_ROUTE_TYPE,)
+        trip_shape_map = get_tram_trip_shape_map()
+        shape_polylines = get_tram_shape_polylines()
+    else:  # "all"
+        route_types = (METRO_TRAIN_ROUTE_TYPE, METRO_TRAM_ROUTE_TYPE)
+        trip_shape_map = get_all_trip_shape_map()
+        shape_polylines = get_all_shape_polylines()
 
     conn = sqlite3.connect(db_path)
     try:
         cur = conn.cursor()
 
-        # A trip departing before midnight can still be "in service" after it,
-        # recorded under times like 24:15:00 against *yesterday's* service day.
-        # So today's and yesterday's active services are both probed, the latter
-        # with `now` re-expressed as seconds-past-yesterday-midnight.
         candidates = [
             (now, now.hour * 3600 + now.minute * 60 + now.second),
             (now - timedelta(days=1), now.hour * 3600 + now.minute * 60 + now.second + 86400),
@@ -169,35 +212,50 @@ def get_active_train_positions(now: Optional[datetime] = None, db_path: str = DB
         by_trip: Dict[str, Dict[str, Any]] = {}
         for service_date, now_secs in candidates:
             active_ids = _active_service_ids(cur, service_date)
-            for row in _bracketing_segments(cur, active_ids, now_secs):
+            for row in _bracketing_segments(cur, active_ids, now_secs, route_types=route_types):
                 (
-                    trip_id, from_secs, to_secs,
+                    trip_id, from_secs, to_secs, next_dep_secs,
                     from_lat, from_lon, to_lat, to_lon,
-                    route_short_name, route_long_name,
+                    route_short_name, route_long_name, route_type,
                 ) = row
 
-                span = to_secs - from_secs
-                progress = (now_secs - from_secs) / span if span > 0 else 0.0
-                progress = max(0.0, min(1.0, progress))
+                veh_mode = "tram" if route_type == METRO_TRAM_ROUTE_TYPE else "train"
 
-                lat, lon, bearing = _interpolate_position(
+                # Check dwelling state vs in-transit
+                if to_secs is not None and now_secs >= to_secs and next_dep_secs is not None and now_secs <= next_dep_secs:
+                    status = "dwelling"
+                    progress = 1.0
+                    progress_next = 1.0
+                else:
+                    status = "in_transit"
+                    span = to_secs - from_secs if to_secs is not None else 0
+                    progress = (now_secs - from_secs) / span if span > 0 else 0.0
+                    progress = max(0.0, min(1.0, progress))
+                    progress_next = (now_secs + STEP_SECONDS - from_secs) / span if span > 0 else 1.0
+                    progress_next = max(0.0, min(1.0, progress_next))
+
+                lat, lon, bearing, path = _interpolate_position(
                     trip_id, from_lat, from_lon, to_lat, to_lon, progress,
-                    trip_shape_map, shape_polylines,
+                    trip_shape_map, shape_polylines, progress_next=progress_next,
                 )
 
-                # Rows are consumed in from_secs order, so a later (larger
-                # from_secs) match for the same trip_id - possible only when
-                # `now_secs` lands exactly on a stop boundary - overwrites the
-                # earlier one, keeping the segment the train has most recently departed.
+                if veh_mode == "tram":
+                    color = get_tram_route_color(route_short_name)
+                else:
+                    color = train_colors.get(route_short_name, DEFAULT_TRAIN_COLOR)
+
                 by_trip[trip_id] = {
                     "trip_id": trip_id,
                     "route_short_name": route_short_name,
                     "route_long_name": route_long_name,
-                    "color": colors.get(route_short_name, DEFAULT_TRAIN_COLOR),
+                    "mode": veh_mode,
+                    "color": color,
                     "lat": lat,
                     "lon": lon,
                     "bearing_deg": bearing,
                     "progress": progress,
+                    "path": [[p[0], p[1]] for p in path],
+                    "status": status,
                 }
 
         return list(by_trip.values())
@@ -205,9 +263,19 @@ def get_active_train_positions(now: Optional[datetime] = None, db_path: str = DB
         conn.close()
 
 
-def get_active_train_positions_geojson(now: Optional[datetime] = None, db_path: str = DB_NAME) -> Dict[str, Any]:
-    """GeoJSON FeatureCollection wrapper around get_active_train_positions(), ready to serve to the map."""
-    positions = get_active_train_positions(now=now, db_path=db_path)
+def get_active_train_positions(now: Optional[datetime] = None, db_path: str = DB_NAME) -> List[Dict[str, Any]]:
+    """Returns the simulated position of every Metro train currently in service."""
+    return get_active_vehicle_positions(mode="train", now=now, db_path=db_path)
+
+
+def get_active_tram_positions(now: Optional[datetime] = None, db_path: str = DB_NAME) -> List[Dict[str, Any]]:
+    """Returns the simulated position of every Yarra Tram currently in service."""
+    return get_active_vehicle_positions(mode="tram", now=now, db_path=db_path)
+
+
+def get_active_vehicles_geojson(mode: str = "all", now: Optional[datetime] = None, db_path: str = DB_NAME) -> Dict[str, Any]:
+    """GeoJSON FeatureCollection wrapper around get_active_vehicle_positions(), ready to serve to the map."""
+    positions = get_active_vehicle_positions(mode=mode, now=now, db_path=db_path)
     return {
         "type": "FeatureCollection",
         "features": [
@@ -218,11 +286,20 @@ def get_active_train_positions_geojson(now: Optional[datetime] = None, db_path: 
                     "trip_id": p["trip_id"],
                     "route_short_name": p["route_short_name"],
                     "route_long_name": p["route_long_name"],
+                    "mode": p["mode"],
                     "color": p["color"],
                     "bearing_deg": p["bearing_deg"],
                     "progress": p["progress"],
+                    "path": p["path"],
+                    "status": p["status"],
                 },
             }
             for p in positions
         ],
     }
+
+
+def get_active_train_positions_geojson(now: Optional[datetime] = None, db_path: str = DB_NAME) -> Dict[str, Any]:
+    """GeoJSON FeatureCollection wrapper around get_active_train_positions()."""
+    return get_active_vehicles_geojson(mode="train", now=now, db_path=db_path)
+

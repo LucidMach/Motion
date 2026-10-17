@@ -17,6 +17,44 @@ export interface RouteLeg {
   coordinates?: [number, number][]; // [[lon, lat], ...]
 }
 
+export const TRAM_ROUTE_COLORS: Record<string, string> = {
+  '1': '#B5BD00',
+  '3': '#8DC8E8',
+  '5': '#D50032',
+  '6': '#01426A',
+  '11': '#6ECEB2',
+  '12': '#007E92',
+  '16': '#FBD872',
+  '19': '#8A1B61',
+  '30': '#534F96',
+  '35': '#6B3529',
+  '48': '#333434',
+  '57': '#00C1D5',
+  '58': '#969696',
+  '59': '#00653A',
+  '64': '#00AB8E',
+  '67': '#956C58',
+  '70': '#F59BBB',
+  '72': '#9ABEAA',
+  '75': '#00A9E0',
+  '78': '#A0A0D6',
+  '82': '#D2D755',
+  '86': '#FFB500',
+  '96': '#C6007E',
+  '109': '#E87722',
+};
+
+export function getTramRouteColor(route?: string): string {
+  if (!route) return '#78BE20';
+  const clean = route.trim();
+  if (TRAM_ROUTE_COLORS[clean]) return TRAM_ROUTE_COLORS[clean];
+  const match = clean.match(/\b(109|96|86|82|78|75|72|70|67|64|59|58|57|48|35|30|19|16|12|11|6|5|3|1)\b/);
+  if (match && TRAM_ROUTE_COLORS[match[1]]) {
+    return TRAM_ROUTE_COLORS[match[1]];
+  }
+  return '#78BE20';
+}
+
 export function getLegColor(leg: RouteLeg): string {
   if (leg.color) return leg.color;
 
@@ -36,7 +74,7 @@ export function getLegColor(leg: RouteLeg): string {
   }
 
   if (mode.includes('tram')) {
-    return '#78BE20'; // Melbourne Tram Green
+    return getTramRouteColor(route);
   }
 
   if (mode.includes('train') || mode.includes('rail')) {
@@ -49,7 +87,7 @@ export function getLegColor(leg: RouteLeg): string {
       return '#152C6B'; // Burnley Navy
     }
     if (route.includes('cranbourne') || route.includes('pakenham')) {
-      return '#34ACE1'; // Caulfield Cyan
+      return '#0072CE'; // Cranbourne & Pakenham (City Loop Blue)
     }
     if (
       route.includes('frankston') ||
@@ -126,8 +164,20 @@ export interface RouteMetadata {
   route_short_name: string;
   route_long_name: string;
   color: string;
+  text_color?: string;
   group: string;
   mode: string;
+  outline?: boolean;
+  shuttle?: boolean;
+}
+
+export interface RouteStop {
+  stop_id: string;
+  stop_name: string;
+  full_name: string;
+  stop_lat: number;
+  stop_lon: number;
+  stop_sequence: number;
 }
 
 export interface SystemStatus {
@@ -244,6 +294,10 @@ class MotionApiClient {
     return this.request<GeoJSON.FeatureCollection>('/api/network/trains/live');
   }
 
+  async getLiveVehicles(mode: 'all' | 'train' | 'tram' = 'all'): Promise<GeoJSON.FeatureCollection> {
+    return this.request<GeoJSON.FeatureCollection>(`/api/network/vehicles/live?mode=${mode}`);
+  }
+
   async getRoutesByMode(mode: 'train' | 'tram' | 'bus'): Promise<RouteMetadata[]> {
     return this.request<RouteMetadata[]>(`/api/network/routes/${mode}`);
   }
@@ -251,6 +305,12 @@ class MotionApiClient {
   async getRouteShape(mode: 'train' | 'tram' | 'bus', routeShortName: string): Promise<GeoJSON.FeatureCollection> {
     return this.request<GeoJSON.FeatureCollection>(
       `/api/network/route-shape?mode=${mode}&route_short_name=${encodeURIComponent(routeShortName)}`
+    );
+  }
+
+  async getRouteStops(mode: 'train' | 'tram' | 'bus', routeShortName: string): Promise<RouteStop[]> {
+    return this.request<RouteStop[]>(
+      `/api/network/route-stops?mode=${mode}&route_short_name=${encodeURIComponent(routeShortName)}`
     );
   }
 

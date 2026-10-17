@@ -72,6 +72,40 @@ export class MotionMapController {
     }
   };
 
+  private onSidebarToggle = (e: Event) => {
+    const isOpen = (e as CustomEvent<{ isOpen: boolean }>).detail?.isOpen;
+    if (!this.map) return;
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    const leftPadding = isDesktop && isOpen ? 480 : 0;
+    const rightPadding =
+      isDesktop &&
+      typeof document !== 'undefined' &&
+      Boolean(document.getElementById('vehicle-panel')?.classList.contains('translate-x-0'))
+        ? 300
+        : 0;
+    this.map.easeTo({
+      padding: { left: leftPadding, right: rightPadding, top: 0, bottom: 0 },
+      duration: 350
+    });
+  };
+
+  private onVehiclePanelToggle = (e: Event) => {
+    const isOpen = (e as CustomEvent<{ isOpen: boolean }>).detail?.isOpen;
+    if (!this.map) return;
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    const rightPadding = isDesktop && isOpen ? 300 : 0;
+    const leftPadding =
+      isDesktop &&
+      typeof document !== 'undefined' &&
+      Boolean(document.getElementById('transit-explorer-panel')?.classList.contains('translate-x-0'))
+        ? 480
+        : 0;
+    this.map.easeTo({
+      padding: { left: leftPadding, right: rightPadding, top: 0, bottom: 0 },
+      duration: 350
+    });
+  };
+
   init(containerId: string, initialToken?: string): void {
     suppressBenignMapboxWarnings();
 
@@ -115,8 +149,29 @@ export class MotionMapController {
       this.trainSimLayer.start();
       this.routeHighlightLayer = new RouteHighlightLayer(this.map);
 
+      this.map.on('click', (e) => {
+        if (Date.now() - ((window as any).__lastVehicleClickTime || 0) < 200) {
+          return;
+        }
+
+        const bbox: [mapboxgl.PointLike, mapboxgl.PointLike] = [
+          [e.point.x - 12, e.point.y - 12],
+          [e.point.x + 12, e.point.y + 12]
+        ];
+        const hitFeatures = this.map?.queryRenderedFeatures(bbox, {
+          layers: ['motion-train-sim-layer'].filter((id) => this.map?.getLayer(id))
+        });
+        if (hitFeatures && hitFeatures.length > 0) {
+          return;
+        }
+
+        window.dispatchEvent(new CustomEvent('motion:map-empty-click'));
+      });
+
       window.addEventListener('motion:theme-change', this.onThemeChange);
       window.addEventListener('motion:gesture-change', this.onGestureChange);
+      window.addEventListener('motion:sidebar-toggle', this.onSidebarToggle);
+      window.addEventListener('motion:vehicle-panel-toggle', this.onVehiclePanelToggle);
 
       dispatchStatus({ state: 'gps_acquiring', message: 'GPS Accuracy: Acquiring...' });
       this.geoTracker.start();
@@ -191,9 +246,9 @@ export class MotionMapController {
     }
   }
 
-  flyTo(coords: [number, number], zoom = 16.5, pitch = 60): void {
+  flyTo(coords: [number, number], zoom = 16.5, pitch = 60, customPadding?: mapboxgl.PaddingOptions): void {
     if (!this.map) return;
-    this.camera.flyTo(coords, zoom, pitch);
+    this.camera.flyTo(coords, zoom, pitch, customPadding);
   }
 
   setSearchTarget(coords: [number, number], title: string, subtitle?: string): void {
@@ -237,6 +292,8 @@ export class MotionMapController {
   destroy(): void {
     window.removeEventListener('motion:theme-change', this.onThemeChange);
     window.removeEventListener('motion:gesture-change', this.onGestureChange);
+    window.removeEventListener('motion:sidebar-toggle', this.onSidebarToggle);
+    window.removeEventListener('motion:vehicle-panel-toggle', this.onVehiclePanelToggle);
     this.geoTracker.stop();
     if (this.regionDebounceTimer) clearTimeout(this.regionDebounceTimer);
     this.geocoder.cancel();
