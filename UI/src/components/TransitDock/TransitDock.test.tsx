@@ -81,7 +81,16 @@ describe('TransitDock', () => {
         {
           type: 'Feature' as const,
           geometry: { type: 'Point' as const, coordinates: [144.96, -37.81] },
-          properties: { route_short_name: 'Lilydale', trip_id: 'T1', mode: 'train' }
+          properties: {
+            route_short_name: 'Lilydale',
+            trip_id: 'T1',
+            mode: 'train',
+            destination: 'Flinders Street',
+            current_stop_id: '1',
+            current_stop_name: 'Flinders Street',
+            is_stopped: true,
+            bearing_deg: 245
+          }
         }
       ]
     };
@@ -336,5 +345,61 @@ describe('TransitDock', () => {
     expect(lilydaleBtn).not.toBeNull();
     const chevronSvg = lilydaleBtn?.querySelector('path[d="M9 18l6-6-6-6"]');
     expect(chevronSvg).toBeNull();
+  });
+
+  it('renders real-time vehicle direction badge along station timeline and dispatches track-vehicle on click', async () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    render(<TransitDock />);
+
+    fireEvent.click(screen.getByRole('button', { name: /explore trains/i }));
+    fireEvent.click(await screen.findByText('Lilydale Line'));
+
+    // Verify corridor stations are rendered
+    expect(await screen.findByText(/Corridor Stations/i)).toBeInTheDocument();
+
+    // Wait for the vehicle badge to appear
+    const vehicleBadge = await screen.findByTestId('vehicle-badge-T1');
+    expect(vehicleBadge).toBeInTheDocument();
+    expect(vehicleBadge).toHaveTextContent(/Flinders Street/i);
+
+    // Click vehicle badge to engage cinematic 3D chase camera
+    fireEvent.click(vehicleBadge);
+
+    await waitFor(() => {
+      expect(
+        dispatchSpy.mock.calls.some(
+          (c) => (c[0] as CustomEvent).type === 'motion:cmd:track-vehicle'
+        )
+      ).toBe(true);
+    });
+  });
+
+  it('automatically opens Transit Explorer to route when a vehicle on the map is clicked', async () => {
+    render(<TransitDock />);
+
+    // Simulate clicking an in-map train on Lilydale line
+    fireEvent(
+      window,
+      new CustomEvent('motion:vehicle-selected', {
+        detail: {
+          tripId: 'T1',
+          routeShortName: 'Lilydale',
+          color: '#152C6B',
+          coords: [144.96, -37.81],
+          mode: 'train'
+        }
+      })
+    );
+
+    // Transit Explorer should open
+    const explorer = await screen.findByRole('dialog', { name: /transit explorer/i });
+    expect(explorer).toHaveClass('translate-x-0');
+
+    // Lilydale route should be expanded showing stations
+    expect(await screen.findByText(/Corridor Stations/i)).toBeInTheDocument();
+
+    // Vehicle badge should be rendered and highlighted
+    const badge = await screen.findByTestId('vehicle-badge-T1');
+    expect(badge).toBeInTheDocument();
   });
 });

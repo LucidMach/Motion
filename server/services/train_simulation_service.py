@@ -19,6 +19,7 @@ from server.services.network_service import (
     get_tram_shape_polylines,
     get_all_trip_shape_map,
     get_all_shape_polylines,
+    clean_station_name,
 )
 from server.services.geometry_utils import (
     project_point_to_polyline,
@@ -103,7 +104,9 @@ def _bracketing_segments(
         SELECT
             o.trip_id, o.from_secs, o.to_secs, o.next_dep_secs,
             sf.stop_lat, sf.stop_lon, st2.stop_lat, st2.stop_lon,
-            r.route_short_name, r.route_long_name, r.route_type
+            r.route_short_name, r.route_long_name, r.route_type,
+            o.from_stop_id, o.to_stop_id, sf.stop_name, st2.stop_name,
+            t.direction_id
         FROM ordered o
         JOIN stops sf ON sf.stop_id = o.from_stop_id
         JOIN stops st2 ON st2.stop_id = o.to_stop_id
@@ -212,11 +215,38 @@ def get_active_vehicle_positions(
         by_trip: Dict[str, Dict[str, Any]] = {}
         for service_date, now_secs in candidates:
             active_ids = _active_service_ids(cur, service_date)
-            for row in _bracketing_segments(cur, active_ids, now_secs, route_types=route_types):
+            rows = _bracketing_segments(cur, active_ids, now_secs, route_types=route_types)
+            if not rows:
+                continue
+
+            # Batch resolve terminal destination stop names for these active trips
+            trip_ids = list({r[0] for r in rows})
+            dest_by_trip: Dict[str, str] = {}
+            if trip_ids:
+                t_placeholders = ",".join("?" for _ in trip_ids)
+                try:
+                    cur.execute(
+                        f"""
+                        SELECT st.trip_id, s.stop_name, MAX(st.stop_sequence)
+                        FROM stop_times st
+                        JOIN stops s ON st.stop_id = s.stop_id
+                        WHERE st.trip_id IN ({t_placeholders})
+                        GROUP BY st.trip_id
+                        """,
+                        trip_ids,
+                    )
+                    for t_id, s_name, _ in cur.fetchall():
+                        dest_by_trip[t_id] = clean_station_name(s_name)
+                except Exception:
+                    pass
+
+            for row in rows:
                 (
                     trip_id, from_secs, to_secs, next_dep_secs,
                     from_lat, from_lon, to_lat, to_lon,
                     route_short_name, route_long_name, route_type,
+                    from_stop_id, to_stop_id, from_stop_name, to_stop_name,
+                    direction_id,
                 ) = row
 
                 veh_mode = "tram" if route_type == METRO_TRAM_ROUTE_TYPE else "train"
@@ -244,6 +274,13 @@ def get_active_vehicle_positions(
                 else:
                     color = train_colors.get(route_short_name, DEFAULT_TRAIN_COLOR)
 
+                from_clean = clean_station_name(from_stop_name)
+                to_clean = clean_station_name(to_stop_name)
+                destination = dest_by_trip.get(trip_id, to_clean)
+                is_stopped = status == "dwelling" or progress >= 0.96 or progress <= 0.04
+                curr_stop_id = to_stop_id if progress >= 0.5 else from_stop_id
+                curr_stop_name = to_clean if progress >= 0.5 else from_clean
+
                 by_trip[trip_id] = {
                     "trip_id": trip_id,
                     "route_short_name": route_short_name,
@@ -256,6 +293,15 @@ def get_active_vehicle_positions(
                     "progress": progress,
                     "path": [[p[0], p[1]] for p in path],
                     "status": status,
+                    "from_stop_id": str(from_stop_id),
+                    "to_stop_id": str(to_stop_id),
+                    "from_stop_name": from_clean,
+                    "to_stop_name": to_clean,
+                    "current_stop_id": str(curr_stop_id),
+                    "current_stop_name": curr_stop_name,
+                    "destination": destination,
+                    "direction_id": direction_id,
+                    "is_stopped": is_stopped,
                 }
 
         return list(by_trip.values())
@@ -292,6 +338,15 @@ def get_active_vehicles_geojson(mode: str = "all", now: Optional[datetime] = Non
                     "progress": p["progress"],
                     "path": p["path"],
                     "status": p["status"],
+                    "from_stop_id": p.get("from_stop_id"),
+                    "to_stop_id": p.get("to_stop_id"),
+                    "from_stop_name": p.get("from_stop_name"),
+                    "to_stop_name": p.get("to_stop_name"),
+                    "current_stop_id": p.get("current_stop_id"),
+                    "current_stop_name": p.get("current_stop_name"),
+                    "destination": p.get("destination"),
+                    "direction_id": p.get("direction_id"),
+                    "is_stopped": p.get("is_stopped", False),
                 },
             }
             for p in positions

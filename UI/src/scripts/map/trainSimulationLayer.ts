@@ -29,6 +29,15 @@ export interface LiveVehicleProps {
   progress?: number;
   path?: [number, number][];
   status?: 'in_transit' | 'dwelling';
+  from_stop_id?: string;
+  to_stop_id?: string;
+  from_stop_name?: string;
+  to_stop_name?: string;
+  current_stop_id?: string;
+  current_stop_name?: string;
+  destination?: string;
+  direction_id?: number;
+  is_stopped?: boolean;
 }
 
 interface AnimatedVehicle {
@@ -163,12 +172,54 @@ export class TrainSimulationLayer {
   private rafId: number | null = null;
   private animStart = 0;
   private running = false;
+  private trackedTripId: string | null = null;
+  private onTrackVehicleHandler: ((e: Event) => void) | null = null;
+  private onClearRouteHandler: (() => void) | null = null;
 
   constructor(private map: mapboxgl.Map) {
     this.map.on('style.load', () => this.addLayers());
+    this.setupTrackingListeners();
     if (this.map.isStyleLoaded()) {
       this.addLayers();
     }
+  }
+
+  private setupTrackingListeners(): void {
+    this.map.on('dragstart', () => { this.trackedTripId = null; });
+    this.map.on('rotatestart', () => { this.trackedTripId = null; });
+    this.map.on('pitchstart', () => { this.trackedTripId = null; });
+
+    this.onTrackVehicleHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ tripId: string; coords: [number, number]; bearing?: number }>).detail;
+      if (detail?.tripId) {
+        this.trackedTripId = detail.tripId;
+        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+        const explorerOpen =
+          typeof document !== 'undefined' &&
+          document.getElementById('transit-explorer-panel')?.classList.contains('translate-x-0');
+        const padding = {
+          top: 60,
+          bottom: 100,
+          left: isDesktop && explorerOpen ? 500 : 40,
+          right: 40
+        };
+        this.map.flyTo({
+          center: detail.coords,
+          zoom: 18,
+          pitch: 65,
+          bearing: detail.bearing !== undefined ? detail.bearing : this.map.getBearing(),
+          padding,
+          essential: true,
+          duration: 1800
+        });
+      }
+    };
+    window.addEventListener('motion:cmd:track-vehicle', this.onTrackVehicleHandler);
+
+    this.onClearRouteHandler = () => {
+      this.trackedTripId = null;
+    };
+    window.addEventListener('motion:cmd:clear-route-highlight', this.onClearRouteHandler);
   }
 
   private addLayers(): void {
@@ -202,7 +253,16 @@ export class TrainSimulationLayer {
               routeShortName: props?.route_short_name,
               color: props?.color,
               coords,
-              mode: props?.mode || 'train'
+              mode: props?.mode || 'train',
+              bearing: props?.bearing_deg,
+              fromStopId: props?.from_stop_id,
+              toStopId: props?.to_stop_id,
+              fromStopName: props?.from_stop_name,
+              toStopName: props?.to_stop_name,
+              destination: props?.destination,
+              status: props?.status,
+              isStopped: props?.is_stopped,
+              progress: props?.progress
             }
           })
         );
@@ -314,6 +374,18 @@ export class TrainSimulationLayer {
         t
       );
 
+      if (this.trackedTripId && vehicle.props.trip_id === this.trackedTripId) {
+        if (!this.map.isMoving() || this.map.isEasing()) {
+          this.map.easeTo({
+            center: coords,
+            bearing,
+            pitch: 65,
+            duration: 120,
+            easing: (x) => x
+          });
+        }
+      }
+
       features.push({
         type: 'Feature',
         properties: {
@@ -321,7 +393,16 @@ export class TrainSimulationLayer {
           route_short_name: vehicle.props.route_short_name,
           color: vehicle.props.color,
           mode: vehicle.props.mode || 'train',
-          height: heightM
+          height: heightM,
+          bearing_deg: bearing,
+          from_stop_id: vehicle.props.from_stop_id,
+          to_stop_id: vehicle.props.to_stop_id,
+          from_stop_name: vehicle.props.from_stop_name,
+          to_stop_name: vehicle.props.to_stop_name,
+          destination: vehicle.props.destination,
+          status: vehicle.props.status,
+          is_stopped: vehicle.props.is_stopped,
+          progress: vehicle.props.progress
         },
         geometry: {
           type: 'Polygon',
@@ -343,6 +424,12 @@ export class TrainSimulationLayer {
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
+    }
+    if (this.onTrackVehicleHandler) {
+      window.removeEventListener('motion:cmd:track-vehicle', this.onTrackVehicleHandler);
+    }
+    if (this.onClearRouteHandler) {
+      window.removeEventListener('motion:cmd:clear-route-highlight', this.onClearRouteHandler);
     }
     this.vehicles.clear();
 

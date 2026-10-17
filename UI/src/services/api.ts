@@ -178,6 +178,29 @@ export interface RouteStop {
   stop_lat: number;
   stop_lon: number;
   stop_sequence: number;
+  is_interchange?: boolean;
+}
+
+export interface LiveVehicle {
+  trip_id: string;
+  route_short_name: string;
+  route_long_name?: string;
+  mode: 'train' | 'tram' | 'bus';
+  color: string;
+  lat: number;
+  lon: number;
+  bearing_deg?: number;
+  progress?: number;
+  status?: string;
+  from_stop_id?: string;
+  to_stop_id?: string;
+  from_stop_name?: string;
+  to_stop_name?: string;
+  current_stop_id?: string;
+  current_stop_name?: string;
+  destination?: string;
+  direction_id?: number;
+  is_stopped?: boolean;
 }
 
 export interface SystemStatus {

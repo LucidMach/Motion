@@ -13,6 +13,7 @@ from server.services.network_service import (
     get_metro_lines_geojson,
     get_tram_routes_metadata,
     get_tram_route_color,
+    is_city_loop_station,
 )
 
 # GTFS route_type values used throughout gtfs_schedule.db (matches
@@ -203,11 +204,15 @@ def get_route_stops(mode: str, route_short_name: str) -> List[Dict[str, Any]]:
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT trip_id FROM trips
-            WHERE route_id IN (
+            SELECT t.trip_id
+            FROM trips t
+            JOIN stop_times st ON t.trip_id = st.trip_id
+            WHERE t.route_id IN (
                 SELECT route_id FROM routes
                 WHERE route_type = ? AND route_short_name = ?
             )
+            GROUP BY t.trip_id
+            ORDER BY COUNT(st.stop_id) DESC
             LIMIT 1
             """,
             (route_type, route_short_name),
@@ -229,13 +234,15 @@ def get_route_stops(mode: str, route_short_name: str) -> List[Dict[str, Any]]:
         )
         stops = []
         for stop_id, stop_name, lat, lon, seq in cur.fetchall():
+            clean_name = stop_name.replace(" Railway Station", "").replace(" Station", "")
             stops.append({
                 "stop_id": str(stop_id),
-                "stop_name": stop_name.replace(" Railway Station", "").replace(" Station", ""),
+                "stop_name": clean_name,
                 "full_name": stop_name,
                 "stop_lat": float(lat),
                 "stop_lon": float(lon),
                 "stop_sequence": int(seq),
+                "is_interchange": is_city_loop_station(clean_name),
             })
         return stops
     finally:

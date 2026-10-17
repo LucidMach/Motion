@@ -246,9 +246,9 @@ export class MotionMapController {
     }
   }
 
-  flyTo(coords: [number, number], zoom = 16.5, pitch = 60, customPadding?: mapboxgl.PaddingOptions): void {
+  flyTo(coords: [number, number], zoom = 16.5, pitch = 60, customPadding?: mapboxgl.PaddingOptions, bearing?: number, duration = 2200): void {
     if (!this.map) return;
-    this.camera.flyTo(coords, zoom, pitch, customPadding);
+    this.camera.flyTo(coords, zoom, pitch, customPadding, bearing, duration);
   }
 
   setSearchTarget(coords: [number, number], title: string, subtitle?: string): void {

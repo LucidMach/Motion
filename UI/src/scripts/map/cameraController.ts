@@ -11,7 +11,14 @@ export class CameraController {
     return this.is3DActive;
   }
 
-  flyTo(coords: [number, number], zoom = 16.5, pitch = 60, customPadding?: mapboxgl.PaddingOptions): void {
+  flyTo(
+    coords: [number, number],
+    zoom = 16.5,
+    pitch = 60,
+    customPadding?: mapboxgl.PaddingOptions,
+    bearing?: number,
+    duration = 2200
+  ): void {
     const map = this.getMap();
     if (!map) return;
 
@@ -34,10 +41,10 @@ export class CameraController {
       center: coords,
       zoom,
       pitch: this.is3DActive ? pitch : 0,
-      bearing: map.getBearing(),
+      bearing: bearing !== undefined ? bearing : map.getBearing(),
       padding,
       essential: true,
-      duration: 2200,
+      duration,
       curve: 1.35
     });
   }

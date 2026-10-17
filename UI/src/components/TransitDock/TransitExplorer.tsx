@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import type { RouteMetadata, RouteStop } from '../../services/api';
+import type { RouteMetadata, RouteStop, LiveVehicle } from '../../services/api';
 
 export type TransitMode = 'train' | 'tram' | 'bus';
 
@@ -112,6 +112,8 @@ interface TransitExplorerProps {
   selectedRouteShortName?: string | null;
   activeStops?: RouteStop[];
   isLoadingStops?: boolean;
+  activeVehicles?: LiveVehicle[];
+  highlightedTripId?: string | null;
   nearestVehicle?: {
     coords: [number, number];
     distanceLabel: string;
@@ -119,6 +121,7 @@ interface TransitExplorerProps {
   liveTrainCounts?: Record<string, number>;
   onSelectRoute: (mode: TransitMode, route: RouteMetadata) => void;
   onFitRoute: () => void;
+  onTrackVehicle?: (vehicle: LiveVehicle) => void;
   onFlyToVehicle?: () => void;
   onFlyToStop: (stop: RouteStop) => void;
   onNavigateToStop: (stop: RouteStop) => void;
@@ -136,10 +139,13 @@ export default function TransitExplorer({
   selectedRouteShortName,
   activeStops = [],
   isLoadingStops = false,
+  activeVehicles = [],
+  highlightedTripId = null,
   nearestVehicle,
   liveTrainCounts = {},
   onSelectRoute,
   onFitRoute,
+  onTrackVehicle,
   onFlyToVehicle,
   onFlyToStop,
   onNavigateToStop,
@@ -149,7 +155,15 @@ export default function TransitExplorer({
   const [filterText, setFilterText] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const highlightedVehicleRef = useRef<HTMLButtonElement | null>(null);
   const config = MODE_CONFIG[activeMode];
+
+  // Auto-scroll highlighted vehicle badge into view when selected
+  useEffect(() => {
+    if (highlightedTripId && highlightedVehicleRef.current) {
+      highlightedVehicleRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightedTripId, activeVehicles]);
 
   // Auto-focus search input when opening
   useEffect(() => {
@@ -520,24 +534,17 @@ export default function TransitExplorer({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate font-display text-xs font-bold text-primary group-hover:text-accent-cyan transition-colors">
-                          {route.route_short_name} {activeMode === 'train' ? 'Line' : ''}
+                          {activeMode === 'tram'
+                            ? `Route ${route.route_short_name}`
+                            : activeMode === 'train'
+                            ? `${route.route_short_name} Line`
+                            : route.route_short_name}
                         </span>
-                        {(route.shuttle || route.route_short_name === 'Stony Point') && (
-                          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">
-                            Shuttle
-                          </span>
-                        )}
                       </div>
 
                       <p className="truncate text-[11px] text-secondary">
                         {route.route_long_name || `${config.singular} Service`}
                       </p>
-
-                      {route.group && (
-                        <span className="mt-0.5 inline-block text-[10px] font-medium text-secondary/70">
-                          {route.group}
-                        </span>
-                      )}
                     </div>
 
                     {/* Live Vehicle Count Badge (replacing the dropdown arrow) */}
@@ -561,7 +568,7 @@ export default function TransitExplorer({
                             e.stopPropagation();
                             onFitRoute();
                           }}
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-subtle bg-surface/80 py-1.5 text-[11px] font-semibold text-secondary transition-all hover:bg-surface-hover hover:text-primary"
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-subtle bg-surface/80 py-1.5 text-[11px] font-semibold text-secondary transition-all hover:bg-surface-hover hover:text-primary active:scale-95"
                         >
                           <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2}>
                             <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
@@ -574,7 +581,7 @@ export default function TransitExplorer({
                             e.stopPropagation();
                             onClearRoute();
                           }}
-                          className="flex items-center justify-center gap-1 rounded-xl border border-subtle bg-surface/80 px-2.5 py-1.5 text-[11px] font-semibold text-secondary transition-all hover:bg-surface-hover hover:text-rose-400"
+                          className="flex items-center justify-center gap-1 rounded-xl border border-subtle bg-surface/80 px-2.5 py-1.5 text-[11px] font-semibold text-secondary transition-all hover:bg-surface-hover hover:text-rose-400 active:scale-95"
                         >
                           <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2}>
                             <path d="M18 6L6 18M6 6l12 12" />
@@ -583,88 +590,230 @@ export default function TransitExplorer({
                         </button>
                       </div>
 
-                      {/* Live Train Tracker Banner (if nearest vehicle exists) */}
-                      {nearestVehicle && onFlyToVehicle && (
-                        <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-2.5 py-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-[11px] text-primary/90">
-                              Nearest: <strong>{nearestVehicle.distanceLabel}</strong> away
-                            </span>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onFlyToVehicle();
-                            }}
-                            className="flex items-center gap-1 rounded-lg bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/30 transition-colors"
-                          >
-                            Track
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Stops List Timeline */}
-                      <div className="pt-1">
-                        <div className="mb-1.5 flex items-center justify-between">
+                      {/* Stops List Corridor Timeline */}
+                      <div className="pt-0.5">
+                        <div className="mb-2 flex items-center justify-between">
                           <span className="font-mono text-[10px] font-bold text-secondary uppercase tracking-wider">
-                            Route Stops {activeStops && activeStops.length > 0 ? `(${activeStops.length})` : ''}
+                            Corridor Stations {activeStops && activeStops.length > 0 ? `(${activeStops.length})` : ''}
                           </span>
                           <span className="text-[10px] text-secondary/60">
-                            Tap to fly to stop
+                            Tap station to fly
                           </span>
                         </div>
 
                         {isLoadingStops ? (
-                          <div className="flex items-center justify-center py-4 text-[11px] text-secondary">
-                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent mr-2" />
+                          <div className="flex items-center justify-center py-6 text-[11px] text-secondary">
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent mr-2" />
                             Loading stations...
                           </div>
                         ) : !activeStops || activeStops.length === 0 ? (
-                          <p className="py-2 text-center text-[11px] text-secondary">
+                          <p className="py-3 text-center text-[11px] text-secondary">
                             No stops schedule available.
                           </p>
                         ) : (
-                          <div className="max-h-56 overflow-y-auto rounded-xl border border-subtle bg-surface/50 p-2 space-y-1.5">
+                          <div className="rounded-xl border border-subtle bg-surface/50 p-2.5 space-y-0">
                             {activeStops.map((stop, sIdx) => {
                               const isFirst = sIdx === 0;
                               const isLast = sIdx === activeStops.length - 1;
+                              const nextStop = activeStops[sIdx + 1];
+                              const sNameClean = stop.stop_name.toLowerCase();
+
+                              // Vehicles stopped at this station
+                              const stoppedVehicles = activeVehicles.filter(
+                                (v) =>
+                                  v.is_stopped &&
+                                  (v.current_stop_id === stop.stop_id ||
+                                    (v.current_stop_name && v.current_stop_name.toLowerCase() === sNameClean))
+                              );
+
+                              // Vehicles in transit on the segment between this station and the next station
+                              const inTransitVehicles = nextStop
+                                ? activeVehicles.filter((v) => {
+                                    if (v.is_stopped) return false;
+                                    const nextNameClean = nextStop.stop_name.toLowerCase();
+                                    const fromN = v.from_stop_name?.toLowerCase();
+                                    const toN = v.to_stop_name?.toLowerCase();
+                                    return (
+                                      (fromN === sNameClean && toN === nextNameClean) ||
+                                      (fromN === nextNameClean && toN === sNameClean) ||
+                                      (v.from_stop_id === stop.stop_id && v.to_stop_id === nextStop.stop_id) ||
+                                      (v.from_stop_id === nextStop.stop_id && v.to_stop_id === stop.stop_id)
+                                    );
+                                  })
+                                : [];
+
+                              const renderVehicleSymbol = (vehicle: LiveVehicle, isStoppedAtStation: boolean) => {
+                                const s1 = vehicle.from_stop_name?.toLowerCase();
+                                const s2 = vehicle.to_stop_name?.toLowerCase();
+                                const fromIdx = activeStops.findIndex(
+                                  (s) => s.stop_id === vehicle.from_stop_id || (s1 && s.stop_name.toLowerCase() === s1)
+                                );
+                                const toIdx = activeStops.findIndex(
+                                  (s) => s.stop_id === vehicle.to_stop_id || (s2 && s.stop_name.toLowerCase() === s2)
+                                );
+                                const isDown = toIdx !== -1 && fromIdx !== -1 ? toIdx > fromIdx : vehicle.direction_id !== 1;
+                                const isHighlighted = highlightedTripId === vehicle.trip_id;
+                                const destination = vehicle.destination || vehicle.to_stop_name || 'Terminal';
+
+                                return (
+                                  <div key={vehicle.trip_id} className="group/sym relative flex items-center justify-center">
+                                    <button
+                                      id={`vehicle-badge-${vehicle.trip_id}`}
+                                      data-testid={`vehicle-badge-${vehicle.trip_id}`}
+                                      ref={isHighlighted ? highlightedVehicleRef : null}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onTrackVehicle) {
+                                          onTrackVehicle(vehicle);
+                                        } else if (onFlyToVehicle) {
+                                          onFlyToVehicle();
+                                        } else {
+                                          onFlyToStop({
+                                            stop_id: vehicle.current_stop_id || '',
+                                            stop_name: vehicle.current_stop_name || destination,
+                                            full_name: '',
+                                            stop_lat: vehicle.lat,
+                                            stop_lon: vehicle.lon,
+                                            stop_sequence: 0
+                                          });
+                                        }
+                                      }}
+                                      aria-label={`Live ${config.singular} to ${destination} - Click for 3D Chase View`}
+                                      title={`Live ${config.singular} to ${destination} - Click for 3D Chase View`}
+                                      className={`relative z-20 flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-all duration-200 cursor-pointer active:scale-95 ${
+                                        isHighlighted
+                                          ? 'bg-accent-cyan text-slate-950 ring-4 ring-accent-cyan/40 scale-110 shadow-[0_0_14px_rgba(56,189,248,0.8)]'
+                                          : 'bg-surface-elevated text-emerald-400 border-2 border-emerald-400 hover:scale-110 hover:border-emerald-300'
+                                      }`}
+                                    >
+                                      {/* Direction Arrow glyph */}
+                                      <span className="font-bold text-[10px] leading-none select-none">
+                                        {isDown ? '▼' : '▲'}
+                                      </span>
+
+                                      {/* Screen-reader accessible destination content */}
+                                      <span className="sr-only">To {destination}</span>
+                                    </button>
+
+                                    {/* Floating Hover Card / Tooltip */}
+                                    <div className="pointer-events-none absolute left-full ml-2 hidden whitespace-nowrap rounded-lg border border-subtle bg-surface-elevated/95 px-2 py-1 text-[10px] font-semibold text-primary shadow-xl backdrop-blur-md group-hover/sym:flex items-center gap-1.5 z-30">
+                                      <span className="text-secondary">{config.icon({ size: 10 })}</span>
+                                      <span className="text-emerald-400 font-bold">{isDown ? '▼' : '▲'}</span>
+                                      <span>To {destination}</span>
+                                      {isStoppedAtStation && (
+                                        <span className="text-[9px] rounded bg-white/10 px-1 py-0.2 text-secondary uppercase tracking-wider">
+                                          At Stop
+                                        </span>
+                                      )}
+                                      <span className="text-[9px] text-accent-cyan/90 font-mono">3D Chase</span>
+                                    </div>
+                                  </div>
+                                );
+                              };
 
                               return (
-                                <div
-                                  key={`${stop.stop_id}-${sIdx}`}
-                                  className="group/stop flex items-center justify-between rounded-lg px-2 py-1 hover:bg-surface-hover/70 transition-colors"
-                                >
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onFlyToStop(stop);
-                                    }}
-                                    className="flex flex-1 items-center gap-2 text-left min-w-0 focus:outline-none"
-                                  >
-                                    <span
-                                      className={`h-2 w-2 rounded-full shrink-0 ${
-                                        isFirst || isLast ? 'ring-2 ring-white/50' : ''
-                                      }`}
-                                      style={{ backgroundColor: isFirst || isLast ? '#ffffff' : routeColor }}
-                                    />
-                                    <span className="truncate text-[11px] font-medium text-primary group-hover/stop:text-accent-cyan transition-colors">
-                                      {stop.stop_name}
-                                    </span>
-                                  </button>
+                                <div key={`${stop.stop_id}-${sIdx}`} className="flex flex-col">
+                                  {/* Station Node and Title Row */}
+                                  <div className="group/stop flex items-center min-h-[34px] hover:bg-surface-hover/50 rounded-lg pr-2 transition-colors">
+                                    {/* Track Column (32px wide) with centered vertical line and station dot */}
+                                    <div className="relative w-8 shrink-0 self-stretch flex items-center justify-center">
+                                      {/* Top line (from top of row to center) */}
+                                      {!isFirst && (
+                                        <span
+                                          className="absolute top-0 bottom-1/2 left-1/2 -translate-x-1/2 w-1"
+                                          style={{ backgroundColor: routeColor }}
+                                        />
+                                      )}
+                                      {/* Bottom line (from center to row bottom) */}
+                                      {!isLast && (
+                                        <span
+                                          className="absolute top-1/2 bottom-0 left-1/2 -translate-x-1/2 w-1"
+                                          style={{ backgroundColor: routeColor }}
+                                        />
+                                      )}
 
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onNavigateToStop(stop);
-                                    }}
-                                    title={`Navigate to ${stop.stop_name}`}
-                                    className="ml-1 shrink-0 text-secondary opacity-50 hover:opacity-100 hover:text-accent-cyan transition-all"
-                                  >
-                                    <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2}>
-                                      <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                                    </svg>
-                                  </button>
+                                      {/* Station Dot or Stopped Vehicle Symbol */}
+                                      {stoppedVehicles.length > 0 ? (
+                                        <div className="relative z-10 flex items-center justify-center">
+                                          {stoppedVehicles.map((veh) => renderVehicleSymbol(veh, true))}
+                                        </div>
+                                      ) : isFirst || isLast ? (
+                                        <span
+                                          className="relative z-10 h-3.5 w-3.5 rounded-full ring-2 ring-white/90 shadow-md"
+                                          style={{ backgroundColor: routeColor }}
+                                        />
+                                      ) : (
+                                        <span
+                                          className="relative z-10 h-2.5 w-2.5 rounded-full border-2 bg-surface-elevated shadow-sm"
+                                          style={{ borderColor: routeColor }}
+                                        />
+                                      )}
+                                    </div>
+
+                                    {/* Station Name & Navigate action */}
+                                    <div className="flex-1 min-w-0 flex items-center justify-between pl-1.5 py-1">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onFlyToStop(stop);
+                                        }}
+                                        className="flex items-center text-left min-w-0 focus:outline-none"
+                                      >
+                                        <span
+                                          className={`truncate text-xs group-hover/stop:text-accent-cyan transition-colors ${
+                                            isFirst || isLast ? 'font-bold text-primary' : 'font-medium text-primary/90'
+                                          }`}
+                                        >
+                                          {stop.stop_name}
+                                        </span>
+                                      </button>
+
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onNavigateToStop(stop);
+                                        }}
+                                        title={`Navigate to ${stop.stop_name}`}
+                                        className="ml-1 shrink-0 text-secondary opacity-30 hover:opacity-100 hover:text-accent-cyan transition-all p-1"
+                                      >
+                                        <svg viewBox="0 0 24 24" width={11} height={11} fill="none" stroke="currentColor" strokeWidth={2}>
+                                          <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Track Segment between this station and next station */}
+                                  {!isLast && (
+                                    <div className="flex items-center min-h-[26px]">
+                                      {/* Track Column with continuous line and moving vehicle symbol on top */}
+                                      <div className="relative w-8 shrink-0 self-stretch flex items-center justify-center min-h-[26px]">
+                                        {/* Continuous vertical line connecting stations */}
+                                        <span
+                                          className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1"
+                                          style={{ backgroundColor: routeColor }}
+                                        />
+
+                                        {/* Moving vehicle symbol(s) sitting directly on top of the line */}
+                                        {inTransitVehicles.length > 0 && (
+                                          <div className="relative z-20 flex flex-col items-center gap-1">
+                                            {inTransitVehicles.map((veh) => renderVehicleSymbol(veh, false))}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Subtle destination label next to moving vehicle symbol */}
+                                      <div className="flex-1 min-w-0 pl-1.5 py-0.5">
+                                        {inTransitVehicles.length > 0 && (
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] text-secondary/70 italic truncate">
+                                              {inTransitVehicles.map((v) => `→ ${v.destination || 'Terminal'}`).join(', ')}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}

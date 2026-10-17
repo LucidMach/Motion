@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motionApi, type RouteMetadata, type RouteStop } from '../../services/api';
+import { motionApi, type RouteMetadata, type RouteStop, type LiveVehicle } from '../../services/api';
 import { DEFAULT_HUB } from '../../scripts/map/transitHub';
 import type { LocationTelemetry, VehicleSelectedEventDetail } from '../../types/events';
 import TransitExplorer, { MODE_CONFIG, type TransitMode } from './TransitExplorer';
@@ -32,6 +32,8 @@ export default function TransitDock() {
   } | null>(null);
   const [routeStops, setRouteStops] = useState<RouteStop[]>([]);
   const [loadingStops, setLoadingStops] = useState(false);
+  const [activeRouteVehicles, setActiveRouteVehicles] = useState<LiveVehicle[]>([]);
+  const [highlightedTripId, setHighlightedTripId] = useState<string | null>(null);
   const [nearestVehicle, setNearestVehicle] = useState<{
     coords: [number, number];
     distanceLabel: string;
@@ -53,35 +55,14 @@ export default function TransitDock() {
     return () => window.removeEventListener('motion:location', onLocation);
   }, []);
 
-  // Listen for in-map vehicle click events
-  useEffect(() => {
-    const onVehicleSelected = (e: Event) => {
-      const detail = (e as CustomEvent<VehicleSelectedEventDetail>).detail;
-      if (detail) {
-        let distanceLabel: string | undefined;
-        if (detail.coords) {
-          const distKm = haversineKm(
-            lastLocation.current[1],
-            lastLocation.current[0],
-            detail.coords[1],
-            detail.coords[0]
-          );
-          distanceLabel = distKm < 1 ? `${Math.round(distKm * 1000)}m away` : `${distKm.toFixed(1)} km away`;
-        }
-        setInspectedVehicle({
-          ...detail,
-          distanceLabel
-        });
-      }
-    };
-    window.addEventListener('motion:vehicle-selected', onVehicleSelected);
-    return () => window.removeEventListener('motion:vehicle-selected', onVehicleSelected);
-  }, []);
+  // (Consolidated vehicle-selected listener is defined below)
 
   // Clear route highlight
   const handleClearRoute = useCallback(() => {
     setSelectedRoute(null);
     setRouteStops([]);
+    setActiveRouteVehicles([]);
+    setHighlightedTripId(null);
     setNearestVehicle(null);
     activeRouteShape.current = null;
     window.dispatchEvent(new CustomEvent('motion:cmd:clear-route-highlight'));
@@ -246,90 +227,215 @@ export default function TransitDock() {
     []
   );
 
+  // Fetch active vehicles running on the selected route
+  const fetchActiveVehiclesForRoute = useCallback(
+    async (mode: TransitMode, routeShortName: string) => {
+      if (mode !== 'train' && mode !== 'tram') {
+        setActiveRouteVehicles([]);
+        return;
+      }
+      try {
+        const liveFc = await motionApi.getLiveVehicles(mode);
+        const list: LiveVehicle[] = [];
+        for (const f of liveFc.features) {
+          const p = f.properties as any;
+          if (p?.route_short_name === routeShortName) {
+            const coords = (f.geometry as any).coordinates as [number, number];
+            list.push({
+              trip_id: p.trip_id,
+              route_short_name: p.route_short_name,
+              route_long_name: p.route_long_name,
+              mode: p.mode || mode,
+              color: p.color,
+              lat: coords[1],
+              lon: coords[0],
+              bearing_deg: p.bearing_deg,
+              progress: p.progress,
+              status: p.status,
+              from_stop_id: p.from_stop_id,
+              to_stop_id: p.to_stop_id,
+              from_stop_name: p.from_stop_name,
+              to_stop_name: p.to_stop_name,
+              current_stop_id: p.current_stop_id,
+              current_stop_name: p.current_stop_name,
+              destination: p.destination,
+              direction_id: p.direction_id,
+              is_stopped: p.is_stopped
+            });
+          }
+        }
+        setActiveRouteVehicles(list);
+      } catch {
+        // Non-critical fallback
+      }
+    },
+    []
+  );
+
+  // Poll active route vehicles every 4s while route is open
+  useEffect(() => {
+    if (!selectedRoute) return;
+    fetchActiveVehiclesForRoute(selectedRoute.mode, selectedRoute.route.route_short_name);
+    const interval = setInterval(() => {
+      fetchActiveVehiclesForRoute(selectedRoute.mode, selectedRoute.route.route_short_name);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [selectedRoute, fetchActiveVehiclesForRoute]);
+
   // Handle selecting a route from Explorer or Vehicle card
   const handleSelectRoute = useCallback(
-    async (mode: TransitMode, route: RouteMetadata) => {
-      // Toggle collapse/deselect if clicking the already selected route
-      if (selectedRoute?.route.route_short_name === route.route_short_name) {
+    async (mode: TransitMode, route: RouteMetadata, targetTripId?: string) => {
+      // Toggle collapse/deselect if clicking the already selected route without a new target vehicle
+      if (selectedRoute?.route.route_short_name === route.route_short_name && !targetTripId) {
         handleClearRoute();
         return;
       }
 
       setSelectedRoute({ mode, route });
-      setInspectedVehicle(null);
+      if (!targetTripId) {
+        setInspectedVehicle(null);
+      }
+      if (targetTripId) {
+        setHighlightedTripId(targetTripId);
+      }
 
       const color = route.color || MODE_CONFIG[mode].color;
 
+      // Immediately fetch route shape and dispatch map highlight without blocking on stops
+      motionApi
+        .getRouteShape(mode, route.route_short_name)
+        .then((shape) => {
+          activeRouteShape.current = shape;
+          window.dispatchEvent(
+            new CustomEvent('motion:cmd:highlight-route', {
+              detail: {
+                geojson: shape,
+                color,
+                skipCameraFit: false
+              }
+            })
+          );
+        })
+        .catch((err) => {
+          console.warn('[TransitDock] Failed to load route shape:', err);
+        });
+
+      // In parallel, load corridor stops and live vehicles
       try {
-        // Fetch route geometry shape
-        const shapePromise = motionApi.getRouteShape(mode, route.route_short_name);
-
-        // Fetch nearest vehicle if train or tram
-        const vehiclePromise =
-          mode === 'train' || mode === 'tram'
-            ? findNearestVehicle(route.route_short_name, mode)
-            : Promise.resolve(null);
-
-        // Fetch route stops
         setLoadingStops(true);
         const stopsPromise = motionApi
           .getRouteStops(mode, route.route_short_name)
           .catch(() => [] as RouteStop[]);
 
-        const [shape, vehicle, stops] = await Promise.all([shapePromise, vehiclePromise, stopsPromise]);
+        const vehiclePromise =
+          mode === 'train' || mode === 'tram'
+            ? findNearestVehicle(route.route_short_name, mode)
+            : Promise.resolve(null);
 
-        activeRouteShape.current = shape;
-        setNearestVehicle(vehicle);
+        const [stops, vehicle] = await Promise.all([stopsPromise, vehiclePromise]);
         setRouteStops(stops);
+        setNearestVehicle(vehicle);
         setLoadingStops(false);
 
-        // Highlight route on map
-        window.dispatchEvent(
-          new CustomEvent('motion:cmd:highlight-route', {
-            detail: {
-              geojson: shape,
-              color,
-              skipCameraFit: Boolean(vehicle)
-            }
-          })
-        );
-
-        // If vehicle found, fly to it
-        if (vehicle) {
-          const vehicleLabel = mode === 'tram' ? 'tram' : 'train';
-          const lineTitle = mode === 'tram' ? `Route ${route.route_short_name}` : `${route.route_short_name} Line`;
-          window.dispatchEvent(
-            new CustomEvent('motion:cmd:fly-to', {
-              detail: {
-                coords: vehicle.coords,
-                zoom: 17.5,
-                pitch: 65,
-                title: lineTitle,
-                subtitle: `Nearest ${vehicleLabel} • ${vehicle.distanceLabel} away`
-              }
-            })
-          );
-        }
+        fetchActiveVehiclesForRoute(mode, route.route_short_name);
       } catch (err) {
         console.warn('[TransitDock] Failed to load route data:', err);
         setLoadingStops(false);
       }
     },
-    [findNearestVehicle, selectedRoute, handleClearRoute]
+    [findNearestVehicle, selectedRoute, handleClearRoute, fetchActiveVehiclesForRoute]
   );
 
-  // Refit camera to currently highlighted route bounds
-  const handleFitRoute = useCallback(() => {
-    if (!activeRouteShape.current || !selectedRoute) return;
+  // Listen for in-map vehicle click events: opens both right VehiclePanel and left Transit Explorer
+  useEffect(() => {
+    const onVehicleSelected = async (e: Event) => {
+      const detail = (e as CustomEvent<VehicleSelectedEventDetail>).detail;
+      if (detail) {
+        let distanceLabel: string | undefined;
+        if (detail.coords) {
+          const distKm = haversineKm(
+            lastLocation.current[1],
+            lastLocation.current[0],
+            detail.coords[1],
+            detail.coords[0]
+          );
+          distanceLabel = distKm < 1 ? `${Math.round(distKm * 1000)}m away` : `${distKm.toFixed(1)} km away`;
+        }
+        setInspectedVehicle({
+          ...detail,
+          distanceLabel
+        });
+
+        if (detail.routeShortName) {
+          const mode = (detail.mode as TransitMode) || 'train';
+          setIsExplorerOpen(true);
+          setActiveMode(mode);
+          setHighlightedTripId(detail.tripId);
+
+          let modeRoutes = routesByMode[mode];
+          if (!modeRoutes || modeRoutes.length === 0) {
+            try {
+              modeRoutes = await motionApi.getRoutesByMode(mode);
+              setRoutesByMode((prev) => ({ ...prev, [mode]: modeRoutes }));
+            } catch {
+              modeRoutes = [];
+            }
+          }
+          const found = modeRoutes?.find((r) => r.route_short_name === detail.routeShortName);
+          if (found) {
+            handleSelectRoute(mode, found, detail.tripId);
+          }
+        }
+      }
+    };
+    window.addEventListener('motion:vehicle-selected', onVehicleSelected);
+    return () => window.removeEventListener('motion:vehicle-selected', onVehicleSelected);
+  }, [routesByMode, handleSelectRoute]);
+
+  // Track vehicle from badge with cinematic 3D chase camera
+  const handleTrackVehicle = useCallback((vehicle: LiveVehicle) => {
     window.dispatchEvent(
-      new CustomEvent('motion:cmd:highlight-route', {
+      new CustomEvent('motion:cmd:track-vehicle', {
         detail: {
-          geojson: activeRouteShape.current,
-          color: selectedRoute.route.color || MODE_CONFIG[selectedRoute.mode].color,
-          skipCameraFit: false
+          tripId: vehicle.trip_id,
+          coords: [vehicle.lon, vehicle.lat],
+          bearing: vehicle.bearing_deg
         }
       })
     );
+  }, []);
+
+  // Refit camera to currently highlighted route bounds
+  const handleFitRoute = useCallback(async () => {
+    if (!selectedRoute) return;
+    const color = selectedRoute.route.color || MODE_CONFIG[selectedRoute.mode].color;
+    if (activeRouteShape.current) {
+      window.dispatchEvent(
+        new CustomEvent('motion:cmd:highlight-route', {
+          detail: {
+            geojson: activeRouteShape.current,
+            color,
+            skipCameraFit: false
+          }
+        })
+      );
+    } else {
+      try {
+        const shape = await motionApi.getRouteShape(selectedRoute.mode, selectedRoute.route.route_short_name);
+        activeRouteShape.current = shape;
+        window.dispatchEvent(
+          new CustomEvent('motion:cmd:highlight-route', {
+            detail: {
+              geojson: shape,
+              color,
+              skipCameraFit: false
+            }
+          })
+        );
+      } catch (err) {
+        console.warn('[TransitDock] Failed to fit route shape:', err);
+      }
+    }
   }, [selectedRoute]);
 
   // Fly to specific stop
@@ -457,10 +563,13 @@ export default function TransitDock() {
         }
         activeStops={selectedRoute?.mode === activeMode ? routeStops : []}
         isLoadingStops={loadingStops}
+        activeVehicles={selectedRoute?.mode === activeMode ? activeRouteVehicles : []}
+        highlightedTripId={highlightedTripId}
         nearestVehicle={selectedRoute?.mode === activeMode ? nearestVehicle : null}
         liveTrainCounts={liveTrainCounts}
         onSelectRoute={handleSelectRoute}
         onFitRoute={handleFitRoute}
+        onTrackVehicle={handleTrackVehicle}
         onFlyToVehicle={
           nearestVehicle
             ? () =>

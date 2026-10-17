@@ -40,8 +40,16 @@ export interface FlyToEventDetail {
   coords: [number, number]; // [lon, lat]
   zoom?: number;
   pitch?: number;
+  bearing?: number;
   title?: string;
   subtitle?: string;
+  trackTripId?: string;
+}
+
+export interface TrackVehicleEventDetail {
+  tripId: string;
+  coords: [number, number];
+  bearing?: number;
 }
 
 export interface NavigateToEventDetail {
@@ -74,5 +82,14 @@ export interface VehicleSelectedEventDetail {
   color: string;
   coords?: [number, number];
   mode?: 'train' | 'tram' | 'bus';
+  bearing?: number;
+  fromStopId?: string;
+  toStopId?: string;
+  fromStopName?: string;
+  toStopName?: string;
+  destination?: string;
+  status?: string;
+  isStopped?: boolean;
+  progress?: number;
 }
 
