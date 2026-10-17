@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import type { RouteMetadata, RouteStop, LiveVehicle } from '../../services/api';
+import SidebarSettingsView from './SidebarSettingsView';
 
 export type TransitMode = 'train' | 'tram' | 'bus';
 
@@ -105,6 +106,8 @@ const MODES: TransitMode[] = ['train', 'tram', 'bus'];
 interface TransitExplorerProps {
   isOpen: boolean;
   activeMode: TransitMode;
+  sidebarView?: 'transit' | 'settings';
+  onToggleSettings?: () => void;
   selectedRouteMode?: TransitMode | null;
   onChangeMode: (mode: TransitMode) => void;
   routes: RouteMetadata[];
@@ -132,6 +135,8 @@ interface TransitExplorerProps {
 export default function TransitExplorer({
   isOpen,
   activeMode,
+  sidebarView = 'transit',
+  onToggleSettings,
   selectedRouteMode,
   onChangeMode,
   routes,
@@ -177,7 +182,7 @@ export default function TransitExplorer({
 
   // Handle clicking mode in sidebar nav rail
   const handleRailModeClick = (mode: TransitMode) => {
-    if (activeMode === mode) {
+    if (sidebarView === 'transit' && activeMode === mode) {
       onClose();
     } else {
       onChangeMode(mode);
@@ -253,14 +258,16 @@ export default function TransitExplorer({
         id="transit-explorer-panel"
         role="dialog"
         aria-label="Transit Explorer"
-        className={`pointer-events-auto fixed inset-y-0 left-0 z-50 flex w-[480px] max-w-full flex-row border-r border-subtle bg-surface-elevated/95 shadow-2xl backdrop-blur-2xl transition-transform ${
-          isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
+        className={`pointer-events-auto fixed top-24 bottom-5 left-5 z-50 flex w-[480px] max-w-[calc(100vw-2.5rem)] flex-row overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 shadow-glass backdrop-blur-2xl transition-all duration-300 max-[768px]:top-[76px] max-[768px]:bottom-3 max-[768px]:left-3 max-[768px]:max-w-[calc(100vw-1.5rem)] ${
+          isOpen
+            ? 'translate-x-0 opacity-100 pointer-events-auto'
+            : '-translate-x-full opacity-0 pointer-events-none'
         }`}
         style={{
-          transitionDuration: '320ms',
-          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           boxShadow: isOpen
-            ? `16px 0 48px -8px rgba(0, 0, 0, 0.7), 4px 0 24px -4px ${config.glow}`
+            ? `0 20px 48px -8px rgba(0, 0, 0, 0.7), 0 0 24px -4px ${
+                sidebarView === 'settings' ? 'var(--color-glow)' : config.glow
+              }`
             : undefined
         }}
       >
@@ -291,7 +298,7 @@ export default function TransitExplorer({
             {MODES.map((mode) => {
               const mConfig = MODE_CONFIG[mode];
               const Icon = mConfig.icon;
-              const isActive = activeMode === mode;
+              const isActive = sidebarView === 'transit' && activeMode === mode;
 
               return (
                 <button
@@ -318,33 +325,62 @@ export default function TransitExplorer({
             })}
           </div>
 
-        {/* Bottom: Clear Route / Status Indicator */}
-        <div className="flex flex-col items-center gap-1.5">
-          {selectedRouteShortName ? (
+          {/* Bottom: Settings & Clear Route / Status */}
+          <div className="flex flex-col items-center gap-2">
+            {selectedRouteShortName ? (
+              <button
+                onClick={onClearRoute}
+                title="Clear route highlight"
+                aria-label="Clear route highlight"
+                className="group relative flex h-9 w-9 items-center justify-center rounded-xl border border-subtle bg-surface/60 text-secondary transition-all hover:bg-surface-hover hover:text-rose-400 active:scale-95"
+              >
+                <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-xl border border-subtle bg-surface-elevated/95 px-2.5 py-1 text-xs font-semibold text-primary shadow-glass backdrop-blur-md group-hover:block max-[768px]:hidden z-50">
+                  Clear route
+                </span>
+              </button>
+            ) : null}
+
+            {/* Settings button in the sidebar rail */}
             <button
-              onClick={onClearRoute}
-              title="Clear route highlight"
-              aria-label="Clear route highlight"
-              className="group relative flex h-9 w-9 items-center justify-center rounded-xl border border-subtle bg-surface/60 text-secondary transition-all hover:bg-surface-hover hover:text-rose-400 active:scale-95"
+              id="sidebar-mode-settings"
+              onClick={onToggleSettings}
+              title={sidebarView === 'settings' ? 'Close Settings' : 'Studio Settings'}
+              aria-label={sidebarView === 'settings' ? 'Close Settings' : 'Studio Settings'}
+              className={`group relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200 ${
+                sidebarView === 'settings'
+                  ? 'border border-accent-cyan/80 bg-accent-cyan/20 text-accent-cyan shadow-[0_0_12px_rgba(56,189,248,0.25)]'
+                  : 'border border-transparent text-secondary hover:bg-surface-hover hover:text-primary'
+              }`}
             >
-              <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M18 6L6 18M6 6l12 12" />
+              <svg
+                viewBox="0 0 24 24"
+                width={18}
+                height={18}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-transform duration-300 group-hover:rotate-45"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
               <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-xl border border-subtle bg-surface-elevated/95 px-2.5 py-1 text-xs font-semibold text-primary shadow-glass backdrop-blur-md group-hover:block max-[768px]:hidden z-50">
-                Clear route
+                {sidebarView === 'settings' ? 'Close Settings' : 'Studio Settings'}
               </span>
             </button>
-          ) : (
-            <span
-              className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"
-              title="PTV Network Live"
-            />
-          )}
+          </div>
         </div>
-      </div>
 
-      {/* Right Sidebar Content Area (Column 2) */}
-      <div className="flex flex-1 flex-col min-w-0 bg-transparent overflow-hidden">
+        {sidebarView === 'settings' ? (
+          <SidebarSettingsView onClose={onClose} />
+        ) : (
+          /* Right Sidebar Content Area (Column 2) */
+          <div className="flex flex-1 flex-col min-w-0 bg-transparent overflow-hidden">
         {/* Content Header */}
         <div className="flex items-center justify-between border-b border-subtle/60 px-4 py-3.5">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -829,16 +865,17 @@ export default function TransitExplorer({
         )}
       </div>
 
-        {/* Footer Info */}
-        <div className="flex items-center justify-between border-t border-subtle bg-surface/40 px-4 py-2.5 text-[11px] text-secondary">
-          <span>
-            Showing <strong className="text-primary">{filteredRoutes.length}</strong> {config.label.toLowerCase()}
-          </span>
-          <span className="font-mono text-[10px] text-secondary/60">
-            Esc to close
-          </span>
+          {/* Footer Info */}
+          <div className="flex items-center justify-between border-t border-subtle bg-surface/40 px-4 py-2.5 text-[11px] text-secondary">
+            <span>
+              Showing <strong className="text-primary">{filteredRoutes.length}</strong> {config.label.toLowerCase()}
+            </span>
+            <span className="font-mono text-[10px] text-secondary/60">
+              Esc to close
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </aside>
 
     <style>{`

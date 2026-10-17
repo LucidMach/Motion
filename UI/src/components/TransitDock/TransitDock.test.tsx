@@ -402,4 +402,67 @@ describe('TransitDock', () => {
     const badge = await screen.findByTestId('vehicle-badge-T1');
     expect(badge).toBeInTheDocument();
   });
+
+  it('renders detached settings button aligned below the dock rail and opens settings view on click', async () => {
+    render(<TransitDock />);
+
+    const settingsBtn = screen.getByRole('button', { name: /open studio settings/i });
+    expect(settingsBtn).toBeInTheDocument();
+
+    fireEvent.click(settingsBtn);
+
+    const explorer = await screen.findByRole('dialog', { name: /transit explorer/i });
+    expect(explorer).toHaveClass('translate-x-0');
+
+    // Should display unified settings view
+    expect(await screen.findByRole('heading', { name: 'Studio Settings' })).toBeInTheDocument();
+    expect(screen.getByText(/Gesture & Navigation Controls/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mapbox Access Token/i)).toBeInTheDocument();
+
+    // Verify themes are NOT present
+    expect(screen.queryByText(/Theme Presets/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Light & Solar Preset/i)).not.toBeInTheDocument();
+  });
+
+  it('allows switching between transit modes and settings via the sidebar rail', async () => {
+    render(<TransitDock />);
+
+    // Open with Trains
+    fireEvent.click(screen.getByRole('button', { name: /explore trains/i }));
+    expect(await screen.findByText('Lilydale Line')).toBeInTheDocument();
+
+    const explorer = await screen.findByRole('dialog', { name: /transit explorer/i });
+
+    // Click Settings icon in the sidebar rail
+    const railSettingsBtn = within(explorer).getByRole('button', { name: /studio settings/i });
+    fireEvent.click(railSettingsBtn);
+
+    // Explorer stays open, but now displays Settings
+    expect(await screen.findByRole('heading', { name: 'Studio Settings' })).toBeInTheDocument();
+    expect(screen.queryByText('Lilydale Line')).not.toBeInTheDocument();
+
+    // Switch back to Train mode via sidebar rail
+    const trainRailBtn = within(explorer).getByRole('button', { name: /switch to trains/i });
+    fireEvent.click(trainRailBtn);
+
+    expect(await screen.findByText('Lilydale Line')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Studio Settings' })).not.toBeInTheDocument();
+  });
+
+  it('toggles settings view with S keyboard shortcut', async () => {
+    render(<TransitDock />);
+
+    const explorer = screen.getByRole('dialog', { name: /transit explorer/i });
+    expect(explorer).toHaveClass('-translate-x-full');
+
+    // Press 's'
+    fireEvent.keyDown(window, { key: 's' });
+    expect(explorer).toHaveClass('translate-x-0');
+    expect(await screen.findByRole('heading', { name: 'Studio Settings' })).toBeInTheDocument();
+
+    // Press 's' again to close
+    fireEvent.keyDown(window, { key: 's' });
+    expect(explorer).toHaveClass('-translate-x-full');
+  });
 });
+

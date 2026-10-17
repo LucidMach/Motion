@@ -6,5 +6,5 @@
 [x] camera orientation+follow vehicle on clicking a vehicle
 [x] on clicking vehicle - open the route and the specific vehicle in the list menu
 [] a way to show that the train is running underground
-[] align the settings icon vertically with the transit dock
-[] incorporate settings into the side bar
+[x] align the settings icon vertically with the transit dock
+[x] incorporate settings into the side bar

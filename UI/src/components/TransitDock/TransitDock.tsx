@@ -20,6 +20,7 @@ const MODES: TransitMode[] = ['train', 'tram', 'bus'];
 
 export default function TransitDock() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
+  const [sidebarView, setSidebarView] = useState<'transit' | 'settings'>('transit');
   const [activeMode, setActiveMode] = useState<TransitMode>('train');
   const [routesByMode, setRoutesByMode] = useState<Partial<Record<TransitMode, RouteMetadata[]>>>({});
   const [loadingMode, setLoadingMode] = useState<TransitMode | null>(null);
@@ -105,7 +106,17 @@ export default function TransitDock() {
     return () => window.removeEventListener('motion:map-empty-click', onMapEmptyClick);
   }, [inspectedVehicle, isExplorerOpen, handleCloseExplorer]);
 
-  // Keyboard shortcut listener ('T' to toggle explorer, 'Escape' to close with hierarchy)
+  // Listen for open-settings-modal command
+  useEffect(() => {
+    const onOpenSettings = () => {
+      setSidebarView('settings');
+      setIsExplorerOpen(true);
+    };
+    window.addEventListener('motion:cmd:open-settings-modal', onOpenSettings);
+    return () => window.removeEventListener('motion:cmd:open-settings-modal', onOpenSettings);
+  }, []);
+
+  // Keyboard shortcut listener ('T' to toggle explorer, 'S' for settings, 'Escape' to close with hierarchy)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -117,9 +128,18 @@ export default function TransitDock() {
 
       if (e.key.toLowerCase() === 't') {
         e.preventDefault();
-        if (isExplorerOpen) {
+        if (isExplorerOpen && sidebarView === 'transit') {
           handleCloseExplorer();
         } else {
+          setSidebarView('transit');
+          setIsExplorerOpen(true);
+        }
+      } else if (e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (isExplorerOpen && sidebarView === 'settings') {
+          handleCloseExplorer();
+        } else {
+          setSidebarView('settings');
           setIsExplorerOpen(true);
         }
       } else if (e.key === 'Escape') {
@@ -133,7 +153,7 @@ export default function TransitDock() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isExplorerOpen, inspectedVehicle, handleCloseExplorer]);
+  }, [isExplorerOpen, sidebarView, inspectedVehicle, handleCloseExplorer]);
 
   // Load routes for a mode
   const loadRoutesForMode = useCallback(
@@ -176,15 +196,25 @@ export default function TransitDock() {
 
   // Handle clicking a mode in the Left Dock Rail
   const handleDockModeClick = (mode: TransitMode) => {
-    if (isExplorerOpen && activeMode === mode) {
+    if (isExplorerOpen && sidebarView === 'transit' && activeMode === mode) {
       handleCloseExplorer();
     } else {
       if (selectedRoute && selectedRoute.mode !== mode) {
         handleClearRoute();
       }
+      setSidebarView('transit');
       setActiveMode(mode);
       setIsExplorerOpen(true);
       loadRoutesForMode(mode);
+    }
+  };
+
+  const handleOpenSettings = () => {
+    if (isExplorerOpen && sidebarView === 'settings') {
+      handleCloseExplorer();
+    } else {
+      setSidebarView('settings');
+      setIsExplorerOpen(true);
     }
   };
 
@@ -504,19 +534,23 @@ export default function TransitDock() {
 
   return (
     <>
-      {/* Floating Left Dock Rail */}
-      <nav
-        id="transit-dock-rail"
-        aria-label="Transit modes dock"
-        className={`pointer-events-auto fixed left-4 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2 max-[768px]:left-3 transition-all duration-200 ${
+      {/* Floating Left Dock & Detached Settings Stack */}
+      <div
+        id="transit-dock-container"
+        className={`pointer-events-auto fixed left-5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-3 max-[768px]:left-3 transition-all duration-200 ${
           isExplorerOpen ? 'opacity-0 pointer-events-none -translate-x-3' : 'opacity-100 translate-x-0'
         }`}
       >
-        <div className="flex flex-col items-center gap-1.5 rounded-full border border-subtle bg-surface-elevated/95 p-1.5 shadow-glass backdrop-blur-2xl">
+        {/* Transit Modes Dock Rail */}
+        <nav
+          id="transit-dock-rail"
+          aria-label="Transit modes dock"
+          className="flex flex-col items-center gap-1.5 rounded-full border border-subtle bg-surface-elevated/95 p-1.5 shadow-glass backdrop-blur-2xl"
+        >
           {MODES.map((mode) => {
             const config = MODE_CONFIG[mode];
             const Icon = config.icon;
-            const isTabActive = isExplorerOpen && activeMode === mode;
+            const isTabActive = isExplorerOpen && sidebarView === 'transit' && activeMode === mode;
 
             return (
               <button
@@ -535,24 +569,54 @@ export default function TransitDock() {
                 <Icon size={18} />
 
                 {/* Hover Tooltip */}
-                <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-xl border border-subtle bg-surface-elevated/95 px-2.5 py-1 text-xs font-semibold text-primary shadow-glass backdrop-blur-md group-hover:block max-[768px]:hidden">
+                <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-xl border border-subtle bg-surface-elevated/95 px-2.5 py-1 text-xs font-semibold text-primary shadow-glass backdrop-blur-md group-hover:block max-[768px]:hidden z-50">
                   {isTabActive ? `Close ${config.label}` : config.label}
                 </span>
               </button>
             );
           })}
-        </div>
-      </nav>
+        </nav>
+
+        {/* Detached Floating Settings Button (Vertically Aligned Below Dock Rail) */}
+        <button
+          id="dock-settings-btn"
+          onClick={handleOpenSettings}
+          title={isExplorerOpen && sidebarView === 'settings' ? 'Close Studio Settings' : 'Studio Settings (S)'}
+          aria-label="Open Studio Settings"
+          className="group relative flex h-11 w-11 items-center justify-center rounded-full border border-subtle bg-surface-elevated/95 p-1.5 text-secondary shadow-glass backdrop-blur-2xl transition-all duration-200 hover:border-glow hover:bg-surface-hover hover:text-accent-cyan active:scale-95"
+        >
+          <svg
+            className="h-5 w-5 transition-transform duration-300 ease-out group-hover:rotate-90"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+
+          {/* Hover Tooltip */}
+          <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-xl border border-subtle bg-surface-elevated/95 px-2.5 py-1 text-xs font-semibold text-primary shadow-glass backdrop-blur-md group-hover:block max-[768px]:hidden z-50">
+            Settings
+          </span>
+        </button>
+      </div>
 
       {/* Transit Explorer Sidebar (with integrated nav rail and inline route dropdown) */}
       <TransitExplorer
         isOpen={isExplorerOpen}
         activeMode={activeMode}
+        sidebarView={sidebarView}
+        onToggleSettings={handleOpenSettings}
         selectedRouteMode={selectedRoute?.mode}
         onChangeMode={(mode) => {
           if (selectedRoute && selectedRoute.mode !== mode) {
             handleClearRoute();
           }
+          setSidebarView('transit');
           setActiveMode(mode);
           loadRoutesForMode(mode);
         }}

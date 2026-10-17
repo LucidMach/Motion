@@ -32,12 +32,12 @@ export default function VehiclePanel({
       id="vehicle-panel"
       role="dialog"
       aria-label="Vehicle Inspector"
-      className={`pointer-events-auto fixed inset-y-0 right-0 z-50 flex w-[300px] max-w-full flex-col border-l border-subtle bg-surface-elevated/95 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out max-[768px]:w-full ${
-        isOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
+      className={`pointer-events-auto fixed top-24 bottom-5 right-5 z-50 flex w-[320px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 shadow-glass backdrop-blur-2xl transition-all duration-300 ease-out max-[768px]:top-[76px] max-[768px]:bottom-3 max-[768px]:right-3 max-[768px]:max-w-[calc(100vw-1.5rem)] ${
+        isOpen ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-full opacity-0 pointer-events-none'
       }`}
       style={{
         boxShadow: isOpen
-          ? `-16px 0 48px -8px rgba(0, 0, 0, 0.7), -4px 0 24px -4px ${vehicleColor}44`
+          ? `0 20px 48px -8px rgba(0, 0, 0, 0.7), 0 0 24px -4px ${vehicleColor}44`
           : undefined
       }}
     >
