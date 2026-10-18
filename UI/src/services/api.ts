@@ -273,6 +273,21 @@ class MotionApiClient {
     }
   }
 
+  // Static, build-time-precomputed assets (see precompute_route_data/) served
+  // directly by the frontend's own origin - no backend involved at all.
+  private async requestStatic<T>(path: string): Promise<T> {
+    try {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error(`Static asset error [${response.status}]: ${path}`);
+      }
+      return await response.json();
+    } catch (err: any) {
+      console.warn(`[MotionAPI] Static asset request failed for ${path}:`, err.message);
+      throw err;
+    }
+  }
+
   async getHealth(): Promise<HealthCheckResponse> {
     return this.request<HealthCheckResponse>('/api/health');
   }
@@ -326,14 +341,14 @@ class MotionApiClient {
   }
 
   async getRouteShape(mode: 'train' | 'tram' | 'bus', routeShortName: string): Promise<GeoJSON.FeatureCollection> {
-    return this.request<GeoJSON.FeatureCollection>(
-      `/api/network/route-shape?mode=${mode}&route_short_name=${encodeURIComponent(routeShortName)}`
+    return this.requestStatic<GeoJSON.FeatureCollection>(
+      `/data/transit/routes/${mode}/${encodeURIComponent(routeShortName)}/shape.json`
     );
   }
 
   async getRouteStops(mode: 'train' | 'tram' | 'bus', routeShortName: string): Promise<RouteStop[]> {
-    return this.request<RouteStop[]>(
-      `/api/network/route-stops?mode=${mode}&route_short_name=${encodeURIComponent(routeShortName)}`
+    return this.requestStatic<RouteStop[]>(
+      `/data/transit/routes/${mode}/${encodeURIComponent(routeShortName)}/stops.json`
     );
   }
 

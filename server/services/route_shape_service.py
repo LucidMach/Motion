@@ -178,11 +178,27 @@ def get_route_shape(mode: str, route_short_name: str) -> Dict[str, Any]:
     """
     if mode == "train":
         lines = get_metro_lines_geojson()
-        features = [
+        matched = [
             f
             for f in lines.get("features", [])
             if f.get("properties", {}).get("route_short_name") == route_short_name
         ]
+
+        # GTFS mints a new shape_id per timetable revision even when the
+        # physical path is byte-identical, so a line can carry hundreds of
+        # duplicate LineStrings for the same handful of real alignments
+        # (e.g. Lilydale has 520 raw shapes but only ~115 distinct paths).
+        # Collapse exact coordinate-for-coordinate duplicates before baking
+        # the shape out to the static per-route file.
+        seen_coords: set = set()
+        features = []
+        for f in matched:
+            coords_key = tuple(tuple(pt) for pt in f.get("geometry", {}).get("coordinates", []))
+            if coords_key in seen_coords:
+                continue
+            seen_coords.add(coords_key)
+            features.append(f)
+
         return {"type": "FeatureCollection", "features": features}
 
     if mode not in MODE_ROUTE_TYPES:

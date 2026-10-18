@@ -78,13 +78,21 @@ echo ""
 echo "⚡ Precomputing transit edges and KDTree transfer pairs..."
 $PYTHON_CMD precompute_graph/precompute_graph.py
 
-# Step 5: Compress for deployment / release assets
+# Step 5: Precompute per-route shape/stop files for the frontend
+# Route shapes and stops are static GTFS-derived data, so they're baked out
+# once here into UI/public/data/transit/routes/ and served to the browser
+# as plain static files - no backend lookup needed on every route click.
+echo ""
+echo "🗺️  Precomputing per-route shape & stop files..."
+$PYTHON_CMD precompute_route_data/precompute_route_data.py
+
+# Step 6: Compress for deployment / release assets
 echo ""
 echo "🗜️  Compressing database for deployment asset..."
 gzip -c -9 "${DB_FILE}" > "${GZ_FILE}"
 echo "✓ Created compressed asset: $(du -h "${GZ_FILE}" | cut -f1)"
 
-# Step 6: Verify and output summary stats
+# Step 7: Verify and output summary stats
 echo ""
 echo "=============================================================================="
 echo " VERIFICATION SUMMARY"
