@@ -325,24 +325,8 @@ export default function TransitExplorer({
             })}
           </div>
 
-          {/* Bottom: Settings & Clear Route / Status */}
+          {/* Bottom: Settings */}
           <div className="flex flex-col items-center gap-2">
-            {selectedRouteShortName ? (
-              <button
-                onClick={onClearRoute}
-                title="Clear route highlight"
-                aria-label="Clear route highlight"
-                className="group relative flex h-9 w-9 items-center justify-center rounded-xl border border-subtle bg-surface/60 text-secondary transition-all hover:bg-surface-hover hover:text-rose-400 active:scale-95"
-              >
-                <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-                <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-xl border border-subtle bg-surface-elevated/95 px-2.5 py-1 text-xs font-semibold text-primary shadow-glass backdrop-blur-md group-hover:block max-[768px]:hidden z-50">
-                  Clear route
-                </span>
-              </button>
-            ) : null}
-
             {/* Settings button in the sidebar rail */}
             <button
               id="sidebar-mode-settings"
@@ -603,8 +587,18 @@ export default function TransitExplorer({
                           <span className="font-mono text-[10px] font-bold text-secondary uppercase tracking-wider">
                             Corridor Stations {activeStops && activeStops.length > 0 ? `(${activeStops.length})` : ''}
                           </span>
-                          <span className="text-[10px] text-secondary/60">
+                          <span className="flex items-center gap-1 text-[10px] text-secondary/60">
                             Tap station to fly
+                            <button
+                              onClick={onClearRoute}
+                              title="Clear route highlight"
+                              aria-label="Clear route highlight"
+                              className="flex h-4 w-4 items-center justify-center rounded-full text-secondary/60 transition-colors hover:text-rose-400"
+                            >
+                              <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M6 9l6 6 6-6" />
+                              </svg>
+                            </button>
                           </span>
                         </div>
 
