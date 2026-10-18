@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motionApi, type RouteMetadata, type RouteStop, type LiveVehicle } from '../../services/api';
 import { DEFAULT_HUB } from '../../scripts/map/transitHub';
-import type { LocationTelemetry, VehicleSelectedEventDetail } from '../../types/events';
+import type { LocationTelemetry, VehicleSelectedEventDetail, VehiclesUpdatedEventDetail } from '../../types/events';
 import TransitExplorer, { MODE_CONFIG, type TransitMode } from './TransitExplorer';
 import VehiclePanel, { type VehicleDetail } from './VehiclePanel';
 
@@ -40,6 +40,7 @@ export default function TransitDock() {
     distanceLabel: string;
   } | null>(null);
   const activeRouteShape = useRef<GeoJSON.FeatureCollection | null>(null);
+  const activeRouteStops = useRef<RouteStop[]>([]);
 
   // Selected live vehicle on the map (displayed in right-side VehiclePanel)
   const [inspectedVehicle, setInspectedVehicle] = useState<VehicleDetail | null>(null);
@@ -62,6 +63,7 @@ export default function TransitDock() {
   const handleClearRoute = useCallback(() => {
     setSelectedRoute(null);
     setRouteStops([]);
+    activeRouteStops.current = [];
     setActiveRouteVehicles([]);
     setHighlightedTripId(null);
     setNearestVehicle(null);
@@ -311,14 +313,45 @@ export default function TransitDock() {
     []
   );
 
-  // Poll active route vehicles every 4s while route is open
+  const allLiveVehicles = useRef<LiveVehicle[]>([]);
+
+  // Listen for unified live vehicle updates broadcast by TrainSimulationLayer
+  useEffect(() => {
+    const onVehiclesUpdated = (e: Event) => {
+      const detail = (e as CustomEvent<VehiclesUpdatedEventDetail>).detail;
+      if (!detail) return;
+
+      if (detail.vehicles) {
+        allLiveVehicles.current = detail.vehicles;
+      }
+
+      if (detail.countsByRoute) {
+        setLiveTrainCounts((prev) => ({ ...prev, ...detail.countsByRoute }));
+      }
+
+      if (selectedRoute) {
+        const matching = (detail.vehicles || []).filter(
+          (v) => v.route_short_name === selectedRoute.route.route_short_name
+        );
+        setActiveRouteVehicles(matching);
+      }
+    };
+
+    window.addEventListener('motion:vehicles-updated', onVehiclesUpdated);
+    return () => window.removeEventListener('motion:vehicles-updated', onVehiclesUpdated);
+  }, [selectedRoute]);
+
+  // When selectedRoute changes, populate activeRouteVehicles immediately from cache or single fetch
   useEffect(() => {
     if (!selectedRoute) return;
-    fetchActiveVehiclesForRoute(selectedRoute.mode, selectedRoute.route.route_short_name);
-    const interval = setInterval(() => {
+    const matching = allLiveVehicles.current.filter(
+      (v) => v.route_short_name === selectedRoute.route.route_short_name
+    );
+    if (matching.length > 0) {
+      setActiveRouteVehicles(matching);
+    } else {
       fetchActiveVehiclesForRoute(selectedRoute.mode, selectedRoute.route.route_short_name);
-    }, 4000);
-    return () => clearInterval(interval);
+    }
   }, [selectedRoute, fetchActiveVehiclesForRoute]);
 
   // Handle selecting a route from Explorer or Vehicle card
@@ -347,16 +380,18 @@ export default function TransitDock() {
       motionApi
         .getRouteShape(mode, route.route_short_name)
         .then((shape) => {
-          activeRouteShape.current = shape;
-          window.dispatchEvent(
-            new CustomEvent('motion:cmd:highlight-route', {
-              detail: {
-                geojson: shape,
-                color,
-                skipCameraFit: false
-              }
-            })
-          );
+          if (shape && shape.features && shape.features.length > 0) {
+            activeRouteShape.current = shape;
+            window.dispatchEvent(
+              new CustomEvent('motion:cmd:highlight-route', {
+                detail: {
+                  geojson: shape,
+                  color,
+                  skipCameraFit: false
+                }
+              })
+            );
+          }
         })
         .catch((err) => {
           console.warn('[TransitDock] Failed to load route shape:', err);
@@ -375,9 +410,43 @@ export default function TransitDock() {
             : Promise.resolve(null);
 
         const [stops, vehicle] = await Promise.all([stopsPromise, vehiclePromise]);
+        activeRouteStops.current = stops;
         setRouteStops(stops);
         setNearestVehicle(vehicle);
         setLoadingStops(false);
+
+        // If shape has 0 features (e.g. bus line or offline fallback), generate shape from stops
+        if (!activeRouteShape.current || (activeRouteShape.current.features || []).length === 0) {
+          if (stops && stops.length >= 2) {
+            const fallbackShape: GeoJSON.FeatureCollection = {
+              type: 'FeatureCollection',
+              features: [
+                {
+                  type: 'Feature',
+                  geometry: {
+                    type: 'LineString',
+                    coordinates: stops.map((s) => [s.stop_lon, s.stop_lat])
+                  },
+                  properties: {
+                    route_short_name: route.route_short_name,
+                    color,
+                    mode
+                  }
+                }
+              ]
+            };
+            activeRouteShape.current = fallbackShape;
+            window.dispatchEvent(
+              new CustomEvent('motion:cmd:highlight-route', {
+                detail: {
+                  geojson: fallbackShape,
+                  color,
+                  skipCameraFit: false
+                }
+              })
+            );
+          }
+        }
 
         fetchActiveVehiclesForRoute(mode, route.route_short_name);
       } catch (err) {
@@ -451,34 +520,50 @@ export default function TransitDock() {
   const handleFitRoute = useCallback(async () => {
     if (!selectedRoute) return;
     const color = selectedRoute.route.color || MODE_CONFIG[selectedRoute.mode].color;
-    if (activeRouteShape.current) {
+    let shape = activeRouteShape.current;
+    if (!shape || !shape.features || shape.features.length === 0) {
+      try {
+        const fetched = await motionApi.getRouteShape(selectedRoute.mode, selectedRoute.route.route_short_name);
+        if (fetched && fetched.features && fetched.features.length > 0) {
+          shape = fetched;
+        }
+      } catch {
+        shape = null;
+      }
+    }
+    const stops = activeRouteStops.current.length >= 2 ? activeRouteStops.current : routeStops;
+    if ((!shape || !shape.features || shape.features.length === 0) && stops.length >= 2) {
+      shape = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: stops.map((s) => [s.stop_lon, s.stop_lat])
+            },
+            properties: {
+              route_short_name: selectedRoute.route.route_short_name,
+              color,
+              mode: selectedRoute.mode
+            }
+          }
+        ]
+      };
+    }
+    if (shape && shape.features && shape.features.length > 0) {
+      activeRouteShape.current = shape;
       window.dispatchEvent(
         new CustomEvent('motion:cmd:highlight-route', {
           detail: {
-            geojson: activeRouteShape.current,
+            geojson: shape,
             color,
             skipCameraFit: false
           }
         })
       );
-    } else {
-      try {
-        const shape = await motionApi.getRouteShape(selectedRoute.mode, selectedRoute.route.route_short_name);
-        activeRouteShape.current = shape;
-        window.dispatchEvent(
-          new CustomEvent('motion:cmd:highlight-route', {
-            detail: {
-              geojson: shape,
-              color,
-              skipCameraFit: false
-            }
-          })
-        );
-      } catch (err) {
-        console.warn('[TransitDock] Failed to fit route shape:', err);
-      }
     }
-  }, [selectedRoute]);
+  }, [selectedRoute, routeStops]);
 
   // Fly to specific stop
   const handleFlyToStop = useCallback(
@@ -551,17 +636,29 @@ export default function TransitDock() {
         if (found) {
           setIsExplorerOpen(true);
           setActiveMode('train');
-          handleSelectRoute('train', found, inspectedVehicle?.tripId);
+          setInspectedVehicle(null);
+          setHighlightedTripId(null);
+          if (selectedRoute?.route.route_short_name === found.route_short_name) {
+            handleFitRoute();
+          } else {
+            handleSelectRoute('train', found);
+          }
           return;
         }
       }
       if (found) {
         setIsExplorerOpen(true);
         setActiveMode(mode);
-        handleSelectRoute(mode, found, inspectedVehicle?.tripId);
+        setInspectedVehicle(null);
+        setHighlightedTripId(null);
+        if (selectedRoute?.route.route_short_name === found.route_short_name) {
+          handleFitRoute();
+        } else {
+          handleSelectRoute(mode, found);
+        }
       }
     },
-    [inspectedVehicle, activeMode, routesByMode, handleSelectRoute]
+    [inspectedVehicle, activeMode, routesByMode, selectedRoute, handleFitRoute, handleSelectRoute]
   );
 
   return (
@@ -664,7 +761,6 @@ export default function TransitDock() {
         nearestVehicle={selectedRoute?.mode === activeMode ? nearestVehicle : null}
         liveTrainCounts={liveTrainCounts}
         onSelectRoute={handleSelectRoute}
-        onFitRoute={handleFitRoute}
         onTrackVehicle={handleTrackVehicle}
         onFlyToVehicle={
           nearestVehicle

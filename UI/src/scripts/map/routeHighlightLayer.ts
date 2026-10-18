@@ -190,12 +190,10 @@ export class RouteHighlightLayer {
         bottomPad = 30;
       }
 
-      const currentPitch = this.map.getPitch();
-      const currentBearing = this.map.getBearing();
       this.map.fitBounds(new mapboxgl.LngLatBounds([minLon, minLat], [maxLon, maxLat]), {
         padding: { top: topPad, bottom: bottomPad, left: leftPad, right: rightPad },
-        pitch: currentPitch > 25 ? 45 : currentPitch,
-        bearing: currentBearing,
+        pitch: 0,
+        bearing: 0,
         maxZoom: 15.0,
         duration: 1200,
         essential: true

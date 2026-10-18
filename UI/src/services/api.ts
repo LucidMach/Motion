@@ -247,8 +247,18 @@ export const getApiBaseUrl = (): string => {
 };
 
 class MotionApiClient {
+  private backendAvailable: boolean | null = null;
+  private lastBackendCheck = 0;
+
   get baseUrl(): string {
     return getApiBaseUrl();
+  }
+
+  private isLocalHost(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    );
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -266,8 +276,13 @@ class MotionApiClient {
         throw new Error(`API Error [${response.status}]: ${response.statusText}`);
       }
 
+      this.backendAvailable = true;
       return await response.json();
     } catch (err: any) {
+      if (this.isLocalHost()) {
+        this.backendAvailable = false;
+        this.lastBackendCheck = Date.now();
+      }
       console.warn(`[MotionAPI] Request failed for ${endpoint}:`, err.message);
       throw err;
     }
@@ -314,24 +329,143 @@ class MotionApiClient {
   }
 
   async getLiveTrains(): Promise<GeoJSON.FeatureCollection> {
-    return this.request<GeoJSON.FeatureCollection>('/api/network/trains/live');
+    const isLocal = this.isLocalHost();
+    const shouldTryBackend = this.backendAvailable !== false || Date.now() - this.lastBackendCheck > 15000;
+
+    if (shouldTryBackend) {
+      try {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller && isLocal ? setTimeout(() => controller.abort(), 700) : null;
+        const res = await this.request<GeoJSON.FeatureCollection>(
+          '/api/network/trains/live',
+          controller ? { signal: controller.signal } : {}
+        );
+        if (timeoutId) clearTimeout(timeoutId);
+        if (res && res.features && res.features.length > 0) {
+          this.backendAvailable = true;
+          return res;
+        }
+      } catch {
+        if (isLocal) {
+          this.backendAvailable = false;
+          this.lastBackendCheck = Date.now();
+        }
+      }
+    }
+    const { realtimeSimulator } = await import('../scripts/map/realtimeSimulator');
+    return await realtimeSimulator.getLiveVehicles('train');
   }
 
   async getLiveVehicles(mode: 'all' | 'train' | 'tram' = 'all'): Promise<GeoJSON.FeatureCollection> {
-    return this.request<GeoJSON.FeatureCollection>(`/api/network/vehicles/live?mode=${mode}`);
+    const isLocal = this.isLocalHost();
+    const shouldTryBackend = this.backendAvailable !== false || Date.now() - this.lastBackendCheck > 15000;
+
+    if (shouldTryBackend) {
+      try {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller && isLocal ? setTimeout(() => controller.abort(), 700) : null;
+        const res = await this.request<GeoJSON.FeatureCollection>(
+          `/api/network/vehicles/live?mode=${mode}`,
+          controller ? { signal: controller.signal } : {}
+        );
+        if (timeoutId) clearTimeout(timeoutId);
+        if (res && res.features && res.features.length > 0) {
+          this.backendAvailable = true;
+          return res;
+        }
+      } catch {
+        if (isLocal) {
+          this.backendAvailable = false;
+          this.lastBackendCheck = Date.now();
+        }
+      }
+    }
+    const { realtimeSimulator } = await import('../scripts/map/realtimeSimulator');
+    return await realtimeSimulator.getLiveVehicles(mode);
+  }
+
+  private staticRoutesCache: Record<string, RouteMetadata[]> | null = null;
+  private staticRouteStopsCache: Record<string, RouteStop[]> | null = null;
+  private staticRouteShapesCache: GeoJSON.FeatureCollection | null = null;
+
+  clearStaticCache(): void {
+    this.staticRoutesCache = null;
+    this.staticRouteStopsCache = null;
+    this.staticRouteShapesCache = null;
   }
 
   async getRoutesByMode(mode: 'train' | 'tram' | 'bus'): Promise<RouteMetadata[]> {
+    if (!this.staticRoutesCache) {
+      try {
+        const res = await fetch('/data/transit/routes.json');
+        if (res.ok) {
+          this.staticRoutesCache = await res.json();
+        }
+      } catch {
+        // Fallback to backend API
+      }
+    }
+
+    if (this.staticRoutesCache && this.staticRoutesCache[mode]) {
+      return this.staticRoutesCache[mode];
+    }
+
     return this.request<RouteMetadata[]>(`/api/network/routes/${mode}`);
   }
 
   async getRouteShape(mode: 'train' | 'tram' | 'bus', routeShortName: string): Promise<GeoJSON.FeatureCollection> {
+    if (!this.staticRouteShapesCache) {
+      try {
+        let res = await fetch('/data/transit/canonical_route_shapes.json');
+        if (!res.ok) {
+          res = await fetch('/data/transit/route_shapes.geojson');
+        }
+        if (res.ok) {
+          this.staticRouteShapesCache = await res.json();
+        }
+      } catch {
+        // Fallback to API
+      }
+    }
+
+    if (this.staticRouteShapesCache && this.staticRouteShapesCache.features) {
+      const filtered = this.staticRouteShapesCache.features.filter((f) => {
+        const p = f.properties;
+        return (
+          p?.route_short_name === routeShortName &&
+          (!p?.mode || p.mode.toLowerCase().includes(mode.toLowerCase()))
+        );
+      });
+      if (filtered.length > 0) {
+        return {
+          type: 'FeatureCollection',
+          features: filtered,
+        };
+      }
+    }
+
     return this.request<GeoJSON.FeatureCollection>(
       `/api/network/route-shape?mode=${mode}&route_short_name=${encodeURIComponent(routeShortName)}`
     );
   }
 
   async getRouteStops(mode: 'train' | 'tram' | 'bus', routeShortName: string): Promise<RouteStop[]> {
+    const key = `${mode}:${routeShortName}`;
+    if (!this.staticRouteStopsCache) {
+      try {
+        const res = await fetch('/data/transit/route_stops.json');
+        if (res.ok) {
+          this.staticRouteStopsCache = await res.json();
+        }
+      } catch {
+        // Fallback to API
+      }
+    }
+
+    if (this.staticRouteStopsCache && this.staticRouteStopsCache[key]) {
+      return this.staticRouteStopsCache[key];
+    }
+
     return this.request<RouteStop[]>(
       `/api/network/route-stops?mode=${mode}&route_short_name=${encodeURIComponent(routeShortName)}`
     );

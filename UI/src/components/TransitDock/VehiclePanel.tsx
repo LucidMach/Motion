@@ -79,11 +79,22 @@ export default function VehiclePanel({
             </div>
 
             <div className="min-w-0 flex-1">
-              <h3 className="truncate font-display text-base font-bold text-primary">
-                {vehicle.mode === 'tram'
-                  ? `Route ${vehicle.routeShortName}`
-                  : `${vehicle.routeShortName} Line`}
-              </h3>
+              <button
+                type="button"
+                onClick={() => onSelectRoute(vehicle.routeShortName)}
+                aria-label={vehicle.mode === 'tram' ? `Route ${vehicle.routeShortName}` : `${vehicle.routeShortName} Line`}
+                className="group flex items-center gap-1.5 text-left transition-colors hover:text-accent-cyan focus:outline-none"
+                title={`Show full ${vehicle.routeShortName} route on map`}
+              >
+                <h3 className="truncate font-display text-base font-bold text-primary group-hover:text-accent-cyan underline-offset-2 hover:underline">
+                  {vehicle.mode === 'tram'
+                    ? `Route ${vehicle.routeShortName}`
+                    : `${vehicle.routeShortName} Line`}
+                </h3>
+                <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} className="opacity-60 group-hover:opacity-100 shrink-0 text-accent-cyan">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+                </svg>
+              </button>
               <p className="text-xs text-secondary truncate">
                 {vehicle.mode === 'tram' ? 'Yarra Trams Network' : 'Metro Trains Melbourne'}
               </p>

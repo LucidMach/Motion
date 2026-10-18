@@ -1,5 +1,6 @@
 import mapboxgl from 'mapbox-gl';
 import { motionApi } from '../../services/api';
+import { realtimeSimulator } from './realtimeSimulator';
 
 const SOURCE_ID = 'motion-train-sim-source';
 const LAYER_ID = 'motion-train-sim-layer';
@@ -16,6 +17,11 @@ const TRAM_LENGTH_M = 26;
 const TRAM_WIDTH_M = 4.8;
 const TRAM_HEIGHT_M = 3.6;
 
+// Bus low-poly capsule dimensions (meters)
+const BUS_LENGTH_M = 14;
+const BUS_WIDTH_M = 4.2;
+const BUS_HEIGHT_M = 3.2;
+
 const CAP_SEGMENTS = 6;
 const METERS_PER_DEGREE_LAT = 111320;
 
@@ -23,12 +29,13 @@ export interface LiveVehicleProps {
   trip_id: string;
   route_short_name: string;
   route_long_name?: string;
-  mode?: 'train' | 'tram';
+  mode?: 'train' | 'tram' | 'bus';
   color: string;
   bearing_deg: number;
+  speed_kmh?: number;
   progress?: number;
   path?: [number, number][];
-  status?: 'in_transit' | 'dwelling';
+  status?: string;
   from_stop_id?: string;
   to_stop_id?: string;
   from_stop_name?: string;
@@ -46,6 +53,8 @@ interface AnimatedVehicle {
   segmentDistances: number[];
   totalDistance: number;
   lastKnownBearing: number;
+  animStart: number;
+  isSimulated?: boolean;
 }
 
 const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
@@ -170,11 +179,11 @@ export class TrainSimulationLayer {
   private vehicles = new Map<string, AnimatedVehicle>();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private rafId: number | null = null;
-  private animStart = 0;
   private running = false;
   private trackedTripId: string | null = null;
   private onTrackVehicleHandler: ((e: Event) => void) | null = null;
   private onClearRouteHandler: (() => void) | null = null;
+  private lastBroadcastTime = 0;
 
   constructor(private map: mapboxgl.Map) {
     this.map.on('style.load', () => this.addLayers());
@@ -278,7 +287,7 @@ export class TrainSimulationLayer {
     });
 
     if (this.running) {
-      this.render(1);
+      this.render();
     }
   }
 
@@ -286,9 +295,47 @@ export class TrainSimulationLayer {
   start(): void {
     if (this.running) return;
     this.running = true;
+
+    // Immediately load active simulated vehicles if simulator is ready
+    this.loadFromSimulator();
+
     this.poll();
     this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL_MS);
     this.tick();
+  }
+
+  private loadFromSimulator(): void {
+    const states = realtimeSimulator.getContinuousStates(Date.now() / 1000);
+    if (!states || states.length === 0) return;
+
+    for (const state of states) {
+      if (!this.vehicles.has(state.tripId)) {
+        const { segmentDistances, totalDistance } = computePathDistances(state.path);
+        this.vehicles.set(state.tripId, {
+          props: {
+            trip_id: state.tripId,
+            route_short_name: state.routeShortName,
+            route_long_name: state.routeLongName,
+            mode: state.mode,
+            color: state.color,
+            bearing_deg: state.bearing,
+            speed_kmh: state.speedKmh,
+            progress: state.progress,
+            path: state.path,
+            status: state.status,
+            destination: state.destination,
+            direction_id: state.directionId,
+            is_stopped: state.isStopped
+          },
+          path: state.path,
+          segmentDistances,
+          totalDistance,
+          lastKnownBearing: state.bearing,
+          animStart: performance.now(),
+          isSimulated: true
+        });
+      }
+    }
   }
 
   private async poll(): Promise<void> {
@@ -304,9 +351,21 @@ export class TrainSimulationLayer {
       }
     }
 
-    const seenTripIds = new Set<string>();
+    if (!featureCollection || !featureCollection.features || featureCollection.features.length === 0) {
+      try {
+        const fallback = await motionApi.getLiveTrains();
+        if (fallback && fallback.features && fallback.features.length > 0) {
+          featureCollection = fallback;
+        }
+      } catch {
+        // preserve current vehicles
+      }
+    }
 
-    for (const feature of featureCollection.features) {
+    const seenTripIds = new Set<string>();
+    const isSimulatedFeed = (featureCollection as any)?.telemetry?.ptv_feed === 'realtime_simulation';
+
+    for (const feature of (featureCollection?.features || [])) {
       if (feature.geometry.type !== 'Point') continue;
       const [lon, lat] = feature.geometry.coordinates as [number, number];
       const props = feature.properties as unknown as LiveVehicleProps;
@@ -319,11 +378,18 @@ export class TrainSimulationLayer {
       if (props.path && props.path.length >= 2) {
         path = props.path;
       } else {
-        const existing = this.vehicles.get(props.trip_id);
-        const prevPoint = existing && existing.path.length > 0
-          ? existing.path[existing.path.length - 1]
-          : [lon, lat];
-        path = [prevPoint as [number, number], [lon, lat]];
+        if (props.is_stopped) {
+          path = [[lon, lat], [lon, lat]];
+        } else {
+          // Dead-reckoning forward projection along heading so vehicle glides continuously
+          const speedKmh = props.speed_kmh || 45;
+          const distM = (speedKmh / 3.6) * (POLL_INTERVAL_MS / 1000);
+          const bearingRad = ((props.bearing_deg || 0) * Math.PI) / 180;
+          const metersPerDegreeLon = METERS_PER_DEGREE_LAT * Math.cos((lat * Math.PI) / 180);
+          const nextLon = lon + (distM * Math.sin(bearingRad)) / metersPerDegreeLon;
+          const nextLat = lat + (distM * Math.cos(bearingRad)) / METERS_PER_DEGREE_LAT;
+          path = [[lon, lat], [nextLon, nextLat]];
+        }
       }
 
       const { segmentDistances, totalDistance } = computePathDistances(path);
@@ -333,46 +399,172 @@ export class TrainSimulationLayer {
         path,
         segmentDistances,
         totalDistance,
-        lastKnownBearing: props.bearing_deg || 0
+        lastKnownBearing: props.bearing_deg || 0,
+        animStart: performance.now(),
+        isSimulated: isSimulatedFeed
       });
     }
 
-    // Drop vehicles that have finished their trip
-    for (const tripId of this.vehicles.keys()) {
-      if (!seenTripIds.has(tripId)) this.vehicles.delete(tripId);
+    if (seenTripIds.size > 0) {
+      // Drop vehicles that have finished their trip
+      for (const tripId of this.vehicles.keys()) {
+        if (!seenTripIds.has(tripId)) this.vehicles.delete(tripId);
+      }
     }
 
-    this.animStart = performance.now();
+    // Broadcast current snapshot immediately on poll completion
+    this.broadcastVehiclesUpdate();
+  }
+
+  private broadcastVehiclesUpdate(): void {
+    if (typeof window === 'undefined') return;
+
+    const vehiclesList: any[] = [];
+    const countsByRoute: Record<string, number> = {};
+    const nowSecs = Date.now() / 1000;
+    const simStates = realtimeSimulator.isReady()
+      ? new Map(realtimeSimulator.getContinuousStates(nowSecs).map((s) => [s.tripId, s]))
+      : null;
+
+    for (const vehicle of this.vehicles.values()) {
+      const rName = vehicle.props.route_short_name;
+      if (rName) {
+        countsByRoute[rName] = (countsByRoute[rName] || 0) + 1;
+      }
+
+      const simState = simStates?.get(vehicle.props.trip_id);
+      let lat = vehicle.path[0]?.[1] ?? 0;
+      let lon = vehicle.path[0]?.[0] ?? 0;
+      let bearing = vehicle.lastKnownBearing;
+      let isStopped = vehicle.props.is_stopped ?? false;
+      let status = vehicle.props.status ?? 'in_transit';
+      let progress = vehicle.props.progress ?? 0;
+
+      if (simState) {
+        lat = simState.coords[1];
+        lon = simState.coords[0];
+        bearing = simState.bearing;
+        isStopped = simState.isStopped;
+        status = simState.status;
+        progress = simState.progress;
+      }
+
+      vehiclesList.push({
+        trip_id: vehicle.props.trip_id,
+        route_short_name: vehicle.props.route_short_name,
+        route_long_name: vehicle.props.route_long_name,
+        mode: vehicle.props.mode || 'train',
+        color: vehicle.props.color,
+        lat,
+        lon,
+        bearing_deg: bearing,
+        status,
+        destination: vehicle.props.destination,
+        is_stopped: isStopped,
+        progress,
+        from_stop_id: vehicle.props.from_stop_id,
+        to_stop_id: vehicle.props.to_stop_id,
+        from_stop_name: vehicle.props.from_stop_name,
+        to_stop_name: vehicle.props.to_stop_name,
+        current_stop_id: vehicle.props.current_stop_id,
+        current_stop_name: vehicle.props.current_stop_name,
+        direction_id: vehicle.props.direction_id,
+      });
+    }
+
+    if (vehiclesList.length > 0) {
+      window.dispatchEvent(
+        new CustomEvent('motion:vehicles-updated', {
+          detail: {
+            vehicles: vehiclesList,
+            countsByRoute,
+            timestamp: Date.now(),
+          },
+        })
+      );
+    }
   }
 
   private tick = (): void => {
     if (!this.running) return;
 
-    const elapsed = performance.now() - this.animStart;
-    const t = Math.min(1, elapsed / POLL_INTERVAL_MS);
-    this.render(t);
+    this.render();
+
+    const now = performance.now();
+    // Dispatch real-time station & vehicle telemetry updates every 1200ms
+    if (now - this.lastBroadcastTime > 1200) {
+      this.lastBroadcastTime = now;
+      this.broadcastVehiclesUpdate();
+    }
 
     this.rafId = requestAnimationFrame(this.tick);
   };
 
-  private render(t: number): void {
+  private render(): void {
     const source = this.map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
     if (!source) return;
 
+    const nowSecs = Date.now() / 1000;
+    const nowMs = performance.now();
     const features: GeoJSON.Feature[] = [];
+
+    const simStates = realtimeSimulator.isReady()
+      ? new Map(realtimeSimulator.getContinuousStates(nowSecs).map((s) => [s.tripId, s]))
+      : null;
+
     for (const vehicle of this.vehicles.values()) {
       const isTram = vehicle.props.mode === 'tram';
-      const lengthM = isTram ? TRAM_LENGTH_M : TRAIN_LENGTH_M;
-      const widthM = isTram ? TRAM_WIDTH_M : TRAIN_WIDTH_M;
-      const heightM = isTram ? TRAM_HEIGHT_M : TRAIN_HEIGHT_M;
+      const isBus = vehicle.props.mode === 'bus';
+      const lengthM = isBus ? BUS_LENGTH_M : isTram ? TRAM_LENGTH_M : TRAIN_LENGTH_M;
+      const widthM = isBus ? BUS_WIDTH_M : isTram ? TRAM_WIDTH_M : TRAIN_WIDTH_M;
+      const heightM = isBus ? BUS_HEIGHT_M : isTram ? TRAM_HEIGHT_M : TRAIN_HEIGHT_M;
 
-      const { coords, bearing } = pointAndBearingAlongPath(
-        vehicle.path,
-        vehicle.segmentDistances,
-        vehicle.totalDistance,
-        vehicle.lastKnownBearing,
-        t
-      );
+      let coords: [number, number];
+      let bearing: number;
+      let isStopped = vehicle.props.is_stopped ?? false;
+      let progress = vehicle.props.progress ?? 0;
+      let status = vehicle.props.status ?? 'in_transit';
+
+      const simState = simStates?.get(vehicle.props.trip_id);
+      if (simState) {
+        // High-precision continuous 60 FPS trajectory evaluation along actual Melbourne track geometry
+        coords = simState.coords;
+        bearing = simState.bearing;
+        isStopped = simState.isStopped;
+        progress = simState.progress;
+        status = simState.status;
+        vehicle.lastKnownBearing = bearing;
+      } else {
+        // Live GTFS-R feed interpolation + forward dead-reckoning projection
+        const elapsed = nowMs - vehicle.animStart;
+        const t = elapsed / POLL_INTERVAL_MS;
+
+        if (t <= 1.0) {
+          const res = pointAndBearingAlongPath(
+            vehicle.path,
+            vehicle.segmentDistances,
+            vehicle.totalDistance,
+            vehicle.lastKnownBearing,
+            t
+          );
+          coords = res.coords;
+          bearing = res.bearing;
+          vehicle.lastKnownBearing = bearing;
+        } else {
+          // Dead-reckon forward along heading rather than stopping dead while waiting for next packet
+          const overtimeSecs = (elapsed - POLL_INTERVAL_MS) / 1000;
+          const speedKmh = vehicle.props.speed_kmh || (isTram ? 25 : 55);
+          const distM = (speedKmh / 3.6) * overtimeSecs;
+          const bearingRad = (vehicle.lastKnownBearing * Math.PI) / 180;
+          const lastPt = vehicle.path[vehicle.path.length - 1];
+          const metersPerDegreeLon = METERS_PER_DEGREE_LAT * Math.cos((lastPt[1] * Math.PI) / 180);
+          coords = [
+            lastPt[0] + (distM * Math.sin(bearingRad)) / metersPerDegreeLon,
+            lastPt[1] + (distM * Math.cos(bearingRad)) / METERS_PER_DEGREE_LAT
+          ];
+          bearing = vehicle.lastKnownBearing;
+        }
+      }
 
       if (this.trackedTripId && vehicle.props.trip_id === this.trackedTripId) {
         if (!this.map.isMoving() || this.map.isEasing()) {
@@ -380,7 +572,7 @@ export class TrainSimulationLayer {
             center: coords,
             bearing,
             pitch: 65,
-            duration: 120,
+            duration: 80,
             easing: (x) => x
           });
         }
@@ -400,9 +592,9 @@ export class TrainSimulationLayer {
           from_stop_name: vehicle.props.from_stop_name,
           to_stop_name: vehicle.props.to_stop_name,
           destination: vehicle.props.destination,
-          status: vehicle.props.status,
-          is_stopped: vehicle.props.is_stopped,
-          progress: vehicle.props.progress
+          status,
+          is_stopped: isStopped,
+          progress
         },
         geometry: {
           type: 'Polygon',
@@ -441,4 +633,3 @@ export class TrainSimulationLayer {
     }
   }
 }
-

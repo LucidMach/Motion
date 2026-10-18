@@ -6,8 +6,10 @@ from server.services.network_service import (
     get_all_routes_metadata,
     generate_metro_geojson
 )
+from server.services.live_vehicle_service import (
+    get_live_vehicles_geojson,
+)
 from server.services.train_simulation_service import (
-    get_active_train_positions_geojson,
     get_active_vehicles_geojson,
 )
 from server.services.route_shape_service import get_routes_for_mode, get_route_shape, get_route_stops
@@ -69,30 +71,60 @@ def get_route_stops_endpoint(mode: str, route_short_name: str) -> List[Dict[str,
 def get_live_vehicles(mode: str = "all") -> Dict[str, Any]:
     """
     Returns GeoJSON FeatureCollection of active transit vehicles (trains, trams, or all)
-    currently in service, with positions snapped to track shapes and intermediate polyline
-    path slices for curve-following animation.
+    ingested directly from PTV GTFS-Realtime vehicle position feeds and snapped to
+    physical track polylines. If live feeds have no active vehicles or are offline,
+    seamlessly falls back to physical track schedule simulation so vehicles are
+    always moving on the map.
     """
-    return get_active_vehicles_geojson(mode=mode)
+    res = get_live_vehicles_geojson(mode=mode)
+    if not res.get("features"):
+        sim = get_active_vehicles_geojson(mode=mode)
+        if sim.get("features"):
+            sim["telemetry"] = {
+                "ptv_feed": "simulated",
+                "vehicles_count": len(sim.get("features", [])),
+                "timestamp": res.get("telemetry", {}).get("timestamp", 0)
+            }
+            return sim
+    return res
 
 
 @router.get("/trains/live")
 def get_live_trains() -> Dict[str, Any]:
     """
     Returns GeoJSON FeatureCollection of every Metro train currently in service,
-    with positions simulated by interpolating the static GTFS timetable against
-    the current time and snapped to track shapes.
+    falling back to schedule simulation when offline.
     """
-    return get_active_train_positions_geojson()
+    res = get_live_vehicles_geojson(mode="train")
+    if not res.get("features"):
+        sim = get_active_vehicles_geojson(mode="train")
+        if sim.get("features"):
+            sim["telemetry"] = {
+                "ptv_feed": "simulated",
+                "vehicles_count": len(sim.get("features", [])),
+                "timestamp": res.get("telemetry", {}).get("timestamp", 0)
+            }
+            return sim
+    return res
 
 
 @router.get("/trams/live")
 def get_live_trams() -> Dict[str, Any]:
     """
     Returns GeoJSON FeatureCollection of every Yarra Tram currently in service,
-    with positions simulated by interpolating the static GTFS timetable against
-    the current time and snapped to street track shapes.
+    falling back to schedule simulation when offline.
     """
-    return get_active_vehicles_geojson(mode="tram")
+    res = get_live_vehicles_geojson(mode="tram")
+    if not res.get("features"):
+        sim = get_active_vehicles_geojson(mode="tram")
+        if sim.get("features"):
+            sim["telemetry"] = {
+                "ptv_feed": "simulated",
+                "vehicles_count": len(sim.get("features", [])),
+                "timestamp": res.get("telemetry", {}).get("timestamp", 0)
+            }
+            return sim
+    return res
 
 
 @router.post("/metro/regenerate")

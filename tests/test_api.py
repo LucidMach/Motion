@@ -134,6 +134,20 @@ class TestFastAPIBackend(unittest.TestCase):
         data = res.json()
         self.assertEqual(data.get("status"), "Success")
 
+    def test_07_live_vehicles_endpoints(self):
+        """Test live vehicle GeoJSON endpoints."""
+        res_vehicles = self.client.get("/api/network/vehicles/live?mode=all")
+        self.assertEqual(res_vehicles.status_code, 200)
+        data = res_vehicles.json()
+        self.assertEqual(data.get("type"), "FeatureCollection")
+        self.assertIn("features", data)
+        self.assertIn("telemetry", data)
+
+        res_trains = self.client.get("/api/network/trains/live")
+        self.assertEqual(res_trains.status_code, 200)
+        trains_data = res_trains.json()
+        self.assertEqual(trains_data.get("type"), "FeatureCollection")
+
 
 if __name__ == "__main__":
     unittest.main()

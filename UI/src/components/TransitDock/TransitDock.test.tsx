@@ -465,5 +465,184 @@ describe('TransitDock', () => {
     fireEvent.keyDown(window, { key: 's' });
     expect(explorer).toHaveClass('-translate-x-full');
   });
+
+  it('updates live vehicle counts and active route vehicles from motion:vehicles-updated event', async () => {
+    render(<TransitDock />);
+
+    fireEvent.click(screen.getByRole('button', { name: /explore trains/i }));
+    expect(await screen.findByText('Lilydale Line')).toBeInTheDocument();
+
+    // Dispatch motion:vehicles-updated with 3 Pakenham trains and 2 Lilydale trains
+    fireEvent(
+      window,
+      new CustomEvent('motion:vehicles-updated', {
+        detail: {
+          vehicles: [
+            {
+              trip_id: 'TRIP_L1',
+              route_short_name: 'Lilydale',
+              mode: 'train',
+              lat: -37.818,
+              lon: 144.967,
+              destination: 'Flinders Street',
+              color: '#152C6B',
+              is_stopped: false,
+            },
+            {
+              trip_id: 'TRIP_L2',
+              route_short_name: 'Lilydale',
+              mode: 'train',
+              lat: -37.810,
+              lon: 144.970,
+              destination: 'Lilydale',
+              color: '#152C6B',
+              is_stopped: true,
+            },
+            {
+              trip_id: 'TRIP_P1',
+              route_short_name: 'Pakenham',
+              mode: 'train',
+              lat: -37.820,
+              lon: 144.980,
+              destination: 'Pakenham',
+              color: '#0072CE',
+              is_stopped: false,
+            },
+          ],
+          countsByRoute: {
+            Lilydale: 99,
+            Pakenham: 1,
+          },
+          timestamp: Date.now(),
+        },
+      })
+    );
+
+    // Verify Lilydale badge updated to '99 trains'
+    expect(await screen.findByText('99 trains')).toBeInTheDocument();
+  });
+
+  it('limits route breakdown expansion with a bounded scrollable section', async () => {
+    render(<TransitDock />);
+
+    fireEvent.click(screen.getByRole('button', { name: /explore trains/i }));
+    fireEvent.click(await screen.findByText('Lilydale Line'));
+
+    // Verify corridor stations are rendered in a scrollable container with max height limit
+    const stationsContainer = await screen.findByTestId('corridor-stations-scroll');
+    expect(stationsContainer).toBeInTheDocument();
+    expect(stationsContainer).toHaveClass('overflow-y-auto');
+    expect(stationsContainer.className).toMatch(/max-h-\[/);
+  });
+
+  it('visualizes live vehicles on route breakdown expansion via spatial matching when stop names are omitted', async () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    render(<TransitDock />);
+
+    fireEvent.click(screen.getByRole('button', { name: /explore trains/i }));
+    fireEvent.click(await screen.findByText('Lilydale Line'));
+
+    // Wait for corridor stations to be ready
+    expect(await screen.findByText(/corridor stations/i)).toBeInTheDocument();
+
+    // Broadcast live vehicles with only GPS coordinates (no current_stop_name or from/to stop names)
+    fireEvent(
+      window,
+      new CustomEvent('motion:vehicles-updated', {
+        detail: {
+          vehicles: [
+            {
+              trip_id: 'LIVE_AT_STATION',
+              route_short_name: 'Lilydale',
+              mode: 'train',
+              lat: -37.818, // at Flinders Street
+              lon: 144.967,
+              color: '#152C6B',
+              is_stopped: true,
+              bearing_deg: 90,
+            },
+            {
+              trip_id: 'LIVE_IN_TRANSIT',
+              route_short_name: 'Lilydale',
+              mode: 'train',
+              lat: -37.785, // halfway along segment to Lilydale
+              lon: 145.150,
+              color: '#152C6B',
+              is_stopped: false,
+              bearing_deg: 85,
+            },
+          ],
+          countsByRoute: { Lilydale: 2 },
+          timestamp: Date.now(),
+        },
+      })
+    );
+
+    // Both vehicles should be visualized on the timeline
+    const stationBadge = await screen.findByTestId('vehicle-badge-LIVE_AT_STATION');
+    expect(stationBadge).toBeInTheDocument();
+
+    const transitBadge = await screen.findByTestId('vehicle-badge-LIVE_IN_TRANSIT');
+    expect(transitBadge).toBeInTheDocument();
+
+    // Clicking in-transit vehicle badge dispatches track-vehicle
+    fireEvent.click(transitBadge);
+    await waitFor(() => {
+      expect(
+        dispatchSpy.mock.calls.some(
+          (c) =>
+            (c[0] as CustomEvent).type === 'motion:cmd:track-vehicle' &&
+            (c[0] as CustomEvent).detail?.tripId === 'LIVE_IN_TRANSIT'
+        )
+      ).toBe(true);
+    });
+  });
+
+  it('shows the whole route on the map when clicking on a route link from vehicle HUD', async () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    render(<TransitDock />);
+
+    // Inspect vehicle on map
+    fireEvent(
+      window,
+      new CustomEvent('motion:vehicle-selected', {
+        detail: {
+          tripId: 'T1',
+          routeShortName: 'Lilydale',
+          color: '#152C6B',
+          coords: [144.96, -37.81],
+          mode: 'train',
+        },
+      })
+    );
+
+    // Wait for stations to load from initial vehicle selection
+    expect(await screen.findByRole('button', { name: 'Flinders Street' })).toBeInTheDocument();
+
+    // Vehicle Panel / HUD displays route link "Lilydale Line"
+    const routeLink = await screen.findByRole('button', { name: /lilydale line/i });
+    expect(routeLink).toBeInTheDocument();
+
+    dispatchSpy.mockClear();
+
+    // Click route link: should highlight whole route on map with skipCameraFit: false
+    fireEvent.click(routeLink);
+
+    await waitFor(() => {
+      expect(
+        dispatchSpy.mock.calls.some(
+          (c) =>
+            (c[0] as CustomEvent).type === 'motion:cmd:highlight-route' &&
+            (c[0] as CustomEvent).detail?.skipCameraFit === false
+        )
+      ).toBe(true);
+    });
+
+    // Corridor Stations should remain expanded in explorer
+    expect(await screen.findByText(/corridor stations/i)).toBeInTheDocument();
+
+    // Fit Route button should no longer exist
+    expect(screen.queryByRole('button', { name: /fit route on map/i })).not.toBeInTheDocument();
+  });
 });
 

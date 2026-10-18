@@ -9,6 +9,12 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+try:
+    import dotenv
+    dotenv.load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
+except Exception:
+    pass
+
 from server.routes import system, stops, network, disruptions, routing
 from server.services.network_service import generate_metro_geojson
 from server.services.spatial_service import initialize_in_memory_spatial_tree

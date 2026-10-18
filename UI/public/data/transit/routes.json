@@ -1,0 +1,3780 @@
+{
+  "train": [
+    {
+      "route_id": "aus:vic:vic-02-CBE:",
+      "route_short_name": "Cranbourne",
+      "route_long_name": "Cranbourne - City",
+      "color": "#0072CE",
+      "text_color": "#FFFFFF",
+      "group": "City Loop Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-PKM:",
+      "route_short_name": "Pakenham",
+      "route_long_name": "Pakenham - City",
+      "color": "#0072CE",
+      "text_color": "#FFFFFF",
+      "group": "City Loop Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-SUY:",
+      "route_short_name": "Sunbury",
+      "route_long_name": "Sunbury - City",
+      "color": "#0072CE",
+      "text_color": "#FFFFFF",
+      "group": "City Loop Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-LIL:",
+      "route_short_name": "Lilydale",
+      "route_long_name": "Lilydale - City",
+      "color": "#152C6B",
+      "text_color": "#FFFFFF",
+      "group": "Burnley Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-BEG:",
+      "route_short_name": "Belgrave",
+      "route_long_name": "Belgrave - City",
+      "color": "#152C6B",
+      "text_color": "#FFFFFF",
+      "group": "Burnley Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-GWY:",
+      "route_short_name": "Glen Waverley",
+      "route_long_name": "Glen Waverley - City",
+      "color": "#152C6B",
+      "text_color": "#FFFFFF",
+      "group": "Burnley Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-ALM:",
+      "route_short_name": "Alamein",
+      "route_long_name": "Alamein - City",
+      "color": "#152C6B",
+      "text_color": "#FFFFFF",
+      "group": "Burnley Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-CGB:",
+      "route_short_name": "Craigieburn",
+      "route_long_name": "Craigieburn - City",
+      "color": "#FFBE00",
+      "text_color": "#000000",
+      "group": "Northern Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-UFD:",
+      "route_short_name": "Upfield",
+      "route_long_name": "Upfield - City",
+      "color": "#FFBE00",
+      "text_color": "#000000",
+      "group": "Northern Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-MDD:",
+      "route_short_name": "Mernda",
+      "route_long_name": "Mernda - City",
+      "color": "#BE1014",
+      "text_color": "#FFFFFF",
+      "group": "Clifton Hill Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-HBE:",
+      "route_short_name": "Hurstbridge",
+      "route_long_name": "Hurstbridge - City",
+      "color": "#BE1014",
+      "text_color": "#FFFFFF",
+      "group": "Clifton Hill Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-FKN:",
+      "route_short_name": "Frankston",
+      "route_long_name": "Frankston - City",
+      "color": "#028430",
+      "text_color": "#FFFFFF",
+      "group": "Frankston Line",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-WER:",
+      "route_short_name": "Werribee",
+      "route_long_name": "Werribee - City",
+      "color": "#F178AF",
+      "text_color": "#FFFFFF",
+      "group": "Cross-City Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    },
+    {
+      "route_id": "aus:vic:vic-02-SHM:",
+      "route_short_name": "Sandringham",
+      "route_long_name": "Sandringham - City",
+      "color": "#F178AF",
+      "text_color": "#FFFFFF",
+      "group": "Cross-City Group",
+      "outline": false,
+      "shuttle": false,
+      "mode": "train"
+    }
+  ],
+  "tram": [
+    {
+      "route_id": "aus:vic:vic-03-1:",
+      "route_short_name": "1",
+      "route_long_name": "South Melbourne Beach - East Coburg",
+      "color": "#B5BD00",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-3:",
+      "route_short_name": "3",
+      "route_long_name": "East Malvern - Melbourne University",
+      "color": "#8DC8E8",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-5:",
+      "route_short_name": "5",
+      "route_long_name": "Malvern - Melbourne University",
+      "color": "#D50032",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-6:",
+      "route_short_name": "6",
+      "route_long_name": "Glen Iris - Moreland",
+      "color": "#01426A",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-11:",
+      "route_short_name": "11",
+      "route_long_name": "Victoria Harbour Docklands - West Preston",
+      "color": "#6ECEB2",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-12:",
+      "route_short_name": "12",
+      "route_long_name": "St Kilda (Fitzroy St) - Victoria Gardens",
+      "color": "#007E92",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-16:",
+      "route_short_name": "16",
+      "route_long_name": "Kew - Melbourne University",
+      "color": "#FBD872",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-19:",
+      "route_short_name": "19",
+      "route_long_name": "Flinders Street Station - North Coburg",
+      "color": "#8A1B61",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-30:",
+      "route_short_name": "30",
+      "route_long_name": "Central Pier Docklands - St Vincents Plaza",
+      "color": "#534F96",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-35:",
+      "route_short_name": "35",
+      "route_long_name": "City Circle",
+      "color": "#6B3529",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-48:",
+      "route_short_name": "48",
+      "route_long_name": "Victoria Harbour Docklands - North Balwyn",
+      "color": "#333434",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-57:",
+      "route_short_name": "57",
+      "route_long_name": "Flinders Street Station - West Maribyrnong",
+      "color": "#00C1D5",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-58:",
+      "route_short_name": "58",
+      "route_long_name": "Toorak - West Coburg",
+      "color": "#969696",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-59:",
+      "route_short_name": "59",
+      "route_long_name": "Flinders Street Station - Airport West",
+      "color": "#00653A",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-64:",
+      "route_short_name": "64",
+      "route_long_name": "East Brighton - Melbourne University",
+      "color": "#00AB8E",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-67:",
+      "route_short_name": "67",
+      "route_long_name": "Carnegie - Melbourne University",
+      "color": "#956C58",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-70:",
+      "route_short_name": "70",
+      "route_long_name": "Waterfront City Docklands - Wattle Park",
+      "color": "#F59BBB",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-72:",
+      "route_short_name": "72",
+      "route_long_name": "Camberwell - Melbourne University",
+      "color": "#9ABEAA",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-75:",
+      "route_short_name": "75",
+      "route_long_name": "Central Pier Docklands - Vermont South",
+      "color": "#00A9E0",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-78:",
+      "route_short_name": "78",
+      "route_long_name": "Balaclava - North Richmond",
+      "color": "#A0A0D6",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-82:",
+      "route_short_name": "82",
+      "route_long_name": "Moonee Ponds - Footscray",
+      "color": "#D2D755",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-86:",
+      "route_short_name": "86",
+      "route_long_name": "Waterfront City Docklands - Bundoora RMIT",
+      "color": "#FFB500",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-96:",
+      "route_short_name": "96",
+      "route_long_name": "St Kilda Beach - East Brunswick",
+      "color": "#C6007E",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    },
+    {
+      "route_id": "aus:vic:vic-03-109:",
+      "route_short_name": "109",
+      "route_long_name": "Port Melbourne - Box Hill",
+      "color": "#E87722",
+      "text_color": "#FFFFFF",
+      "group": "Yarra Trams",
+      "mode": "tram"
+    }
+  ],
+  "bus": [
+    {
+      "route_id": "60-150-aus-1",
+      "route_short_name": "150",
+      "route_long_name": "Tarneit Station - Williams Landing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-151-aus-1",
+      "route_short_name": "151",
+      "route_long_name": "Tarneit Station - Williams Landing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-152-aus-1",
+      "route_short_name": "152",
+      "route_long_name": "Williams Landing Station - Tarneit Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-153-aus-1",
+      "route_short_name": "153",
+      "route_long_name": "Werribee Station - Williams Landing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-154-aus-1",
+      "route_short_name": "154",
+      "route_long_name": "Tarneit Station - Laverton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-160-aus-1",
+      "route_short_name": "160",
+      "route_long_name": "Hoppers Crossing Station - Tarneit Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-161-aus-1",
+      "route_short_name": "161",
+      "route_long_name": "Werribee Station - Hoppers Crossing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-166-aus-1",
+      "route_short_name": "166",
+      "route_long_name": "Wyndham Vale Station - Hoppers Crossing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-167-aus-1",
+      "route_short_name": "167",
+      "route_long_name": "Hoppers Crossing Station - Tarneit Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-170-aus-1",
+      "route_short_name": "170",
+      "route_long_name": "Werribee Station - Tarneit Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-180-aus-1",
+      "route_short_name": "180",
+      "route_long_name": "Werribee Station - Tarneit Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-181-aus-1",
+      "route_short_name": "181",
+      "route_long_name": "Werribee Station - Hoppers Crossing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-182-aus-1",
+      "route_short_name": "182",
+      "route_long_name": "Werribee Station - Tarneit Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-186-aus-1",
+      "route_short_name": "186",
+      "route_long_name": "West Tarneit Station - Tarneit Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-190-aus-1",
+      "route_short_name": "190",
+      "route_long_name": "Wyndham Vale Station - Werribee Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-191-aus-1",
+      "route_short_name": "191",
+      "route_long_name": "Jubilee Estate - Werribee Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-192-aus-1",
+      "route_short_name": "192",
+      "route_long_name": "Wyndham Vale Station - Werribee Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-194-aus-1",
+      "route_short_name": "194",
+      "route_long_name": "Werribee Station - Wyndham Vale Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-200-aus-1",
+      "route_short_name": "200",
+      "route_long_name": "Bulleen - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "21-201-aus-1",
+      "route_short_name": "201",
+      "route_long_name": "Box Hill Station - Deakin University",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-207-aus-1",
+      "route_short_name": "207",
+      "route_long_name": "Doncaster SC - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "35-215-aus-1",
+      "route_short_name": "215",
+      "route_long_name": "Caroline Springs - Highpoint SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "35-216-aus-1",
+      "route_short_name": "216",
+      "route_long_name": "Sunshine Station - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "35-220-aus-1",
+      "route_short_name": "220",
+      "route_long_name": "Sunshine Station - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "35-223-aus-1",
+      "route_short_name": "223",
+      "route_long_name": "Yarraville - Highpoint SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "35-232-aus-1",
+      "route_short_name": "232",
+      "route_long_name": "Altona North - City (Queen Victoria Market)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-234-aus-1",
+      "route_short_name": "234",
+      "route_long_name": "Garden City - City (Queen Victoria Market)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-235-aus-1",
+      "route_short_name": "235",
+      "route_long_name": "Fishermans Bend - City (Southern Cross Station)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-236-aus-1",
+      "route_short_name": "236",
+      "route_long_name": "Garden City - City (Queen Victoria Market)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-237-aus-1",
+      "route_short_name": "237",
+      "route_long_name": "Fishermans Bend - City (Southern Cross Station)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-241-aus-1",
+      "route_short_name": "241",
+      "route_long_name": "Yarra Bend - North Melbourne Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-246-aus-1",
+      "route_short_name": "246",
+      "route_long_name": "Elsternwick - Clifton Hill",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-250-aus-1",
+      "route_short_name": "250",
+      "route_long_name": "La Trobe University - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-251-aus-1",
+      "route_short_name": "251",
+      "route_long_name": "Northland Shopping Centre - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-270-aus-1",
+      "route_short_name": "270",
+      "route_long_name": "Mitcham - Box Hill",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-271-aus-1",
+      "route_short_name": "271",
+      "route_long_name": "Ringwood - Box Hill Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-273-aus-1",
+      "route_short_name": "273",
+      "route_long_name": "The Pines SC - Nunawading Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-279-aus-1",
+      "route_short_name": "279",
+      "route_long_name": "Doncaster SC/Templestowe - Box Hill Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-280-aus-1",
+      "route_short_name": "280",
+      "route_long_name": "The Pines SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-281-aus-1",
+      "route_short_name": "281",
+      "route_long_name": "Box Hill Station - Templestowe",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-282-aus-1",
+      "route_short_name": "282",
+      "route_long_name": "The Pines SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-284-aus-1",
+      "route_short_name": "284",
+      "route_long_name": "Doncaster Park & Ride - Box Hill Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-285-aus-1",
+      "route_short_name": "285",
+      "route_long_name": "Camberwell SC - Doncaster Park & Ride",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-293-aus-1",
+      "route_short_name": "293",
+      "route_long_name": "Greensborough - Box Hill Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-295-aus-1",
+      "route_short_name": "295",
+      "route_long_name": "The Pines SC - Doncaster SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Frequent & University",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-301-aus-1",
+      "route_short_name": "301",
+      "route_long_name": "La Trobe University - Reservoir Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-302-aus-1",
+      "route_short_name": "302",
+      "route_long_name": "Box Hill Station - City (King/Lonsdale St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-303-aus-1",
+      "route_short_name": "303",
+      "route_long_name": "Ringwood North - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-304-aus-1",
+      "route_short_name": "304",
+      "route_long_name": "Doncaster SC - City (King/Lonsdale St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-305-aus-1",
+      "route_short_name": "305",
+      "route_long_name": "The Pines SC - City (King/Lonsdale Sts)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-309-aus-1",
+      "route_short_name": "309",
+      "route_long_name": "The Pines SC - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-318-aus-1",
+      "route_short_name": "318",
+      "route_long_name": "Deep Creek - City (King/Lonsdale Sts)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-343-aus-1",
+      "route_short_name": "343",
+      "route_long_name": "Hurstbridge Station - Greensborough",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-350-aus-1",
+      "route_short_name": "350",
+      "route_long_name": "La Trobe University - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-356-aus-1",
+      "route_short_name": "356",
+      "route_long_name": "Wollert East - Epping Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-357-aus-1",
+      "route_short_name": "357",
+      "route_long_name": "Wollert West - Thomastown Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-358-aus-1",
+      "route_short_name": "358",
+      "route_long_name": "Wollert - Epping Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-364-aus-1",
+      "route_short_name": "364",
+      "route_long_name": "Warrandyte - Ringwood Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-370-aus-1",
+      "route_short_name": "370",
+      "route_long_name": "Ringwood Station - Mitcham Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-381-aus-1",
+      "route_short_name": "381",
+      "route_long_name": "Diamond Creek Station - Mernda Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-382-aus-1",
+      "route_short_name": "382",
+      "route_long_name": "Whittlesea - Northland Shopping Centre",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-383-aus-1",
+      "route_short_name": "383",
+      "route_long_name": "Palisades - University Hill",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-384-aus-1",
+      "route_short_name": "384",
+      "route_long_name": "Kinglake - Whittlesea",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-385-aus-1",
+      "route_short_name": "385",
+      "route_long_name": "Mernda Station/Whittlesea - Greensborough",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-386-aus-1",
+      "route_short_name": "386",
+      "route_long_name": "Mernda Station - Bundoora RMIT",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-387-aus-1",
+      "route_short_name": "387",
+      "route_long_name": "Mernda Station - Bundoora RMIT",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-388-aus-1",
+      "route_short_name": "388",
+      "route_long_name": "Mernda Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-389-aus-1",
+      "route_short_name": "389",
+      "route_long_name": "Mernda Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-390-aus-1",
+      "route_short_name": "390",
+      "route_long_name": "Mernda Station - Craigieburn Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-400-aus-1",
+      "route_short_name": "400",
+      "route_long_name": "Laverton Station - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-402-aus-1",
+      "route_short_name": "402",
+      "route_long_name": "Footscray Station - East Melbourne",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-404-aus-1",
+      "route_short_name": "404",
+      "route_long_name": "Footscray Station - Moonee Ponds",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-405-aus-1",
+      "route_short_name": "405",
+      "route_long_name": "Brimbank Shopping Centre - Deer Park Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-406-aus-1",
+      "route_short_name": "406",
+      "route_long_name": "Footscray Station - Keilor East",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-407-aus-1",
+      "route_short_name": "407",
+      "route_long_name": "Avondale Heights - Highpoint SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-408-aus-1",
+      "route_short_name": "408",
+      "route_long_name": "St Albans Station - Highpoint SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-409-aus-1",
+      "route_short_name": "409",
+      "route_long_name": "Yarraville - Highpoint Shopping Centre",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-410-aus-1",
+      "route_short_name": "410",
+      "route_long_name": "Sunshine Station - Footscray",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-411-aus-1",
+      "route_short_name": "411",
+      "route_long_name": "Laverton Station - Footscray",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-412-aus-1",
+      "route_short_name": "412",
+      "route_long_name": "Laverton Station - Footscray",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-414-aus-1",
+      "route_short_name": "414",
+      "route_long_name": "Laverton Station - Footscray",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-415-aus-1",
+      "route_short_name": "415",
+      "route_long_name": "Laverton Station - Williamstown",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-417-aus-1",
+      "route_short_name": "417",
+      "route_long_name": "Laverton Station - Laverton North",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-418-aus-1",
+      "route_short_name": "418",
+      "route_long_name": "Caroline Springs - St Albans Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-419-aus-1",
+      "route_short_name": "419",
+      "route_long_name": "St Albans Station - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-420-aus-1",
+      "route_short_name": "420",
+      "route_long_name": "Watergardens Station - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-421-aus-1",
+      "route_short_name": "421",
+      "route_long_name": "St Albans Station - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-422-aus-1",
+      "route_short_name": "422",
+      "route_long_name": "Brimbank SC - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-423-aus-1",
+      "route_short_name": "423",
+      "route_long_name": "Brimbank SC - St Albans Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-424-aus-1",
+      "route_short_name": "424",
+      "route_long_name": "Brimbank SC - St Albans Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-425-aus-1",
+      "route_short_name": "425",
+      "route_long_name": "St Albans Station - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "35-426-aus-1",
+      "route_short_name": "426",
+      "route_long_name": "Caroline Springs - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-427-aus-1",
+      "route_short_name": "427",
+      "route_long_name": "Sunshine West - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-428-aus-1",
+      "route_short_name": "428",
+      "route_long_name": "Sunshine West - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "35-429-aus-1",
+      "route_short_name": "429",
+      "route_long_name": "Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-431-aus-1",
+      "route_short_name": "431",
+      "route_long_name": "Kingsville - Yarraville",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-432-aus-1",
+      "route_short_name": "432",
+      "route_long_name": "Yarraville - Newport",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-439-aus-1",
+      "route_short_name": "439",
+      "route_long_name": "Werribee South - Werribee Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-441-aus-1",
+      "route_short_name": "441",
+      "route_long_name": "Riverwalk Estate - Werribee Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-443-aus-1",
+      "route_short_name": "443",
+      "route_long_name": "Werribee Station - Werribee Station (Clockwise)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-444-aus-1",
+      "route_short_name": "444",
+      "route_long_name": "Aintree - Rockbank Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-451-aus-1",
+      "route_short_name": "451",
+      "route_long_name": "Cobblebank Station - Thornhill Park",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "81-452-aus-1",
+      "route_short_name": "452",
+      "route_long_name": "Eynesbury - Melton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-453-aus-1",
+      "route_short_name": "453",
+      "route_long_name": "Melton - Melton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-454-aus-1",
+      "route_short_name": "454",
+      "route_long_name": "Cobblebank Station - Melton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-455-aus-1",
+      "route_short_name": "455",
+      "route_long_name": "Micasa Rise - Melton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-456-aus-1",
+      "route_short_name": "456",
+      "route_long_name": "Sunshine Station - Melton",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-457-aus-1",
+      "route_short_name": "457",
+      "route_long_name": "Melton - Melton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-458-aus-1",
+      "route_short_name": "458",
+      "route_long_name": "Kurunjang - Melton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-459-aus-1",
+      "route_short_name": "459",
+      "route_long_name": "Arnolds Creek - Melton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-460-aus-1",
+      "route_short_name": "460",
+      "route_long_name": "Caroline Springs Station - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-461-aus-1",
+      "route_short_name": "461",
+      "route_long_name": "Caroline Springs Town Centre - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-462-aus-1",
+      "route_short_name": "462",
+      "route_long_name": "Caroline Springs Station - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-463-aus-1",
+      "route_short_name": "463",
+      "route_long_name": "Caroline Springs - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-465-aus-1",
+      "route_short_name": "465",
+      "route_long_name": "Keilor Park - Essendon Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-467-aus-1",
+      "route_short_name": "467",
+      "route_long_name": "Aberfeldie - Moonee Ponds Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-468-aus-1",
+      "route_short_name": "468",
+      "route_long_name": "Highpoint Shopping Centre - Essendon Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-469-aus-1",
+      "route_short_name": "469",
+      "route_long_name": "Keilor East - Moonee Ponds",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-471-aus-1",
+      "route_short_name": "471",
+      "route_long_name": "Williamstown - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-472-aus-1",
+      "route_short_name": "472",
+      "route_long_name": "Moonee Ponds - Williamstown",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-475-aus-1",
+      "route_short_name": "475",
+      "route_long_name": "Sunbury Station - Diggers Rest Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "38-476-aus-1",
+      "route_short_name": "476",
+      "route_long_name": "Watergardens Station - Moonee Ponds",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-477-aus-1",
+      "route_short_name": "477",
+      "route_long_name": "Broadmeadows Station - Moonee Ponds",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-478-aus-1",
+      "route_short_name": "478",
+      "route_long_name": "Melbourne Airport - Airport West SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-479-aus-1",
+      "route_short_name": "479",
+      "route_long_name": "Sunbury Station - Airport West SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-481-aus-1",
+      "route_short_name": "481",
+      "route_long_name": "Mount Lion - Sunbury Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-482-aus-1",
+      "route_short_name": "482",
+      "route_long_name": "Melbourne Airport - Airport West SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-483-aus-1",
+      "route_short_name": "483",
+      "route_long_name": "Moonee Ponds - Sunbury",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-484-aus-1",
+      "route_short_name": "484",
+      "route_long_name": "Roxburgh Park - Broadmeadows",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-485-aus-1",
+      "route_short_name": "485",
+      "route_long_name": "Wilsons Lane - Sunbury Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-486-aus-1",
+      "route_short_name": "486",
+      "route_long_name": "Rolling Meadows - Sunbury Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-487-aus-1",
+      "route_short_name": "487",
+      "route_long_name": "Killara Heights - Sunbury Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-488-aus-1",
+      "route_short_name": "488",
+      "route_long_name": "Jacksons Hill - Sunbury Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "24-489-aus-1",
+      "route_short_name": "489",
+      "route_long_name": "Canterbury Hills - Sunbury Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-490-aus-1",
+      "route_short_name": "490",
+      "route_long_name": "Gowanbrae - Airport West",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-494-aus-1",
+      "route_short_name": "494",
+      "route_long_name": "Point Cook South - Williams Landing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-495-aus-1",
+      "route_short_name": "495",
+      "route_long_name": "Point Cook South - Williams Landing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-496-aus-1",
+      "route_short_name": "496",
+      "route_long_name": "Sanctuary Lakes - Laverton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-497-aus-1",
+      "route_short_name": "497",
+      "route_long_name": "Saltwater Coast Estate - Williams Landing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-498-aus-1",
+      "route_short_name": "498",
+      "route_long_name": "Hoppers Crossing Station - Laverton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-501-aus-1",
+      "route_short_name": "501",
+      "route_long_name": "Donnybrook Station - Craigieburn Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-503-aus-1",
+      "route_short_name": "503",
+      "route_long_name": "Essendon - East Brunswick",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-504-aus-1",
+      "route_short_name": "504",
+      "route_long_name": "Clifton Hill - Moonee Ponds",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-505-aus-1",
+      "route_short_name": "505",
+      "route_long_name": "Melbourne University - Moonee Ponds",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-506-aus-1",
+      "route_short_name": "506",
+      "route_long_name": "Moonee Ponds - Westgarth",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-508-aus-1",
+      "route_short_name": "508",
+      "route_long_name": "Alphington - Moonee Ponds",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-509-aus-1",
+      "route_short_name": "509",
+      "route_long_name": "Brunswick West - Barkly Square SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-510-aus-1",
+      "route_short_name": "510",
+      "route_long_name": "Ivanhoe Station - Essendon Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-511-aus-1",
+      "route_short_name": "511",
+      "route_long_name": "Mandalay - Craigieburn Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "17-512-aus-1",
+      "route_short_name": "512",
+      "route_long_name": "East Coburg - Strathmore Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-513-aus-1",
+      "route_short_name": "513",
+      "route_long_name": "Eltham Station - Glenroy Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-514-aus-1",
+      "route_short_name": "514",
+      "route_long_name": "Eltham Station - Glenroy Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-517-aus-1",
+      "route_short_name": "517",
+      "route_long_name": "St Helena - Northland SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-518-aus-1",
+      "route_short_name": "518",
+      "route_long_name": "St Helena West - Greensborough",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-524-aus-1",
+      "route_short_name": "524",
+      "route_long_name": "Kalkallo - Peppercorn Hill",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-525-aus-1",
+      "route_short_name": "525",
+      "route_long_name": "Donnybrook Station - Craigieburn Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-526-aus-1",
+      "route_short_name": "526",
+      "route_long_name": "Reservoir - Coburg",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-527-aus-1",
+      "route_short_name": "527",
+      "route_long_name": "Gowrie - Northland SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-528-aus-1",
+      "route_short_name": "528",
+      "route_long_name": "Craigieburn Central SC - Craigieburn Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-529-aus-1",
+      "route_short_name": "529",
+      "route_long_name": "Craigieburn North - Craigieburn Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-530-aus-1",
+      "route_short_name": "530",
+      "route_long_name": "Coburg - Campbellfield",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-531-aus-1",
+      "route_short_name": "531",
+      "route_long_name": "North Coburg - Upfield Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-532-aus-1",
+      "route_short_name": "532",
+      "route_long_name": "Broadmeadows - Craigieburn",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-533-aus-1",
+      "route_short_name": "533",
+      "route_long_name": "Craigieburn North - Craigieburn",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-534-aus-1",
+      "route_short_name": "534",
+      "route_long_name": "Coburg - Glenroy",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-536-aus-1",
+      "route_short_name": "536",
+      "route_long_name": "Gowrie Station - Glenroy Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-537-aus-1",
+      "route_short_name": "537",
+      "route_long_name": "Craigieburn Central Shopping Centre - Craigieburn Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-538-aus-1",
+      "route_short_name": "538",
+      "route_long_name": "Broadmeadows - Somerset Estate",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-540-aus-1",
+      "route_short_name": "540",
+      "route_long_name": "Upfield - Broadmeadows",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-541-aus-1",
+      "route_short_name": "541",
+      "route_long_name": "Craigieburn North (Mt Ridley Rd) - Broadmeadows Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-542-aus-1",
+      "route_short_name": "542",
+      "route_long_name": "Roxburgh Park - Pascoe Vale",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "43-543-aus-1",
+      "route_short_name": "543",
+      "route_long_name": "Craigieburn Central - Roxburgh Park",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "61-544-aus-1",
+      "route_short_name": "544",
+      "route_long_name": "Bus 544",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-546-aus-1",
+      "route_short_name": "546",
+      "route_long_name": "Melbourne University - Heidelberg Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-548-aus-1",
+      "route_short_name": "548",
+      "route_long_name": "Kew - La Trobe University",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-549-aus-1",
+      "route_short_name": "549",
+      "route_long_name": "Ivanhoe - Northland SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-550-aus-1",
+      "route_short_name": "550",
+      "route_long_name": "Northland SC - La Trobe University",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-551-aus-1",
+      "route_short_name": "551",
+      "route_long_name": "Heidelberg - La Trobe University",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-552-aus-1",
+      "route_short_name": "552",
+      "route_long_name": "North East Reservoir - Northcote Plaza",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-553-aus-1",
+      "route_short_name": "553",
+      "route_long_name": "West Preston - Preston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-554-aus-1",
+      "route_short_name": "554",
+      "route_long_name": "Lalor",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-555-aus-1",
+      "route_short_name": "555",
+      "route_long_name": "Northland SC - Epping Plaza SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-556-aus-1",
+      "route_short_name": "556",
+      "route_long_name": "Epping Plaza SC - Northland SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-557-aus-1",
+      "route_short_name": "557",
+      "route_long_name": "Thomastown",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-558-aus-1",
+      "route_short_name": "558",
+      "route_long_name": "Reservoir (clockwise) - Reservoir (anti-clockwise)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-559-aus-1",
+      "route_short_name": "559",
+      "route_long_name": "Thomastown Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-561-aus-1",
+      "route_short_name": "561",
+      "route_long_name": "Macleod - Pascoe Vale Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-564-aus-1",
+      "route_short_name": "564",
+      "route_long_name": "South Morang Station - Bundoora RMIT",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-566-aus-1",
+      "route_short_name": "566",
+      "route_long_name": "Lalor - Northland SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-567-aus-1",
+      "route_short_name": "567",
+      "route_long_name": "Northcote - Regent",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-569-aus-1",
+      "route_short_name": "569",
+      "route_long_name": "Epping Plaza SC - South Morang Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-570-aus-1",
+      "route_short_name": "570",
+      "route_long_name": "Thomastown - Bundoora RMIT",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-577-aus-1",
+      "route_short_name": "577",
+      "route_long_name": "Epping Plaza SC - South Morang Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-578-aus-1",
+      "route_short_name": "578",
+      "route_long_name": "Eltham Station - Warrandyte",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-579-aus-1",
+      "route_short_name": "579",
+      "route_long_name": "Eltham - Warrandyte",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-580-aus-1",
+      "route_short_name": "580",
+      "route_long_name": "Eltham Station - Diamond Creek",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "42-582-aus-1",
+      "route_short_name": "582",
+      "route_long_name": "Eltham Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "32-600-aus-1",
+      "route_short_name": "600",
+      "route_long_name": "Southland Shopping Centre - St Kilda Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-601-aus-1",
+      "route_short_name": "601",
+      "route_long_name": "Huntingdale Station - Monash University (Clayton)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "32-603-aus-1",
+      "route_short_name": "603",
+      "route_long_name": "Brighton Beach Station - Burnley Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "32-604-aus-1",
+      "route_short_name": "604",
+      "route_long_name": "Elsternwick Station - Anzac Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-605-aus-1",
+      "route_short_name": "605",
+      "route_long_name": "Gardenvale - City (Queen Victoria Market)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-606-aus-1",
+      "route_short_name": "606",
+      "route_long_name": "Fishermans Bend - Elsternwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "37-609-aus-1",
+      "route_short_name": "609",
+      "route_long_name": "Kew/Hawthorn - Fairfield",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-612-aus-1",
+      "route_short_name": "612",
+      "route_long_name": "Box Hill Station - Chadstone SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-623-aus-1",
+      "route_short_name": "623",
+      "route_long_name": "Glen Waverley - St Kilda",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-624-aus-1",
+      "route_short_name": "624",
+      "route_long_name": "Oakleigh - Kew",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-625-aus-1",
+      "route_short_name": "625",
+      "route_long_name": "Elsternwick - Chadstone SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-626-aus-1",
+      "route_short_name": "626",
+      "route_long_name": "Chadstone - Middle Brighton",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-627-aus-1",
+      "route_short_name": "627",
+      "route_long_name": "Moorabbin Station - Chadstone SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "49-630-aus-1",
+      "route_short_name": "630",
+      "route_long_name": "Monash University - Elwood",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-631-aus-1",
+      "route_short_name": "631",
+      "route_long_name": "Waverley Gardens SC - Southland SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-663-aus-1",
+      "route_short_name": "663",
+      "route_long_name": "Belgrave - Lilydale",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-664-aus-1",
+      "route_short_name": "664",
+      "route_long_name": "Chirnside Park SC - Knox City SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-668-aus-1",
+      "route_short_name": "668",
+      "route_long_name": "Croydon Station - Ringwood Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-669-aus-1",
+      "route_short_name": "669",
+      "route_long_name": "Croydon Station - Ringwood Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-670-aus-1",
+      "route_short_name": "670",
+      "route_long_name": "Lilydale - Ringwood",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-671-aus-1",
+      "route_short_name": "671",
+      "route_long_name": "Chirnside Park SC - Croydon",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-672-aus-1",
+      "route_short_name": "672",
+      "route_long_name": "Chirnside Park SC - Croydon",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-675-aus-1",
+      "route_short_name": "675",
+      "route_long_name": "Chirnside Park SC - Mooroolbark",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-677-aus-1",
+      "route_short_name": "677",
+      "route_long_name": "Chirnside Park SC - Lilydale",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-679-aus-1",
+      "route_short_name": "679",
+      "route_long_name": "Chirnside Park SC - Ringwood",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-680-aus-1",
+      "route_short_name": "680",
+      "route_long_name": "Mooroolbark - Lilydale",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-681-aus-1",
+      "route_short_name": "681",
+      "route_long_name": "Knox City SC - Knox City SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-682-aus-1",
+      "route_short_name": "682",
+      "route_long_name": "Knox City SC - Knox City SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "40-683-aus-1",
+      "route_short_name": "683",
+      "route_long_name": "Warburton - Chirnside Park SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "44-684-aus-1",
+      "route_short_name": "684",
+      "route_long_name": "Ringwood - Eildon",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "44-685-aus-1",
+      "route_short_name": "685",
+      "route_long_name": "Lilydale - Healesville",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-688-aus-1",
+      "route_short_name": "688",
+      "route_long_name": "Upper Ferntree Gully - Croydon",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-689-aus-1",
+      "route_short_name": "689",
+      "route_long_name": "Montrose - Croydon Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-690-aus-1",
+      "route_short_name": "690",
+      "route_long_name": "Boronia - Croydon",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-691-aus-1",
+      "route_short_name": "691",
+      "route_long_name": "Boronia - Waverley Gardens SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-693-aus-1",
+      "route_short_name": "693",
+      "route_long_name": "Belgrave - Oakleigh",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-694-aus-1",
+      "route_short_name": "694",
+      "route_long_name": "Mount Dandenong - Belgrave",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-695-aus-1",
+      "route_short_name": "695",
+      "route_long_name": "Gembrook - Belgrave",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-696-aus-1",
+      "route_short_name": "696",
+      "route_long_name": "Olinda - Monbulk",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-697-aus-1",
+      "route_short_name": "697",
+      "route_long_name": "Belgrave South - Belgrave",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-699-aus-1",
+      "route_short_name": "699",
+      "route_long_name": "Upwey - Belgrave",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-701-aus-1",
+      "route_short_name": "701",
+      "route_long_name": "Bentleigh - Oakleigh",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-703-aus-1",
+      "route_short_name": "703",
+      "route_long_name": "Blackburn - Middle Brighton",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-704-aus-1",
+      "route_short_name": "704",
+      "route_long_name": "Westall Station - Oakleigh Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-705-aus-1",
+      "route_short_name": "705",
+      "route_long_name": "Springvale Station - Mordialloc Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-706-aus-1",
+      "route_short_name": "706",
+      "route_long_name": "Chelsea Railway Station - Mordialloc Shopping Centre",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-708-aus-1",
+      "route_short_name": "708",
+      "route_long_name": "Carrum Station - Hampton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-709-aus-1",
+      "route_short_name": "709",
+      "route_long_name": "Noble Park Station - Mordialloc",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-732-aus-1",
+      "route_short_name": "732",
+      "route_long_name": "Upper Ferntree Gully - Box Hill Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-733-aus-1",
+      "route_short_name": "733",
+      "route_long_name": "Box Hill - Oakleigh",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-734-aus-1",
+      "route_short_name": "734",
+      "route_long_name": "Glen Waverley - Glen Iris",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-735-aus-1",
+      "route_short_name": "735",
+      "route_long_name": "Nunawading - Box Hill Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-736-aus-1",
+      "route_short_name": "736",
+      "route_long_name": "Blackburn - Mitcham",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-737-aus-1",
+      "route_short_name": "737",
+      "route_long_name": "Monash University - Croydon",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-738-aus-1",
+      "route_short_name": "738",
+      "route_long_name": "Knox City - Mitcham",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-740-aus-1",
+      "route_short_name": "740",
+      "route_long_name": "Vermont East - Mitcham",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-742-aus-1",
+      "route_short_name": "742",
+      "route_long_name": "Chadstone SC - Ringwood",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "21-745-aus-1",
+      "route_short_name": "745",
+      "route_long_name": "Knox City SC - Bayswater",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-753-aus-1",
+      "route_short_name": "753",
+      "route_long_name": "Bayswater - Glen Waverley",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-754-aus-1",
+      "route_short_name": "754",
+      "route_long_name": "Glen Waverley - Rowville",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-755-aus-1",
+      "route_short_name": "755",
+      "route_long_name": "Knox City SC - Bayswater",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-757-aus-1",
+      "route_short_name": "757",
+      "route_long_name": "Scoresby - Knox City SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-758-aus-1",
+      "route_short_name": "758",
+      "route_long_name": "Knoxfield - Knox City SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-760-aus-1",
+      "route_short_name": "760",
+      "route_long_name": "Cranbourne Station - Seaford Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "19-765-aus-1",
+      "route_short_name": "765",
+      "route_long_name": "Box Hill - Mitcham",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-766-aus-1",
+      "route_short_name": "766",
+      "route_long_name": "Box Hill Station - Burwood",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-767-aus-1",
+      "route_short_name": "767",
+      "route_long_name": "Box Hill Station - Southland SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-770-aus-1",
+      "route_short_name": "770",
+      "route_long_name": "Karingal - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-771-aus-1",
+      "route_short_name": "771",
+      "route_long_name": "Langwarrin - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-772-aus-1",
+      "route_short_name": "772",
+      "route_long_name": "Eliza Heights - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-773-aus-1",
+      "route_short_name": "773",
+      "route_long_name": "Frankston South - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-774-aus-1",
+      "route_short_name": "774",
+      "route_long_name": "Delacombe Park - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-775-aus-1",
+      "route_short_name": "775",
+      "route_long_name": "Lakewood - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-776-aus-1",
+      "route_short_name": "776",
+      "route_long_name": "Pearcedale - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-777-aus-1",
+      "route_short_name": "777",
+      "route_long_name": "McClelland Drive - Karingal  SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-778-aus-1",
+      "route_short_name": "778",
+      "route_long_name": "Carrum Downs - Kananook Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-779-aus-1",
+      "route_short_name": "779",
+      "route_long_name": "Belvedere - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-780-aus-1",
+      "route_short_name": "780",
+      "route_long_name": "Carrum Station - Frankston Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-781-aus-1",
+      "route_short_name": "781",
+      "route_long_name": "Dromana - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-782-aus-1",
+      "route_short_name": "782",
+      "route_long_name": "Balnarring Flinders - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-783-aus-1",
+      "route_short_name": "783",
+      "route_long_name": "Hastings - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-784-aus-1",
+      "route_short_name": "784",
+      "route_long_name": "Mornington - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-785-aus-1",
+      "route_short_name": "785",
+      "route_long_name": "Mornington - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "27-786-aus-1",
+      "route_short_name": "786",
+      "route_long_name": "St Andrews Beach - Rye",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "27-787-aus-1",
+      "route_short_name": "787",
+      "route_long_name": "Sorrento - Rosebud",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "27-788-aus-1",
+      "route_short_name": "788",
+      "route_long_name": "Portsea - Frankston Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-789-aus-1",
+      "route_short_name": "789",
+      "route_long_name": "Langwarrin - Frankston Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-790-aus-1",
+      "route_short_name": "790",
+      "route_long_name": "Frankston Station - Langwarrin",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-791-aus-1",
+      "route_short_name": "791",
+      "route_long_name": "Cranbourne Station - Frankston Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-792-aus-1",
+      "route_short_name": "792",
+      "route_long_name": "Pearcedale - Cranbourne Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-795-aus-1",
+      "route_short_name": "795",
+      "route_long_name": "Warneet - Cranbourne",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-796-aus-1",
+      "route_short_name": "796",
+      "route_long_name": "Clyde - Cranbourne Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-798-aus-1",
+      "route_short_name": "798",
+      "route_long_name": "Clyde North - Cranbourne Park SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-799-aus-1",
+      "route_short_name": "799",
+      "route_long_name": "The Avenue Village SC - Merinda Park Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-800-aus-1",
+      "route_short_name": "800",
+      "route_long_name": "Chadstone SC - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-802-aus-1",
+      "route_short_name": "802",
+      "route_long_name": "Chadstone SC - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-804-aus-1",
+      "route_short_name": "804",
+      "route_long_name": "Chadstone SC - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-811-aus-1",
+      "route_short_name": "811",
+      "route_long_name": "Brighton - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-812-aus-1",
+      "route_short_name": "812",
+      "route_long_name": "Brighton - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-813-aus-1",
+      "route_short_name": "813",
+      "route_long_name": "Waverley Gardens SC - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "41-814-aus-1",
+      "route_short_name": "814",
+      "route_long_name": "Springvale South - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-816-aus-1",
+      "route_short_name": "816",
+      "route_long_name": "Noble Park Station - Keysborough South",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-822-aus-1",
+      "route_short_name": "822",
+      "route_long_name": "Sandringham - Chadstone SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-823-aus-1",
+      "route_short_name": "823",
+      "route_long_name": "Southland SC - North Brighton",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-824-aus-1",
+      "route_short_name": "824",
+      "route_long_name": "Keysborough - Moorabbin",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-825-aus-1",
+      "route_short_name": "825",
+      "route_long_name": "Southland SC - Moorabbin",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-828-aus-1",
+      "route_short_name": "828",
+      "route_long_name": "Berwick Station - Hampton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-C31-aus-1",
+      "route_short_name": "831",
+      "route_long_name": "Clyde - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-832-aus-1",
+      "route_short_name": "832",
+      "route_long_name": "Carrum Downs - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-833-aus-1",
+      "route_short_name": "833",
+      "route_long_name": "Carrum Station - Frankston Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-834-aus-1",
+      "route_short_name": "834",
+      "route_long_name": "Berwick Station - Fountain Gate SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-C35-aus-1",
+      "route_short_name": "835",
+      "route_long_name": "Berwick Station - Fountain Gate SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-836-aus-1",
+      "route_short_name": "836",
+      "route_long_name": "Eden Rise SC - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-837-aus-1",
+      "route_short_name": "837",
+      "route_long_name": "Beaconsfield East - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-838-aus-1",
+      "route_short_name": "838",
+      "route_long_name": "Emerald - Fountain Gate SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-839-aus-1",
+      "route_short_name": "839",
+      "route_long_name": "North Berwick - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-840-aus-1",
+      "route_short_name": "840",
+      "route_long_name": "Gembrook - Pakenham Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-841-aus-1",
+      "route_short_name": "841",
+      "route_long_name": "Cranbourne - Narre Warren North",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-842-aus-1",
+      "route_short_name": "842",
+      "route_long_name": "Endeavour Hills SC - Fountain Gate SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-843-aus-1",
+      "route_short_name": "843",
+      "route_long_name": "Endeavour Hills - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-844-aus-1",
+      "route_short_name": "844",
+      "route_long_name": "Doveton - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-845-aus-1",
+      "route_short_name": "845",
+      "route_long_name": "Endeavour Hills - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-846-aus-1",
+      "route_short_name": "846",
+      "route_long_name": "Eden Rise SC - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-C47-aus-1",
+      "route_short_name": "847",
+      "route_long_name": "The Avenue Village SC - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-848-aus-1",
+      "route_short_name": "848",
+      "route_long_name": "Brandon Park SC - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-850-aus-1",
+      "route_short_name": "850",
+      "route_long_name": "Glen Waverley - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-857-aus-1",
+      "route_short_name": "857",
+      "route_long_name": "Chelsea Station - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-858-aus-1",
+      "route_short_name": "858",
+      "route_long_name": "Aspendale Gardens - Edithvale Railway Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-861-aus-1",
+      "route_short_name": "861",
+      "route_long_name": "Endeavour Hills - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-862-aus-1",
+      "route_short_name": "862",
+      "route_long_name": "Chadstone SC - Dandenong",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-863-aus-1",
+      "route_short_name": "863",
+      "route_long_name": "Cranbourne West - Endeavour Hills SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-881-aus-1",
+      "route_short_name": "881",
+      "route_long_name": "Merinda Park Station - Clyde North",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "26-885-aus-1",
+      "route_short_name": "885",
+      "route_long_name": "Springvale - Glen Waverley",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "28-886-aus-1",
+      "route_short_name": "886",
+      "route_long_name": "Hastings - Mornington",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "27-887-aus-1",
+      "route_short_name": "887",
+      "route_long_name": "Rosebud - Frankston",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-C88-aus-1",
+      "route_short_name": "888",
+      "route_long_name": "Clyde - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-C89-aus-1",
+      "route_short_name": "889",
+      "route_long_name": "Clyde North - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-890-aus-1",
+      "route_short_name": "890",
+      "route_long_name": "Dandenong Station - Lynbrook Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-891-aus-1",
+      "route_short_name": "891",
+      "route_long_name": "Lynbrook Station - Fountain Gate SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-892-aus-1",
+      "route_short_name": "892",
+      "route_long_name": "Casey Central SC - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-893-aus-1",
+      "route_short_name": "893",
+      "route_long_name": "Cranbourne Park SC - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-894-aus-1",
+      "route_short_name": "894",
+      "route_long_name": "Amberly Park - Hallam Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-895-aus-1",
+      "route_short_name": "895",
+      "route_long_name": "Narre Warren South - Fountain Gate SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-897-aus-1",
+      "route_short_name": "897",
+      "route_long_name": "Lynbrook Station - Clyde North",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "51-898-aus-1",
+      "route_short_name": "898",
+      "route_long_name": "Clyde North - Cranbourne Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-C99-aus-1",
+      "route_short_name": "899",
+      "route_long_name": "The Avenue Village SC - Berwick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "20-900-aus-1",
+      "route_short_name": "900",
+      "route_long_name": "Stud Park SC (Rowville) - Caulfield",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-901-aus-1",
+      "route_short_name": "901",
+      "route_long_name": "Frankston - Melbourne Airport",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "18-902-aus-1",
+      "route_short_name": "902",
+      "route_long_name": "Chelsea Railway Station - Airport West SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-903-aus-1",
+      "route_short_name": "903",
+      "route_long_name": "Mordialloc - Altona",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-905-aus-1",
+      "route_short_name": "905",
+      "route_long_name": "The Pines SC - City (King/Lonsdale Sts)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-906-aus-1",
+      "route_short_name": "906",
+      "route_long_name": "Warrandyte - City (King St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-907-aus-1",
+      "route_short_name": "907",
+      "route_long_name": "Mitcham - City (King/Lonsdale Sts)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "14-908-aus-1",
+      "route_short_name": "908",
+      "route_long_name": "The Pines SC - City (King/Lonsdale Sts)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "SmartBus / Orbital",
+      "mode": "bus"
+    },
+    {
+      "route_id": "32-922-aus-1",
+      "route_short_name": "922",
+      "route_long_name": "Southland Shopping Centre - St Kilda Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "32-923-aus-1",
+      "route_short_name": "923",
+      "route_long_name": "Southland Shopping Centre - St Kilda Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-925-aus-1",
+      "route_short_name": "925",
+      "route_long_name": "Officer South - Pakenham Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-926-aus-1",
+      "route_short_name": "926",
+      "route_long_name": "Pakenham Station - Fountain Gate SC",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-927-aus-1",
+      "route_short_name": "927",
+      "route_long_name": "Pakenham North - Pakenham Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-C28-aus-1",
+      "route_short_name": "928",
+      "route_long_name": "Berwick Station - Pakenham Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-929-aus-1",
+      "route_short_name": "929",
+      "route_long_name": "Pakenham North - Pakenham Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-941-aus-1",
+      "route_short_name": "941",
+      "route_long_name": "Watergardens Station - Sunshine Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-943-aus-1",
+      "route_short_name": "943",
+      "route_long_name": "Melton - Watergardens Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-947-aus-1",
+      "route_short_name": "947",
+      "route_long_name": "Newport Station - Footscray",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "53-949-aus-1",
+      "route_short_name": "949",
+      "route_long_name": "Williams Landing Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-951-aus-1",
+      "route_short_name": "951",
+      "route_long_name": "Glenroy Station - Brunswick Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-953-aus-1",
+      "route_short_name": "953",
+      "route_long_name": "Craigieburn - Broadmeadows Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-959-aus-1",
+      "route_short_name": "959",
+      "route_long_name": "Broadmeadows Station - City (Queen St)",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "44-965-aus-1",
+      "route_short_name": "965",
+      "route_long_name": "Healesville - Lilydale Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "21-967-aus-1",
+      "route_short_name": "967",
+      "route_long_name": "Croydon Station - Glen Waverley Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "41-978-aus-1",
+      "route_short_name": "978",
+      "route_long_name": "Dandenong Station - Clayton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "41-979-aus-1",
+      "route_short_name": "979",
+      "route_long_name": "Dandenong Station - Clayton Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "41-981-aus-1",
+      "route_short_name": "981",
+      "route_long_name": "Cranbourne - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "41-982-aus-1",
+      "route_short_name": "982",
+      "route_long_name": "Cranbourne - Dandenong Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "36-14A-aus-1",
+      "route_short_name": "140A",
+      "route_long_name": "Mt Atkinson - Rockbank Station",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "21-695-F-aus-1",
+      "route_short_name": "695F",
+      "route_long_name": "Fountain Gate - Gembrook",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "41-A05-aus-1",
+      "route_short_name": "ANZAC_1",
+      "route_long_name": "Chadstone - Shrine of Remembrance",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "41-A07-aus-1",
+      "route_short_name": "ANZAC_2",
+      "route_long_name": "Shrine of Remembrance",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "23-A06-aus-1",
+      "route_short_name": "ANZAC_3",
+      "route_long_name": "Doncaster SC - Shrine of Remembrance",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "52-PEX-aus-1",
+      "route_short_name": "PEX",
+      "route_long_name": "Bus PEX",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    },
+    {
+      "route_id": "60-wbg-aus-1",
+      "route_short_name": "s3700o",
+      "route_long_name": "Bus s3700o",
+      "color": "#FF8200",
+      "text_color": "#FFFFFF",
+      "group": "Metro Grid",
+      "mode": "bus"
+    }
+  ]
+}

@@ -351,6 +351,11 @@ def get_active_vehicles_geojson(mode: str = "all", now: Optional[datetime] = Non
             }
             for p in positions
         ],
+        "telemetry": {
+            "ptv_feed": "simulated",
+            "vehicles_count": len(positions),
+            "mode": mode,
+        },
     }
 
 

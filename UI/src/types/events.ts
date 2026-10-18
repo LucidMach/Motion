@@ -93,3 +93,9 @@ export interface VehicleSelectedEventDetail {
   progress?: number;
 }
 
+export interface VehiclesUpdatedEventDetail {
+  vehicles: import('../services/api').LiveVehicle[];
+  countsByRoute: Record<string, number>;
+  timestamp: number;
+}
+

@@ -14,7 +14,9 @@ from server.services.network_service import (
     get_tram_routes_metadata,
     get_tram_route_color,
     is_city_loop_station,
+    GEOJSON_DIR,
 )
+import json
 
 # GTFS route_type values used throughout gtfs_schedule.db (matches
 # directional_routing.get_mode_name's convention: 0=Tram, 400=Train, 3=Bus).
@@ -27,6 +29,38 @@ DEFAULT_MODE_COLOR = "#38BDF8"
 
 
 _CACHED_ROUTES_BY_MODE: Dict[str, List[Dict[str, Any]]] = {}
+_CACHED_STATIC_ROUTES: Optional[Dict[str, List[Dict[str, Any]]]] = None
+_CACHED_STATIC_ROUTE_STOPS: Optional[Dict[str, List[Dict[str, Any]]]] = None
+
+
+def _load_static_routes_if_available() -> Optional[Dict[str, List[Dict[str, Any]]]]:
+    global _CACHED_STATIC_ROUTES
+    if _CACHED_STATIC_ROUTES is not None:
+        return _CACHED_STATIC_ROUTES
+    routes_file = os.path.join(GEOJSON_DIR, "routes.json")
+    if os.path.exists(routes_file):
+        try:
+            with open(routes_file, "r", encoding="utf-8") as f:
+                _CACHED_STATIC_ROUTES = json.load(f)
+                return _CACHED_STATIC_ROUTES
+        except Exception:
+            pass
+    return None
+
+
+def _load_static_route_stops_if_available() -> Optional[Dict[str, List[Dict[str, Any]]]]:
+    global _CACHED_STATIC_ROUTE_STOPS
+    if _CACHED_STATIC_ROUTE_STOPS is not None:
+        return _CACHED_STATIC_ROUTE_STOPS
+    stops_file = os.path.join(GEOJSON_DIR, "route_stops.json")
+    if os.path.exists(stops_file):
+        try:
+            with open(stops_file, "r", encoding="utf-8") as f:
+                _CACHED_STATIC_ROUTE_STOPS = json.load(f)
+                return _CACHED_STATIC_ROUTE_STOPS
+        except Exception:
+            pass
+    return None
 
 
 def get_routes_for_mode(mode: str) -> List[Dict[str, Any]]:
@@ -198,6 +232,12 @@ def get_route_stops(mode: str, route_short_name: str) -> List[Dict[str, Any]]:
     route_type = MODE_ROUTE_TYPES.get(mode)
     if route_type is None:
         return []
+
+    static_stops = _load_static_route_stops_if_available()
+    if static_stops:
+        key = f"{mode}:{route_short_name}"
+        if key in static_stops:
+            return static_stops[key]
 
     conn = sqlite3.connect(DB_NAME)
     try:

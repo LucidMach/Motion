@@ -55,9 +55,17 @@ export default function VehicleHUD({
                 Live Vehicle
               </span>
             </div>
-            <h4 className="font-display text-sm font-bold text-primary">
-              {vehicle.mode === 'tram' ? `Route ${vehicle.routeShortName} Tram` : `${vehicle.routeShortName} Line Train`}
-            </h4>
+            <button
+              type="button"
+              onClick={() => onSelectRoute(vehicle.routeShortName)}
+              aria-label={vehicle.mode === 'tram' ? `Route ${vehicle.routeShortName}` : `${vehicle.routeShortName} Line`}
+              className="group flex items-center gap-1 text-left transition-colors hover:text-accent-cyan focus:outline-none"
+              title={`Show full ${vehicle.routeShortName} route on map`}
+            >
+              <h4 className="font-display text-sm font-bold text-primary group-hover:text-accent-cyan underline-offset-2 hover:underline">
+                {vehicle.mode === 'tram' ? `Route ${vehicle.routeShortName} Tram` : `${vehicle.routeShortName} Line Train`}
+              </h4>
+            </button>
           </div>
         </div>
 

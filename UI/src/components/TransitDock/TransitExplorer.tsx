@@ -123,13 +123,188 @@ interface TransitExplorerProps {
   } | null;
   liveTrainCounts?: Record<string, number>;
   onSelectRoute: (mode: TransitMode, route: RouteMetadata) => void;
-  onFitRoute?: () => void;
   onTrackVehicle?: (vehicle: LiveVehicle) => void;
   onFlyToVehicle?: () => void;
   onFlyToStop: (stop: RouteStop) => void;
   onNavigateToStop: (stop: RouteStop) => void;
   onClearRoute: () => void;
   onClose: () => void;
+}
+
+/** Computes great-circle distance between two GPS coordinates in meters */
+function distMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Computes shortest distance from point P to line segment AB in meters */
+function distToSegmentMeters(
+  pLat: number,
+  pLon: number,
+  aLat: number,
+  aLon: number,
+  bLat: number,
+  bLon: number
+): number {
+  const cosLat = Math.cos(((aLat + bLat) / 2) * (Math.PI / 180));
+  const px = (pLon - aLon) * cosLat;
+  const py = pLat - aLat;
+  const bx = (bLon - aLon) * cosLat;
+  const by = bLat - aLat;
+  const l2 = bx * bx + by * by;
+  if (l2 === 0) return distMeters(pLat, pLon, aLat, aLon);
+  const t = Math.max(0, Math.min(1, (px * bx + py * by) / l2));
+  const projLon = aLon + t * (bLon - aLon);
+  const projLat = aLat + t * (bLat - aLat);
+  return distMeters(pLat, pLon, projLat, projLon);
+}
+
+interface CorrelatedCorridorVehicles {
+  stoppedVehiclesMap: Record<number, LiveVehicle[]>;
+  inTransitVehiclesMap: Record<number, LiveVehicle[]>;
+}
+
+function mapVehiclesToCorridor(
+  stops: RouteStop[],
+  vehicles: LiveVehicle[]
+): CorrelatedCorridorVehicles {
+  const stoppedVehiclesMap: Record<number, LiveVehicle[]> = {};
+  const inTransitVehiclesMap: Record<number, LiveVehicle[]> = {};
+
+  if (!stops || stops.length === 0 || !vehicles || vehicles.length === 0) {
+    return { stoppedVehiclesMap, inTransitVehiclesMap };
+  }
+
+  const defaultDownDest = stops[stops.length - 1].stop_name;
+  const defaultUpDest = stops[0].stop_name;
+
+  for (const v of vehicles) {
+    let assigned = false;
+
+    // 1. Explicit ID / Name check first
+    const sNameClean = v.current_stop_name?.toLowerCase();
+    for (let i = 0; i < stops.length; i++) {
+      const stop = stops[i];
+      if (
+        v.is_stopped &&
+        (v.current_stop_id === stop.stop_id ||
+          (sNameClean && stop.stop_name.toLowerCase() === sNameClean))
+      ) {
+        if (!stoppedVehiclesMap[i]) stoppedVehiclesMap[i] = [];
+        stoppedVehiclesMap[i].push(v);
+        assigned = true;
+        break;
+      }
+    }
+
+    if (assigned) continue;
+
+    // Check explicit segment
+    const fromN = v.from_stop_name?.toLowerCase();
+    const toN = v.to_stop_name?.toLowerCase();
+    if (!v.is_stopped && (fromN || v.from_stop_id)) {
+      for (let i = 0; i < stops.length - 1; i++) {
+        const s1 = stops[i];
+        const s2 = stops[i + 1];
+        const s1Name = s1.stop_name.toLowerCase();
+        const s2Name = s2.stop_name.toLowerCase();
+        if (
+          (fromN === s1Name && toN === s2Name) ||
+          (fromN === s2Name && toN === s1Name) ||
+          (v.from_stop_id === s1.stop_id && v.to_stop_id === s2.stop_id) ||
+          (v.from_stop_id === s2.stop_id && v.to_stop_id === s1.stop_id)
+        ) {
+          if (!inTransitVehiclesMap[i]) inTransitVehiclesMap[i] = [];
+          inTransitVehiclesMap[i].push(v);
+          assigned = true;
+          break;
+        }
+      }
+    }
+
+    if (assigned) continue;
+
+    // 2. Spatial GPS matching fallback
+    if (v.lat === undefined || v.lon === undefined) continue;
+
+    // Find closest stop
+    let minStopDist = Infinity;
+    let closestStopIdx = 0;
+    for (let i = 0; i < stops.length; i++) {
+      const d = distMeters(v.lat, v.lon, stops[i].stop_lat, stops[i].stop_lon);
+      if (d < minStopDist) {
+        minStopDist = d;
+        closestStopIdx = i;
+      }
+    }
+
+    // Station dwell threshold: if vehicle is stopped (or within 400m station sphere)
+    if (v.is_stopped || minStopDist <= 400) {
+      if (minStopDist <= 1500 || v.is_stopped) {
+        if (!stoppedVehiclesMap[closestStopIdx]) stoppedVehiclesMap[closestStopIdx] = [];
+        const enriched: LiveVehicle = {
+          ...v,
+          is_stopped: true,
+          current_stop_id: stops[closestStopIdx].stop_id,
+          current_stop_name: stops[closestStopIdx].stop_name,
+          destination: v.destination || (v.direction_id === 1 ? defaultUpDest : defaultDownDest)
+        };
+        stoppedVehiclesMap[closestStopIdx].push(enriched);
+        continue;
+      }
+    }
+
+    // If moving or not matched to station, find best segment along corridor
+    if (stops.length >= 2) {
+      let minSegDist = Infinity;
+      let bestSegIdx = 0;
+      for (let i = 0; i < stops.length - 1; i++) {
+        const segDist = distToSegmentMeters(
+          v.lat,
+          v.lon,
+          stops[i].stop_lat,
+          stops[i].stop_lon,
+          stops[i + 1].stop_lat,
+          stops[i + 1].stop_lon
+        );
+        if (segDist < minSegDist) {
+          minSegDist = segDist;
+          bestSegIdx = i;
+        }
+      }
+
+      // Infer downstream heading from segment orientation vs bearing
+      const s1 = stops[bestSegIdx];
+      const s2 = stops[bestSegIdx + 1];
+      const segBearing =
+        ((Math.atan2(s2.stop_lon - s1.stop_lon, s2.stop_lat - s1.stop_lat) * 180) / Math.PI + 360) % 360;
+      const bearingDiff = Math.abs((v.bearing_deg || 0) - segBearing);
+      const isDown = bearingDiff < 90 || bearingDiff > 270;
+
+      const enriched: LiveVehicle = {
+        ...v,
+        from_stop_name: isDown ? s1.stop_name : s2.stop_name,
+        to_stop_name: isDown ? s2.stop_name : s1.stop_name,
+        from_stop_id: isDown ? s1.stop_id : s2.stop_id,
+        to_stop_id: isDown ? s2.stop_id : s1.stop_id,
+        direction_id: isDown ? 0 : 1,
+        destination: v.destination || (isDown ? defaultDownDest : defaultUpDest)
+      };
+
+      if (!inTransitVehiclesMap[bestSegIdx]) inTransitVehiclesMap[bestSegIdx] = [];
+      inTransitVehiclesMap[bestSegIdx].push(enriched);
+    }
+  }
+
+  return { stoppedVehiclesMap, inTransitVehiclesMap };
 }
 
 export default function TransitExplorer({
@@ -149,7 +324,6 @@ export default function TransitExplorer({
   nearestVehicle,
   liveTrainCounts = {},
   onSelectRoute,
-  onFitRoute,
   onTrackVehicle,
   onFlyToVehicle,
   onFlyToStop,
@@ -162,6 +336,10 @@ export default function TransitExplorer({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const highlightedVehicleRef = useRef<HTMLButtonElement | null>(null);
   const config = MODE_CONFIG[activeMode];
+
+  const { stoppedVehiclesMap, inTransitVehiclesMap } = useMemo(() => {
+    return mapVehiclesToCorridor(activeStops, activeVehicles);
+  }, [activeStops, activeVehicles]);
 
   // Auto-scroll highlighted vehicle badge into view when selected
   useEffect(() => {
@@ -532,6 +710,7 @@ export default function TransitExplorer({
                   <button
                     onClick={() => onSelectRoute(activeMode, route)}
                     className="flex w-full items-center gap-3.5 p-3 text-left focus:outline-none"
+                    aria-label={`Toggle ${route.route_short_name} corridor`}
                     aria-expanded={isSelected}
                   >
                     {/* Route Badge */}
@@ -587,7 +766,7 @@ export default function TransitExplorer({
                           <span className="font-mono text-[10px] font-bold text-secondary uppercase tracking-wider">
                             Corridor Stations {activeStops && activeStops.length > 0 ? `(${activeStops.length})` : ''}
                           </span>
-                          <span className="flex items-center gap-1 text-[10px] text-secondary/60">
+                          <div className="flex items-center gap-1.5 text-[10px] text-secondary/60">
                             Tap station to fly
                             <button
                               onClick={onClearRoute}
@@ -599,7 +778,7 @@ export default function TransitExplorer({
                                 <path d="M6 9l6 6 6-6" />
                               </svg>
                             </button>
-                          </span>
+                          </div>
                         </div>
 
                         {isLoadingStops ? (
@@ -612,36 +791,17 @@ export default function TransitExplorer({
                             No stops schedule available.
                           </p>
                         ) : (
-                          <div className="rounded-xl border border-subtle bg-surface/50 p-2.5 space-y-0">
+                          <div
+                            data-testid="corridor-stations-scroll"
+                            className="max-h-[380px] overflow-y-auto pr-1.5 rounded-xl border border-subtle bg-surface/50 p-2.5 space-y-0 focus:outline-none"
+                          >
                             {activeStops.map((stop, sIdx) => {
                               const isFirst = sIdx === 0;
                               const isLast = sIdx === activeStops.length - 1;
-                              const nextStop = activeStops[sIdx + 1];
-                              const sNameClean = stop.stop_name.toLowerCase();
 
-                              // Vehicles stopped at this station
-                              const stoppedVehicles = activeVehicles.filter(
-                                (v) =>
-                                  v.is_stopped &&
-                                  (v.current_stop_id === stop.stop_id ||
-                                    (v.current_stop_name && v.current_stop_name.toLowerCase() === sNameClean))
-                              );
-
-                              // Vehicles in transit on the segment between this station and the next station
-                              const inTransitVehicles = nextStop
-                                ? activeVehicles.filter((v) => {
-                                    if (v.is_stopped) return false;
-                                    const nextNameClean = nextStop.stop_name.toLowerCase();
-                                    const fromN = v.from_stop_name?.toLowerCase();
-                                    const toN = v.to_stop_name?.toLowerCase();
-                                    return (
-                                      (fromN === sNameClean && toN === nextNameClean) ||
-                                      (fromN === nextNameClean && toN === sNameClean) ||
-                                      (v.from_stop_id === stop.stop_id && v.to_stop_id === nextStop.stop_id) ||
-                                      (v.from_stop_id === nextStop.stop_id && v.to_stop_id === stop.stop_id)
-                                    );
-                                  })
-                                : [];
+                              // Use correlated corridor vehicles (handles both explicit stop names and live GPS feeds)
+                              const stoppedVehicles = stoppedVehiclesMap[sIdx] || [];
+                              const inTransitVehicles = inTransitVehiclesMap[sIdx] || [];
 
                               const renderVehicleSymbol = (vehicle: LiveVehicle, isStoppedAtStation: boolean) => {
                                 const s1 = vehicle.from_stop_name?.toLowerCase();
@@ -652,9 +812,20 @@ export default function TransitExplorer({
                                 const toIdx = activeStops.findIndex(
                                   (s) => s.stop_id === vehicle.to_stop_id || (s2 && s.stop_name.toLowerCase() === s2)
                                 );
-                                const isDown = toIdx !== -1 && fromIdx !== -1 ? toIdx > fromIdx : vehicle.direction_id !== 1;
+                                const isDown =
+                                  vehicle.direction_id !== undefined
+                                    ? vehicle.direction_id === 0
+                                    : toIdx !== -1 && fromIdx !== -1
+                                    ? toIdx > fromIdx
+                                    : true;
                                 const isHighlighted = highlightedTripId === vehicle.trip_id;
-                                const destination = vehicle.destination || vehicle.to_stop_name || 'Terminal';
+                                const defaultDownDest = activeStops[activeStops.length - 1]?.stop_name;
+                                const defaultUpDest = activeStops[0]?.stop_name;
+                                const destination =
+                                  vehicle.destination ||
+                                  vehicle.to_stop_name ||
+                                  (isDown ? defaultDownDest : defaultUpDest) ||
+                                  'Terminal';
 
                                 return (
                                   <div key={vehicle.trip_id} className="group/sym relative flex items-center justify-center">
