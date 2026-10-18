@@ -1,5 +1,5 @@
 from typing import Dict, Any, List
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from server.services.network_service import (
     get_metro_lines_geojson,
     get_metro_stations_geojson,
@@ -49,19 +49,23 @@ def get_routes_by_mode(mode: str) -> List[Dict[str, Any]]:
 
 
 @router.get("/route-shape")
-def get_route_shape_endpoint(mode: str, route_short_name: str) -> Dict[str, Any]:
+def get_route_shape_endpoint(mode: str, route_short_name: str, response: Response) -> Dict[str, Any]:
     """
     Returns a GeoJSON FeatureCollection tracing the given route's physical
-    path, for highlighting it on the map.
+    path, for highlighting it on the map. Derived from static GTFS shapes,
+    which change at most a few times a year, so responses are cacheable.
     """
+    response.headers["Cache-Control"] = "public, max-age=86400"
     return get_route_shape(mode, route_short_name)
 
 
 @router.get("/route-stops")
-def get_route_stops_endpoint(mode: str, route_short_name: str) -> List[Dict[str, Any]]:
+def get_route_stops_endpoint(mode: str, route_short_name: str, response: Response) -> List[Dict[str, Any]]:
     """
     Returns ordered stops along a representative trip for the given route.
+    Derived from static GTFS data, so responses are cacheable.
     """
+    response.headers["Cache-Control"] = "public, max-age=86400"
     return get_route_stops(mode, route_short_name)
 
 
