@@ -46,40 +46,55 @@ export class RouteLayerManager {
       return;
     }
 
-    if (!this.map.getSource(ROUTE_SOURCE_ID)) {
-      this.addLayers();
-    }
+    this.addLayers();
     this.updateData(route);
     this.fitRouteBounds(route);
+  }
+
+  private safeAddLayer(layer: any): void {
+    try {
+      this.map.addLayer(layer);
+    } catch {
+      if (layer.slot) {
+        const { slot, ...withoutSlot } = layer;
+        try {
+          this.map.addLayer(withoutSlot);
+        } catch (err) {
+          console.warn(`[RouteLayerManager] Failed to add layer ${layer.id}:`, err);
+        }
+      }
+    }
   }
 
   /**
    * Initializes GeoJSON sources and line/circle layers on the active Mapbox style.
    */
   private addLayers(): void {
-    if (this.map.getSource(ROUTE_SOURCE_ID)) return;
-
     // 1. Line strings source for route segments
-    this.map.addSource(ROUTE_SOURCE_ID, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [],
-      },
-    });
+    if (!this.map.getSource(ROUTE_SOURCE_ID)) {
+      this.map.addSource(ROUTE_SOURCE_ID, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      });
+    }
 
     // 2. Waypoints source for start, transfer, and destination stops
-    this.map.addSource(WAYPOINTS_SOURCE_ID, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [],
-      },
-    });
+    if (!this.map.getSource(WAYPOINTS_SOURCE_ID)) {
+      this.map.addSource(WAYPOINTS_SOURCE_ID, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      });
+    }
 
     // 3. Glowing neon underglow layer
     if (!this.map.getLayer(LAYER_HALO_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_HALO_ID,
         type: 'line',
         source: ROUTE_SOURCE_ID,
@@ -108,7 +123,7 @@ export class RouteLayerManager {
 
     // 4. Solid transit tracks layer (Train, Tram, Bus)
     if (!this.map.getLayer(LAYER_SOLID_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_SOLID_ID,
         type: 'line',
         source: ROUTE_SOURCE_ID,
@@ -137,7 +152,7 @@ export class RouteLayerManager {
 
     // 5. Walking / pedestrian dashed layer
     if (!this.map.getLayer(LAYER_WALK_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_WALK_ID,
         type: 'line',
         source: ROUTE_SOURCE_ID,
@@ -167,7 +182,7 @@ export class RouteLayerManager {
 
     // 6. Waypoints outer glow ring
     if (!this.map.getLayer(LAYER_WP_GLOW_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_WP_GLOW_ID,
         type: 'circle',
         source: WAYPOINTS_SOURCE_ID,
@@ -194,7 +209,7 @@ export class RouteLayerManager {
 
     // 7. Waypoints inner crisp core dot
     if (!this.map.getLayer(LAYER_WP_CORE_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_WP_CORE_ID,
         type: 'circle',
         source: WAYPOINTS_SOURCE_ID,

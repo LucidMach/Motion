@@ -123,7 +123,7 @@ interface TransitExplorerProps {
   } | null;
   liveTrainCounts?: Record<string, number>;
   onSelectRoute: (mode: TransitMode, route: RouteMetadata) => void;
-  onFitRoute: () => void;
+  onFitRoute?: () => void;
   onTrackVehicle?: (vehicle: LiveVehicle) => void;
   onFlyToVehicle?: () => void;
   onFlyToStop: (stop: RouteStop) => void;
@@ -597,37 +597,8 @@ export default function TransitExplorer({
                   {/* Inline Route Dropdown Content (Accordion) */}
                   {isSelected && (
                     <div className="border-t border-subtle bg-surface/80 p-3 pt-2.5 text-xs space-y-2.5">
-                      {/* Action toolbar */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onFitRoute();
-                          }}
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-subtle bg-surface/80 py-1.5 text-[11px] font-semibold text-secondary transition-all hover:bg-surface-hover hover:text-primary active:scale-95"
-                        >
-                          <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2}>
-                            <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
-                          </svg>
-                          Fit on Map
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onClearRoute();
-                          }}
-                          className="flex items-center justify-center gap-1 rounded-xl border border-subtle bg-surface/80 px-2.5 py-1.5 text-[11px] font-semibold text-secondary transition-all hover:bg-surface-hover hover:text-rose-400 active:scale-95"
-                        >
-                          <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2}>
-                            <path d="M18 6L6 18M6 6l12 12" />
-                          </svg>
-                          Clear
-                        </button>
-                      </div>
-
                       {/* Stops List Corridor Timeline */}
-                      <div className="pt-0.5">
+                      <div>
                         <div className="mb-2 flex items-center justify-between">
                           <span className="font-mono text-[10px] font-bold text-secondary uppercase tracking-wider">
                             Corridor Stations {activeStops && activeStops.length > 0 ? `(${activeStops.length})` : ''}

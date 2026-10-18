@@ -149,9 +149,10 @@ describe('TransitDock', () => {
       );
     });
 
-    // Inline dropdown within route card should now be visible
-    expect(await screen.findByRole('button', { name: /fit on map/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Clear' })).toBeInTheDocument();
+    // Inline dropdown within route card should now be visible without redundant highlight/clear buttons
+    expect(await screen.findByText(/corridor stations/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /highlight route/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Flinders Street').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Lilydale').length).toBeGreaterThan(0);
 
@@ -180,14 +181,14 @@ describe('TransitDock', () => {
     );
   });
 
-  it('dismisses route highlight when clear button is clicked in inline dropdown', async () => {
+  it('dismisses route highlight when clear route button is clicked in sidebar rail', async () => {
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
     render(<TransitDock />);
 
     fireEvent.click(screen.getByRole('button', { name: /explore trains/i }));
     fireEvent.click(await screen.findByText('Lilydale Line'));
 
-    const clearBtn = await screen.findByRole('button', { name: 'Clear' });
+    const clearBtn = await screen.findByRole('button', { name: /clear route highlight/i });
     fireEvent.click(clearBtn);
 
     expect(dispatchSpy).toHaveBeenCalledWith(
@@ -195,7 +196,7 @@ describe('TransitDock', () => {
         type: 'motion:cmd:clear-route-highlight'
       })
     );
-    expect(screen.queryByRole('button', { name: /fit on map/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/corridor stations/i)).not.toBeInTheDocument();
   });
 
   it('closes Transit Explorer when the top-left back button is clicked', async () => {

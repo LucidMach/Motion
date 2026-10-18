@@ -40,9 +40,9 @@ export const DRAG_ACTION_OPTIONS: DragActionOption[] = [
 export function getGestureSettings(): GestureSettings {
   if (typeof window === 'undefined') return DEFAULT_GESTURE_SETTINGS;
   try {
-    const raw = localStorage.getItem(GESTURE_STORAGE_KEY);
+    const raw = window.localStorage?.getItem(GESTURE_STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(GESTURE_STORAGE_KEY, JSON.stringify(DEFAULT_GESTURE_SETTINGS));
+      window.localStorage?.setItem(GESTURE_STORAGE_KEY, JSON.stringify(DEFAULT_GESTURE_SETTINGS));
       return DEFAULT_GESTURE_SETTINGS;
     }
     const parsed = JSON.parse(raw);
@@ -82,7 +82,7 @@ export function getGestureSettings(): GestureSettings {
 export function saveGestureSettings(settings: GestureSettings): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(GESTURE_STORAGE_KEY, JSON.stringify(settings));
+    window.localStorage?.setItem(GESTURE_STORAGE_KEY, JSON.stringify(settings));
     window.dispatchEvent(new CustomEvent('motion:gesture-change', { detail: { settings } }));
   } catch (e) {
     console.error('[GestureManager] Failed to save gesture settings:', e);

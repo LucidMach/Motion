@@ -3,7 +3,6 @@ import mapboxgl from 'mapbox-gl';
 const SOURCE_ID = 'motion-route-highlight-source';
 const LAYER_HALO_ID = 'motion-route-highlight-halo';
 const LAYER_SOLID_ID = 'motion-route-highlight-solid';
-const LAYER_CORE_ID = 'motion-route-highlight-core';
 
 const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
 
@@ -13,67 +12,83 @@ const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', feature
  * shape, with camera framing to fit. Unlike RouteLayerManager (a calculated
  * multi-leg itinerary), this always renders one flat accent color for one route.
  */
+function boostRouteColor(color: string): string {
+  if (!color) return '#0072CE';
+  // Boost low-luminance dark navy (#152C6B) to vibrant royal blue so it pops against 3D buildings
+  if (color.toUpperCase() === '#152C6B') {
+    return '#1D4ED8';
+  }
+  return color;
+}
+
+/**
+ * Owns the single "picked route" overlay drawn from the TransitDock's route
+ * picker - a neon halo + solid line over every LineString feature in a route's
+ * shape, with camera framing to fit. Unlike RouteLayerManager (a calculated
+ * multi-leg itinerary), this always renders one flat accent color for one route.
+ */
 export class RouteHighlightLayer {
   private hasRoute = false;
+  private currentData: GeoJSON.FeatureCollection | null = null;
+  private currentColor: string | null = null;
 
   constructor(private map: mapboxgl.Map) {
     this.map.on('style.load', () => {
-      if (this.hasRoute) {
+      if (this.hasRoute && this.currentData) {
         this.addLayers();
+        const source = this.map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+        source?.setData(this.currentData);
       }
     });
   }
 
+  private safeAddLayer(layer: any): void {
+    try {
+      this.map.addLayer(layer);
+    } catch {
+      if (layer.slot) {
+        const { slot, ...withoutSlot } = layer;
+        try {
+          this.map.addLayer(withoutSlot);
+        } catch (err) {
+          console.warn(`[RouteHighlightLayer] Failed to add layer ${layer.id}:`, err);
+        }
+      }
+    }
+  }
+
   private addLayers(): void {
-    if (this.map.getSource(SOURCE_ID)) return;
+    if (!this.map.getSource(SOURCE_ID)) {
+      this.map.addSource(SOURCE_ID, { type: 'geojson', data: this.currentData || EMPTY_FC });
+    }
 
-    this.map.addSource(SOURCE_ID, { type: 'geojson', data: EMPTY_FC });
-
-    // 1. Luminous Neon Underglow Halo
+    // 1. Glowing neon underglow layer in route color
     if (!this.map.getLayer(LAYER_HALO_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_HALO_ID,
         type: 'line',
         source: SOURCE_ID,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': ['get', 'color'],
-          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 8, 12, 14, 15, 20, 18, 28],
-          'line-opacity': 0.75,
-          'line-blur': 4,
-          'line-emissive-strength': 0.9
+          'line-color': ['coalesce', ['get', 'color'], '#0072CE'],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 6, 14, 10, 17, 14],
+          'line-opacity': 0.45,
+          'line-blur': 3.5,
         }
       });
     }
 
-    // 2. High-Contrast Solid Corridor Track
+    // 2. High-Contrast Solid Corridor Track in route color
     if (!this.map.getLayer(LAYER_SOLID_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_SOLID_ID,
         type: 'line',
         source: SOURCE_ID,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': ['get', 'color'],
-          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 4, 12, 7, 15, 10, 18, 14],
-          'line-opacity': 1.0,
-          'line-emissive-strength': 1.0
-        }
-      });
-    }
-
-    // 3. Crisp Illuminated Core Rail (makes dark lines like Lilydale/Belgrave pop instantly)
-    if (!this.map.getLayer(LAYER_CORE_ID)) {
-      this.map.addLayer({
-        id: LAYER_CORE_ID,
-        type: 'line',
-        source: SOURCE_ID,
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: {
-          'line-color': '#FFFFFF',
-          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 1.5, 12, 2.5, 15, 3.5, 18, 5],
-          'line-opacity': 0.85,
-          'line-emissive-strength': 1.0
+          'line-color': ['coalesce', ['get', 'color'], '#0072CE'],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3.5, 14, 5.5, 17, 7.5],
+          'line-opacity': 0.95,
         }
       });
     }
@@ -86,27 +101,28 @@ export class RouteHighlightLayer {
    * (e.g. flying to a specific vehicle on the route) to avoid two competing
    * camera animations racing each other.
    */
-  render(featureCollection: GeoJSON.FeatureCollection, color: string, skipCameraFit = false): void {
+  render(featureCollection: GeoJSON.FeatureCollection, rawColor: string, skipCameraFit = false): void {
+    const color = boostRouteColor(rawColor);
     this.hasRoute = true;
-
-    if (!this.map.isStyleLoaded()) {
-      this.map.once('style.load', () => this.render(featureCollection, color, skipCameraFit));
-      return;
-    }
-
-    if (!this.map.getSource(SOURCE_ID)) {
-      this.addLayers();
-    }
+    this.currentColor = color;
 
     const colored: GeoJSON.FeatureCollection = {
       type: 'FeatureCollection',
       features: (featureCollection.features || []).map((f) => ({
         ...f,
-        properties: { ...f.properties, color }
+        properties: { ...f.properties, color: color || f.properties?.color || '#0072CE' }
       }))
     };
+    this.currentData = colored;
 
-    const source = this.map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource;
+    if (!this.map.isStyleLoaded()) {
+      this.map.once('style.load', () => this.render(featureCollection, rawColor, skipCameraFit));
+      return;
+    }
+
+    this.addLayers();
+
+    const source = this.map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
     source?.setData(colored);
 
     if (!skipCameraFit) {
@@ -174,10 +190,12 @@ export class RouteHighlightLayer {
         bottomPad = 30;
       }
 
+      const currentPitch = this.map.getPitch();
+      const currentBearing = this.map.getBearing();
       this.map.fitBounds(new mapboxgl.LngLatBounds([minLon, minLat], [maxLon, maxLat]), {
         padding: { top: topPad, bottom: bottomPad, left: leftPad, right: rightPad },
-        pitch: 0,
-        bearing: 0,
+        pitch: currentPitch > 25 ? 45 : currentPitch,
+        bearing: currentBearing,
         maxZoom: 15.0,
         duration: 1200,
         essential: true
@@ -189,6 +207,8 @@ export class RouteHighlightLayer {
 
   clear(): void {
     this.hasRoute = false;
+    this.currentData = null;
+    this.currentColor = null;
     const source = this.map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
     source?.setData(EMPTY_FC);
   }
@@ -196,7 +216,6 @@ export class RouteHighlightLayer {
   destroy(): void {
     this.hasRoute = false;
     try {
-      if (this.map.getLayer(LAYER_CORE_ID)) this.map.removeLayer(LAYER_CORE_ID);
       if (this.map.getLayer(LAYER_SOLID_ID)) this.map.removeLayer(LAYER_SOLID_ID);
       if (this.map.getLayer(LAYER_HALO_ID)) this.map.removeLayer(LAYER_HALO_ID);
       if (this.map.getSource(SOURCE_ID)) this.map.removeSource(SOURCE_ID);

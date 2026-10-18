@@ -106,6 +106,15 @@ export default function TransitDock() {
     return () => window.removeEventListener('motion:map-empty-click', onMapEmptyClick);
   }, [inspectedVehicle, isExplorerOpen, handleCloseExplorer]);
 
+  // Listen for navigate-to command: clear highlighted route corridor so navigation takes precedence
+  useEffect(() => {
+    const onNavigateTo = () => {
+      handleClearRoute();
+    };
+    window.addEventListener('motion:cmd:navigate-to', onNavigateTo);
+    return () => window.removeEventListener('motion:cmd:navigate-to', onNavigateTo);
+  }, [handleClearRoute]);
+
   // Listen for open-settings-modal command
   useEffect(() => {
     const onOpenSettings = () => {
@@ -331,6 +340,9 @@ export default function TransitDock() {
 
       const color = route.color || MODE_CONFIG[mode].color;
 
+      // Pre-emptively clear any active navigation itinerary
+      window.dispatchEvent(new CustomEvent('motion:cmd:clear-route'));
+
       // Immediately fetch route shape and dispatch map highlight without blocking on stops
       motionApi
         .getRouteShape(mode, route.route_short_name)
@@ -519,17 +531,37 @@ export default function TransitDock() {
     );
   }, []);
 
-  // Select route from VehicleHUD
+  // Select route from VehicleHUD / VehiclePanel
   const handleSelectRouteFromVehicle = useCallback(
     async (routeShortName: string) => {
-      // Find route metadata from train routes
-      const trainRoutes = routesByMode.train || (await motionApi.getRoutesByMode('train'));
-      const found = trainRoutes.find((r) => r.route_short_name === routeShortName);
+      const mode = (inspectedVehicle?.mode as TransitMode) || activeMode || 'train';
+      let modeRoutes = routesByMode[mode];
+      if (!modeRoutes || modeRoutes.length === 0) {
+        try {
+          modeRoutes = await motionApi.getRoutesByMode(mode);
+          setRoutesByMode((prev) => ({ ...prev, [mode]: modeRoutes }));
+        } catch {
+          modeRoutes = [];
+        }
+      }
+      let found = modeRoutes?.find((r) => r.route_short_name === routeShortName);
+      if (!found && mode !== 'train') {
+        const trainRoutes = routesByMode.train || (await motionApi.getRoutesByMode('train').catch(() => []));
+        found = trainRoutes.find((r) => r.route_short_name === routeShortName);
+        if (found) {
+          setIsExplorerOpen(true);
+          setActiveMode('train');
+          handleSelectRoute('train', found, inspectedVehicle?.tripId);
+          return;
+        }
+      }
       if (found) {
-        handleSelectRoute('train', found);
+        setIsExplorerOpen(true);
+        setActiveMode(mode);
+        handleSelectRoute(mode, found, inspectedVehicle?.tripId);
       }
     },
-    [routesByMode, handleSelectRoute]
+    [inspectedVehicle, activeMode, routesByMode, handleSelectRoute]
   );
 
   return (

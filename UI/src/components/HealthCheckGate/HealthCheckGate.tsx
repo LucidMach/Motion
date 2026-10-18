@@ -37,12 +37,12 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
   }, [gateState]);
 
   useEffect(() => {
-    const cachedReady = sessionStorage.getItem('motion_api_ready');
+    const cachedReady = typeof window !== 'undefined' ? window.sessionStorage?.getItem('motion_api_ready') : null;
     const currentBaseUrl = apiBaseUrl || motionApi.baseUrl;
     setResolvedUrl(currentBaseUrl);
 
     // Validate client Mapbox token
-    const token = (typeof window !== 'undefined' ? localStorage.getItem('motion_mapbox_token') : null) || import.meta.env.PUBLIC_MAPBOX_TOKEN || '';
+    const token = (typeof window !== 'undefined' ? window.localStorage?.getItem('motion_mapbox_token') : null) || import.meta.env.PUBLIC_MAPBOX_TOKEN || '';
     setMapboxConfigured(Boolean(token && token.startsWith('pk.') && token.length > 20));
 
     const isLocal = currentBaseUrl.includes('localhost') || currentBaseUrl.includes('127.0.0.1');
@@ -94,7 +94,9 @@ export default function HealthCheckGate({ apiBaseUrl, onReady }: HealthCheckGate
           if (!isMounted) return;
           setGateState('ready');
           setStatusText('Motion Transit Engine Online');
-          sessionStorage.setItem('motion_api_ready', 'true');
+          if (typeof window !== 'undefined') {
+            window.sessionStorage?.setItem('motion_api_ready', 'true');
+          }
 
           setTimeout(() => {
             if (isMounted) {

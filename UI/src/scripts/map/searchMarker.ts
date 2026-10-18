@@ -39,38 +39,51 @@ export class SearchMarkerManager {
       return;
     }
 
-    if (!this.map.getSource(SOURCE_ID)) {
-      this.addLayers();
-    }
+    this.addLayers();
     this.updateData(coords);
     this.startPulseAnimation();
   }
 
-  private addLayers(): void {
-    if (this.map.getSource(SOURCE_ID)) return;
+  private safeAddLayer(layer: any): void {
+    try {
+      this.map.addLayer(layer);
+    } catch {
+      if (layer.slot) {
+        const { slot, ...withoutSlot } = layer;
+        try {
+          this.map.addLayer(withoutSlot);
+        } catch (err) {
+          console.warn(`[SearchMarkerManager] Failed to add layer ${layer.id}:`, err);
+        }
+      }
+    }
+  }
 
-    this.map.addSource(SOURCE_ID, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: this.coords
-          ? [
-              {
-                type: 'Feature',
-                geometry: {
-                  type: 'Point',
-                  coordinates: this.coords,
+  private addLayers(): void {
+    if (!this.map.getSource(SOURCE_ID)) {
+      this.map.addSource(SOURCE_ID, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: this.coords
+            ? [
+                {
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Point',
+                    coordinates: this.coords,
+                  },
+                  properties: {},
                 },
-                properties: {},
-              },
-            ]
-          : [],
-      },
-    });
+              ]
+            : [],
+        },
+      });
+    }
 
     // 1. Outer animated radar ring
     if (!this.map.getLayer(LAYER_OUTER_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_OUTER_ID,
         type: 'circle',
         source: SOURCE_ID,
@@ -86,7 +99,7 @@ export class SearchMarkerManager {
 
     // 2. Middle pulse ring
     if (!this.map.getLayer(LAYER_MIDDLE_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_MIDDLE_ID,
         type: 'circle',
         source: SOURCE_ID,
@@ -102,7 +115,7 @@ export class SearchMarkerManager {
 
     // 3. Crisp glowing core dot
     if (!this.map.getLayer(LAYER_CORE_ID)) {
-      this.map.addLayer({
+      this.safeAddLayer({
         id: LAYER_CORE_ID,
         type: 'circle',
         source: SOURCE_ID,

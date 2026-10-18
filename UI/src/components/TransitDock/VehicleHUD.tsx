@@ -109,12 +109,14 @@ export default function VehicleHUD({
 
         <button
           onClick={() => onSelectRoute(vehicle.routeShortName)}
+          title="Highlight full route corridor on map"
+          aria-label="Highlight Route"
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-subtle bg-surface/60 py-2 text-xs font-semibold text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
         >
           <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
           </svg>
-          Highlight Line
+          Highlight Route
         </button>
       </div>
     </div>

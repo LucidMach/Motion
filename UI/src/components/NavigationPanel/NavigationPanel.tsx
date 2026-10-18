@@ -152,6 +152,9 @@ export default function NavigationPanel() {
             setCustomArrivalTime(arrivalTimeStr);
           }
 
+          // Pre-emptively clear any active Transit Dock corridor highlight
+          window.dispatchEvent(new CustomEvent('motion:cmd:clear-route-highlight'));
+
           // Dispatch plot-route command for map
           window.dispatchEvent(
             new CustomEvent('motion:cmd:plot-route', {
@@ -330,6 +333,19 @@ export default function NavigationPanel() {
     // Clear route layers on map
     window.dispatchEvent(new CustomEvent('motion:cmd:clear-route'));
   };
+
+  // Close and clear navigation if user selects a route corridor in Transit Dock
+  useEffect(() => {
+    const handleRouteHighlight = () => {
+      if (isOpen) {
+        handleClose();
+      }
+    };
+    window.addEventListener('motion:cmd:highlight-route', handleRouteHighlight);
+    return () => {
+      window.removeEventListener('motion:cmd:highlight-route', handleRouteHighlight);
+    };
+  }, [isOpen]);
 
   // 8. Handle Global Escape key for Navigation: 1st Escape -> Minimize, 2nd Escape -> Clear & Close
   useEffect(() => {

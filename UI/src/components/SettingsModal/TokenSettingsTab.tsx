@@ -9,7 +9,7 @@ const TOKEN_STORAGE_KEY = 'motion_mapbox_token';
 export default function TokenSettingsTab({ onTokenUpdated }: TokenSettingsTabProps) {
   const [token, setToken] = useState(() => {
     if (typeof window === 'undefined') return '';
-    return localStorage.getItem(TOKEN_STORAGE_KEY) || (import.meta.env.PUBLIC_MAPBOX_TOKEN as string) || '';
+    return window.localStorage?.getItem(TOKEN_STORAGE_KEY) || (import.meta.env.PUBLIC_MAPBOX_TOKEN as string) || '';
   });
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
