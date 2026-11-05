@@ -10,7 +10,7 @@ from server.services.train_simulation_service import (
     get_active_train_positions_geojson,
     get_active_vehicles_geojson,
 )
-from server.services.route_shape_service import get_routes_for_mode, get_route_shape, get_route_stops
+from server.services.route_shape_service import get_routes_for_mode
 
 router = APIRouter(prefix="/api/network", tags=["Network & Geometries"])
 
@@ -47,22 +47,6 @@ def get_routes_by_mode(mode: str) -> List[Dict[str, Any]]:
     """
     return get_routes_for_mode(mode)
 
-
-@router.get("/route-shape")
-def get_route_shape_endpoint(mode: str, route_short_name: str) -> Dict[str, Any]:
-    """
-    Returns a GeoJSON FeatureCollection tracing the given route's physical
-    path, for highlighting it on the map.
-    """
-    return get_route_shape(mode, route_short_name)
-
-
-@router.get("/route-stops")
-def get_route_stops_endpoint(mode: str, route_short_name: str) -> List[Dict[str, Any]]:
-    """
-    Returns ordered stops along a representative trip for the given route.
-    """
-    return get_route_stops(mode, route_short_name)
 
 
 @router.get("/vehicles/live")

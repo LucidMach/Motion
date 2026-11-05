@@ -73,7 +73,6 @@ def root():
             "/api/network/metro/stations",
             "/api/network/routes",
             "/api/network/routes/{mode}",
-            "/api/network/route-shape",
             "/api/network/trains/live",
             "/api/disruptions/live",
             "/api/route"
