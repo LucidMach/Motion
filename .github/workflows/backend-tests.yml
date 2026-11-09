@@ -19,22 +19,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Generate mock GTFS database
-        # Mirrors render_build.sh's fallback path (no GTFS_DB_URL) - a small
-        # synthetic dataset, just enough for the test suite to exercise
-        # real DB-backed code paths without needing the real ~GB feeds.
-        run: |
-          python gtfs_db_builder/gtfs_db_builder.py
-          python precompute_graph/precompute_graph.py
-
       - name: Run tests
-        # tests/test_api.py's stop-search/routing/geojson tests are written
-        # against real Melbourne station and line names (Richmond, Belgrave,
-        # Sandringham, ...) and the real extracted gtfs/2 feed for the metro
-        # GeoJSON overlay - neither exists against the synthetic mock DB used
-        # here. Everything else (directional_routing, geocoding, ptv_realtime,
-        # server/services, server/routes, the render.yaml sanity check) is
-        # self-contained and runs for real. To also run tests/test_api.py in
-        # CI, add a GTFS_DB_URL repository secret and fetch the real database
-        # the same way render_build.sh does before this step.
-        run: pytest -v --ignore=tests/test_api.py
+        # directional_routing and server/services (per pytest.ini) are fully
+        # self-contained - server/services' tests build their own temp
+        # sqlite fixtures rather than touching the real GTFS database.
+        run: pytest -v
