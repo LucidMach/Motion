@@ -18,6 +18,13 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 
 const MODES: TransitMode[] = ['train', 'tram', 'bus'];
 
+// Below this width, the Transit Explorer and Vehicle Panel asides each span
+// nearly the full viewport, so they must not be shown open at the same time.
+const MOBILE_BREAKPOINT_PX = 768;
+function isMobileViewport(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT_PX;
+}
+
 export default function TransitDock() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<'transit' | 'settings'>('transit');
@@ -133,6 +140,7 @@ export default function TransitDock() {
         } else {
           setSidebarView('transit');
           setIsExplorerOpen(true);
+          if (isMobileViewport()) setInspectedVehicle(null);
         }
       } else if (e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -141,6 +149,7 @@ export default function TransitDock() {
         } else {
           setSidebarView('settings');
           setIsExplorerOpen(true);
+          if (isMobileViewport()) setInspectedVehicle(null);
         }
       } else if (e.key === 'Escape') {
         if (inspectedVehicle) {
@@ -205,6 +214,7 @@ export default function TransitDock() {
       setSidebarView('transit');
       setActiveMode(mode);
       setIsExplorerOpen(true);
+      if (isMobileViewport()) setInspectedVehicle(null);
       loadRoutesForMode(mode);
     }
   };
@@ -215,6 +225,7 @@ export default function TransitDock() {
     } else {
       setSidebarView('settings');
       setIsExplorerOpen(true);
+      if (isMobileViewport()) setInspectedVehicle(null);
     }
   };
 
@@ -398,7 +409,7 @@ export default function TransitDock() {
 
         if (detail.routeShortName) {
           const mode = (detail.mode as TransitMode) || 'train';
-          setIsExplorerOpen(true);
+          setIsExplorerOpen(!isMobileViewport());
           setActiveMode(mode);
           setHighlightedTripId(detail.tripId);
 
@@ -522,6 +533,7 @@ export default function TransitDock() {
           setIsExplorerOpen(true);
           setActiveMode('train');
           handleSelectRoute('train', found, inspectedVehicle?.tripId);
+          if (isMobileViewport()) setInspectedVehicle(null);
           return;
         }
       }
@@ -529,6 +541,7 @@ export default function TransitDock() {
         setIsExplorerOpen(true);
         setActiveMode(mode);
         handleSelectRoute(mode, found, inspectedVehicle?.tripId);
+        if (isMobileViewport()) setInspectedVehicle(null);
       }
     },
     [inspectedVehicle, activeMode, routesByMode, handleSelectRoute]

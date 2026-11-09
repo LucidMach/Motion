@@ -1,4 +1,5 @@
 import mapboxgl from 'mapbox-gl';
+import { isExplorerPanelOpen, isVehiclePanelOpen, isMobileViewport, mobileSheetHeightPx } from './panelLayout';
 
 // Owns the 3D/2D perspective flag and the two ways the camera moves:
 // an explicit flyTo (recenter/first-fix) and the perspective ease-in/out.
@@ -22,17 +23,17 @@ export class CameraController {
     const map = this.getMap();
     if (!map) return;
 
-    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-    const explorerOpen =
-      typeof document !== 'undefined' &&
-      document.getElementById('transit-explorer-panel')?.classList.contains('translate-x-0');
-    const vehiclePanelOpen =
-      typeof document !== 'undefined' &&
-      document.getElementById('vehicle-panel')?.classList.contains('translate-x-0');
+    const isDesktop = !isMobileViewport();
+    const explorerOpen = isExplorerPanelOpen();
+    const vehiclePanelOpen = isVehiclePanelOpen();
+    // On mobile, a bottom-sheet panel covers the lower ~62% of the screen -
+    // pad the fly-to target up into the remaining visible area instead of
+    // using a flat offset that leaves it hidden under the sheet.
+    const sheetHeight = mobileSheetHeightPx();
 
     const padding: mapboxgl.PaddingOptions = customPadding || {
       top: 60,
-      bottom: 100,
+      bottom: sheetHeight > 0 ? sheetHeight + 24 : 100,
       left: isDesktop && explorerOpen ? 500 : 40,
       right: isDesktop && vehiclePanelOpen ? 320 : 40
     };

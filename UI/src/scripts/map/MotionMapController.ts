@@ -13,6 +13,7 @@ import { createMotionMap, configureDefault3DAtmosphere, configureOrbitControls }
 import { MotionNavigationControl } from './MotionNavigationControl';
 import { suppressBenignMapboxWarnings } from './suppressBenignWarnings';
 import { MAPBOX_STYLES, getThemeSettings } from '../settings/themeManager';
+import { isMobileViewport, MOBILE_SHEET_RATIO } from './panelLayout';
 import type { ThemeChangeEventDetail, GestureChangeEventDetail } from '../../types/events';
 
 export { MotionNavigationControl };
@@ -72,7 +73,7 @@ export class MotionMapController {
   private onSidebarToggle = (e: Event) => {
     const isOpen = (e as CustomEvent<{ isOpen: boolean }>).detail?.isOpen;
     if (!this.map) return;
-    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    const isDesktop = !isMobileViewport();
     const leftPadding = isDesktop && isOpen ? 480 : 0;
     const rightPadding =
       isDesktop &&
@@ -80,8 +81,15 @@ export class MotionMapController {
       Boolean(document.getElementById('vehicle-panel')?.classList.contains('translate-x-0'))
         ? 300
         : 0;
+    // On mobile the explorer is a bottom sheet covering the golden-ratio
+    // portion of the screen, so pad the camera up instead of sideways.
+    const bottomPadding = !isDesktop && isOpen && typeof window !== 'undefined' ? Math.round(window.innerHeight * MOBILE_SHEET_RATIO) : 0;
+    // Passing padding alone only updates the viewport metadata — it doesn't
+    // move the camera. Re-asserting the current center alongside it is what
+    // makes Mapbox actually pan so that point lands in the remaining space.
     this.map.easeTo({
-      padding: { left: leftPadding, right: rightPadding, top: 0, bottom: 0 },
+      center: this.map.getCenter(),
+      padding: { left: leftPadding, right: rightPadding, top: 0, bottom: bottomPadding },
       duration: 350
     });
   };
@@ -89,7 +97,7 @@ export class MotionMapController {
   private onVehiclePanelToggle = (e: Event) => {
     const isOpen = (e as CustomEvent<{ isOpen: boolean }>).detail?.isOpen;
     if (!this.map) return;
-    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    const isDesktop = !isMobileViewport();
     const rightPadding = isDesktop && isOpen ? 300 : 0;
     const leftPadding =
       isDesktop &&
@@ -97,8 +105,10 @@ export class MotionMapController {
       Boolean(document.getElementById('transit-explorer-panel')?.classList.contains('translate-x-0'))
         ? 480
         : 0;
+    const bottomPadding = !isDesktop && isOpen && typeof window !== 'undefined' ? Math.round(window.innerHeight * MOBILE_SHEET_RATIO) : 0;
     this.map.easeTo({
-      padding: { left: leftPadding, right: rightPadding, top: 0, bottom: 0 },
+      center: this.map.getCenter(),
+      padding: { left: leftPadding, right: rightPadding, top: 0, bottom: bottomPadding },
       duration: 350
     });
   };

@@ -1,4 +1,5 @@
 import mapboxgl from 'mapbox-gl';
+import { isExplorerPanelOpen, isVehiclePanelOpen, isMobileViewport, mobileSheetHeightPx } from './panelLayout';
 
 const SOURCE_ID = 'motion-route-highlight-source';
 const LAYER_HALO_ID = 'motion-route-highlight-halo';
@@ -159,13 +160,13 @@ export class RouteHighlightLayer {
     if (minLon === Infinity) return;
 
     try {
-      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-      const explorerOpen =
-        typeof document !== 'undefined' &&
-        document.getElementById('transit-explorer-panel')?.classList.contains('translate-x-0');
-      const vehiclePanelOpen =
-        typeof document !== 'undefined' &&
-        document.getElementById('vehicle-panel')?.classList.contains('translate-x-0');
+      const isDesktop = !isMobileViewport();
+      const explorerOpen = isExplorerPanelOpen();
+      const vehiclePanelOpen = isVehiclePanelOpen();
+      // On mobile, the explorer renders as a bottom sheet covering the
+      // golden-ratio portion of the screen rather than docking to the side -
+      // reserve that much room so the route fits into what's left above it.
+      const sheetHeight = mobileSheetHeightPx();
 
       const canvasWidth =
         this.map.getCanvas()?.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -175,7 +176,7 @@ export class RouteHighlightLayer {
       let leftPad = isDesktop && explorerOpen ? 490 : 40;
       let rightPad = isDesktop && vehiclePanelOpen ? 320 : 40;
       let topPad = 60;
-      let bottomPad = 80;
+      let bottomPad = sheetHeight > 0 ? sheetHeight + 24 : 80;
 
       // Ensure horizontal padding doesn't exceed 65% of viewport
       if (leftPad + rightPad >= canvasWidth * 0.7) {
@@ -184,8 +185,10 @@ export class RouteHighlightLayer {
         rightPad = Math.max(20, Math.round(rightPad * factor));
       }
 
-      // Ensure vertical padding doesn't exceed 50% of viewport
-      if (topPad + bottomPad >= canvasHeight * 0.5) {
+      // Ensure vertical padding doesn't exceed 50% of viewport - except when
+      // that padding is deliberately sized to clear the mobile bottom sheet,
+      // which by design covers the majority of the screen.
+      if (sheetHeight === 0 && topPad + bottomPad >= canvasHeight * 0.5) {
         topPad = 30;
         bottomPad = 30;
       }

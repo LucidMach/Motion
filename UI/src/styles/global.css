@@ -214,6 +214,15 @@ html, body {
   align-items: center !important;
 }
 
+/* On mobile the floating search bar sits almost full-width across the bottom,
+   so the zoom/perspective dock must sit above it instead of at its default
+   bottom-right corner margin. */
+@media (max-width: 768px) {
+  .mapboxgl-ctrl-bottom-right {
+    bottom: 86px !important;
+  }
+}
+
 /* Base button styles applied to ALL dock buttons */
 .mapboxgl-ctrl-group button,
 .motion-ctrl-btn {

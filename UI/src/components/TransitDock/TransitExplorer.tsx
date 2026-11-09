@@ -256,10 +256,10 @@ export default function TransitExplorer({
         id="transit-explorer-panel"
         role="dialog"
         aria-label="Transit Explorer"
-        className={`pointer-events-auto fixed top-24 bottom-5 left-5 z-50 flex w-[480px] max-w-[calc(100vw-2.5rem)] flex-row overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 shadow-glass backdrop-blur-2xl transition-all duration-300 max-[768px]:top-[76px] max-[768px]:bottom-3 max-[768px]:left-3 max-[768px]:max-w-[calc(100vw-1.5rem)] ${
+        className={`pointer-events-auto fixed top-24 bottom-5 left-5 z-50 flex w-[480px] max-w-[calc(100vw-2.5rem)] flex-row overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 shadow-glass backdrop-blur-2xl transition-all duration-300 max-[768px]:inset-x-0 max-[768px]:top-auto max-[768px]:bottom-0 max-[768px]:h-[61.8dvh] max-[768px]:w-full max-[768px]:max-w-full max-[768px]:rounded-b-none max-[768px]:rounded-t-3xl ${
           isOpen
-            ? 'translate-x-0 opacity-100 pointer-events-auto'
-            : '-translate-x-full opacity-0 pointer-events-none'
+            ? 'translate-x-0 opacity-100 pointer-events-auto max-[768px]:translate-x-0 max-[768px]:translate-y-0'
+            : '-translate-x-full opacity-0 pointer-events-none max-[768px]:translate-x-0 max-[768px]:translate-y-full'
         }`}
         style={{
           boxShadow: isOpen
