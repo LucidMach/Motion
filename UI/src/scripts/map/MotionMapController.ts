@@ -4,7 +4,6 @@ import { ReverseGeocodingService } from './reverseGeocoder';
 import { dispatchStatus, dispatchRegion } from './eventBus';
 import { UserMarkerManager } from './userMarker';
 import { SearchMarkerManager } from './searchMarker';
-import { RouteLayerManager } from './routeLayer';
 import { TrainSimulationLayer } from './trainSimulationLayer';
 import { RouteHighlightLayer } from './routeHighlightLayer';
 import { GeolocationTracker } from './geolocationTracker';
@@ -15,7 +14,6 @@ import { MotionNavigationControl } from './MotionNavigationControl';
 import { suppressBenignMapboxWarnings } from './suppressBenignWarnings';
 import { MAPBOX_STYLES, getThemeSettings } from '../settings/themeManager';
 import type { ThemeChangeEventDetail, GestureChangeEventDetail } from '../../types/events';
-import type { RouteResponse } from '../../services/api';
 
 export { MotionNavigationControl };
 
@@ -27,7 +25,6 @@ export class MotionMapController {
   private map: mapboxgl.Map | null = null;
   private markerManager: UserMarkerManager | null = null;
   private searchMarkerManager: SearchMarkerManager | null = null;
-  private routeManager: RouteLayerManager | null = null;
   private trainSimLayer: TrainSimulationLayer | null = null;
   private routeHighlightLayer: RouteHighlightLayer | null = null;
   private lastSearchCoords: [number, number] | null = null;
@@ -144,7 +141,6 @@ export class MotionMapController {
           this.camera.flyTo(this.lastSearchCoords, 17.0, 62);
         }
       });
-      this.routeManager = new RouteLayerManager(this.map);
       this.trainSimLayer = new TrainSimulationLayer(this.map);
       this.trainSimLayer.start();
       this.routeHighlightLayer = new RouteHighlightLayer(this.map);
@@ -263,15 +259,6 @@ export class MotionMapController {
     this.searchMarkerManager?.remove();
   }
 
-  plotRoute(route: RouteResponse): void {
-    if (!this.map) return;
-    this.routeManager?.render(route);
-  }
-
-  clearRoute(): void {
-    this.routeManager?.clear();
-  }
-
   highlightRoute(featureCollection: GeoJSON.FeatureCollection, color: string, skipCameraFit = false): void {
     if (!this.map) return;
     this.routeHighlightLayer?.render(featureCollection, color, skipCameraFit);
@@ -299,7 +286,6 @@ export class MotionMapController {
     this.geocoder.cancel();
     this.markerManager?.remove();
     this.searchMarkerManager?.remove();
-    this.routeManager?.clear();
     this.trainSimLayer?.destroy();
     this.routeHighlightLayer?.destroy();
     this.map?.remove();

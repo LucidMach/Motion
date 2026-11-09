@@ -5,14 +5,12 @@ interface SearchResultItemProps {
   result: StopSearchResult;
   isSelected?: boolean;
   onSelect: (result: StopSearchResult) => void;
-  onNavigate: (result: StopSearchResult, e: React.MouseEvent) => void;
 }
 
 export default function SearchResultItem({
   result,
   isSelected = false,
   onSelect,
-  onNavigate,
 }: SearchResultItemProps) {
   const itemRef = useRef<HTMLDivElement>(null);
 
@@ -188,28 +186,6 @@ export default function SearchResultItem({
             )}
           </div>
         </div>
-      </div>
-
-      {/* Right: Navigate Button */}
-      <div className="shrink-0 pl-1">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onNavigate(result, e);
-          }}
-          title={`Navigate to ${result.stop_name}`}
-          className="group/btn relative flex items-center gap-1.5 rounded-full border border-accent-cyan/50 bg-linear-to-r from-accent-cyan/20 to-accent-indigo/20 px-3.5 py-1.5 font-display text-[0.75rem] font-bold text-accent-cyan shadow-sm transition-all duration-200 hover:border-accent-cyan hover:from-accent-cyan hover:to-accent-indigo hover:text-deep hover:shadow-[0_0_16px_rgba(56,189,248,0.4)] active:scale-95 cursor-pointer"
-        >
-          <svg
-            className="h-3.5 w-3.5 transition-transform duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <polygon points="12 2 19 21 12 17 5 21 12 2" />
-          </svg>
-          <span className="tracking-wide">Navigate</span>
-        </button>
       </div>
     </div>
   );

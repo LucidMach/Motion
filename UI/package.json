@@ -10,14 +10,17 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
+    "@astrojs/vercel": "^9.0.5",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.4.1",
     "mapbox-gl": "^3.10.0",
+    "protobufjs": "^8.8.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.12",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@types/geojson": "^7946.0.16",

@@ -22,6 +22,9 @@ dist/
 */.astro
 .astro/
 
+*/.vercel
+.vercel/
+
 .DS_Store
 
 */.vscode

@@ -2,7 +2,8 @@
 # ==============================================================================
 # Motion GTFS Database Auto-Generator
 # Downloads official Transport for Victoria GTFS feeds, extracts them,
-# populates SQLite timetable schema, and precomputes directional spatial graphs.
+# populates a dev-time SQLite timetable database, and bakes it down into the
+# static JSON the Astro app serves at runtime.
 # ==============================================================================
 
 set -e
@@ -14,7 +15,6 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GTFS_ZIP="${PROJECT_ROOT}/gtfs.zip"
 GTFS_DIR="${PROJECT_ROOT}/gtfs"
 DB_FILE="${PROJECT_ROOT}/gtfs_schedule.db"
-GZ_FILE="${PROJECT_ROOT}/gtfs_schedule.db.gz"
 
 cd "${PROJECT_ROOT}"
 
@@ -55,28 +55,26 @@ FEED_COUNT=$(find "${GTFS_DIR}" -name "google_transit.zip" | wc -l | tr -d ' ')
 echo "✓ Extracted ${FEED_COUNT} GTFS feeds."
 
 # Step 3: Run GTFS Database Ingestion
-# Motion is a Melbourne-metro app, so we only ingest the metro feeds:
+# Motion only serves the metro feeds:
 #   2  = Metro Train
 #   3  = Metro Tram
-#   4  = Metro Bus + regional Bendigo-area town bus bundled in the same zip
-#        (route_type 3 vs 701) - filtered to route_type 3 only
 #   11 = SkyBus airport shuttle (tiny, 5 routes, metro-area service)
-# Feeds 1 (Regional Train), 5 (Regional Coach), 6 (Regional Bus) and 10
-# (Interstate) are intentionally excluded to keep the deployed DB small
-# enough for Render's free tier (512MB RAM).
+# The metro bus feed (4) and the regional feeds (1, 5, 6, 10) are
+# intentionally excluded - bus isn't served for now, and this database is
+# dev-time only (see §4 below), never deployed, so there's no size pressure
+# pushing toward trimming further than that.
 echo ""
-echo "⚙️  Ingesting metro feeds (Train, Tram, Bus, SkyBus) and building SQLite database..."
+echo "⚙️  Ingesting metro feeds (Train, Tram, SkyBus) and building SQLite database..."
 $PYTHON_CMD gtfs_db_builder/gtfs_db_builder.py \
     "${GTFS_DIR}/2/google_transit.zip" \
     "${GTFS_DIR}/3/google_transit.zip" \
-    "${GTFS_DIR}/4/google_transit.zip" \
-    "${GTFS_DIR}/11/google_transit.zip" \
-    --filter "${GTFS_DIR}/4/google_transit.zip:3"
+    "${GTFS_DIR}/11/google_transit.zip"
 
-# Step 4: Precompute Directional & Spatial Graph Edges
+# Step 4: Bake the static JSON the Astro app actually serves at runtime.
+# gtfs_schedule.db itself is never deployed - only these output files are.
 echo ""
-echo "⚡ Precomputing transit edges and KDTree transfer pairs..."
-$PYTHON_CMD precompute_graph/precompute_graph.py
+echo "⚡ Precomputing stops/routes/vehicle-sim static JSON..."
+$PYTHON_CMD gtfs_db_builder/precompute_static_data.py
 
 # Step 5: Precompute per-route shape/stop files for the frontend
 # Route shapes and stops are static GTFS-derived data, so they're baked out
@@ -86,13 +84,7 @@ echo ""
 echo "🗺️  Precomputing per-route shape & stop files..."
 $PYTHON_CMD precompute_route_data/precompute_route_data.py
 
-# Step 6: Compress for deployment / release assets
-echo ""
-echo "🗜️  Compressing database for deployment asset..."
-gzip -c -9 "${DB_FILE}" > "${GZ_FILE}"
-echo "✓ Created compressed asset: $(du -h "${GZ_FILE}" | cut -f1)"
-
-# Step 7: Verify and output summary stats
+# Step 6: Verify and output summary stats
 echo ""
 echo "=============================================================================="
 echo " VERIFICATION SUMMARY"
@@ -103,7 +95,7 @@ db = '${DB_FILE}'
 if os.path.exists(db):
     conn = sqlite3.connect(db)
     c = conn.cursor()
-    for table in ['stops', 'routes', 'trips', 'stop_times', 'transit_network_edges', 'transfer_edges']:
+    for table in ['stops', 'routes', 'trips', 'stop_times', 'calendar', 'calendar_dates']:
         try:
             cnt = c.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
             print(f' • {table.ljust(22)}: {cnt:,} records')
@@ -112,6 +104,5 @@ if os.path.exists(db):
     conn.close()
 "
 echo " Database size (raw) : $(du -h "${DB_FILE}" | cut -f1)"
-echo " Database size (gzip): $(du -h "${GZ_FILE}" | cut -f1)"
 echo "=============================================================================="
-echo "✨ All Done! Database is ready for local development or Render deployment."
+echo "✨ All Done! Static JSON is in UI/public/data/ and ready for local dev or a Vercel deploy."

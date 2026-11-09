@@ -11,7 +11,6 @@ interface SearchResultsPanelProps {
   selectedIndex: number;
   focusedResult: StopSearchResult | null;
   onSelect: (result: StopSearchResult) => void;
-  onNavigate: (result: StopSearchResult, e: React.MouseEvent) => void;
   onBackToResults: () => void;
   onNextOption?: () => void;
   onPrevOption?: () => void;
@@ -27,7 +26,6 @@ export default function SearchResultsPanel({
   selectedIndex,
   focusedResult,
   onSelect,
-  onNavigate,
   onBackToResults,
   onNextOption,
   onPrevOption,
@@ -98,7 +96,7 @@ export default function SearchResultsPanel({
                 </button>
 
                 <span className="hidden sm:inline font-mono text-[0.65rem] text-muted ml-1">
-                  (↑ / ↓ switch · ↵ navigate)
+                  (↑ / ↓ switch)
                 </span>
               </div>
             )}
@@ -196,7 +194,6 @@ export default function SearchResultsPanel({
               result={focusedResult}
               isSelected={true}
               onSelect={() => { }}
-              onNavigate={onNavigate}
             />
           </div>
         )}
@@ -210,7 +207,6 @@ export default function SearchResultsPanel({
               result={result}
               isSelected={idx === selectedIndex}
               onSelect={onSelect}
-              onNavigate={onNavigate}
             />
           ))}
       </div>

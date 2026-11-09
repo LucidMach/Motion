@@ -1,6 +1,6 @@
-# Motion: Multi-Modal Transit Routing Engine
+# Motion: Live Transit Visualization & Search
 
-Motion is a high-performance, multi-modal transit routing and departure calculation engine for the Victorian Public Transport (PTV / Transport for Victoria) network. It supports backward timetable scheduling from a desired arrival time, spatial graph precomputation, directional A* heuristics, and live GTFS-Realtime (GTFS-R) disruption handling (including automated rail replacement bus injection vs alternative train line detour routing).
+Motion is a live 3D visualization and exploration tool for the Victorian Public Transport (PTV / Transport for Victoria) network. It's a single Astro app (`UI/`) - a static Astro + React + Mapbox GL 3D frontend, plus a handful of Astro API routes (`UI/src/pages/api/`) that serve live train/tram position simulation, live PTV disruption alerts, and transit stop/landmark search. There's no separate backend service: the GTFS schedule data is baked into static JSON at build/data-prep time, and the only things fetched live at request time are the PTV GTFS-Realtime alert feeds. Deploys as one Vercel project (`@astrojs/vercel` adapter).
 
 ---
 
@@ -8,50 +8,46 @@ Motion is a high-performance, multi-modal transit routing and departure calculat
 
 ```mermaid
 graph TD
-    A[Transport for Victoria GTFS Schedule Zip] -->|Extract into ./gtfs/| B[GTFS Feeds 1..11 / google_transit.zip]
-    B -->|gtfs_db_builder.py| C[(SQLite: gtfs_schedule.db)]
-    C -->|precompute_graph.py| D[Precomputed Transit & Spatial Transfer Edges]
-    D --> E[Directional Routing Engine]
-    F[Live PTV GTFS-R Alerts & Trip Updates] --> E
-    E --> G[Recommended Departure Time & Turn-by-Turn Itinerary]
+    A[Transport for Victoria GTFS Schedule Zip] -->|Extract into ./gtfs/| B[GTFS Feeds 2/3/11 / google_transit.zip]
+    B -->|gtfs_db_builder.py, local/offline only| C[(SQLite: gtfs_schedule.db, dev-time only)]
+    C -->|precompute_static_data.py + precompute_route_data.py| D[Static JSON: UI/public/data/]
+    D --> E[Astro static pages]
+    D --> F[Astro API routes: stops search/nearby, live vehicle sim]
+    G[Live PTV GTFS-R Service Alerts] --> H[Astro API route: disruptions/live]
+    E --> I[Vercel deployment]
+    F --> I
+    H --> I
 ```
+
+The SQLite database only ever exists on a developer's machine while running the precompute scripts - it's never deployed, never queried at request time, and isn't part of the Vercel bundle.
 
 ---
 
 ## 1. Prerequisites & Environment Setup
 
-### 1.1 Conda Environment
-Create and activate the conda environment using the provided [`environment.yml`](file:///Users/lucidmach/Motion/environment.yml):
-
-```bash
-conda env create -f environment.yml
-conda activate motion
-```
-
-If the environment already exists, update it via:
-```bash
-conda env update -f environment.yml --prune
-```
+### 1.1 Python (offline data-prep tooling only)
+The only Python in this repo is offline tooling to go from raw GTFS zips to the static JSON the app actually serves (`gtfs_db_builder/`, `precompute_route_data/`, `server/services/` as a small support library for those scripts) - standard library only, no third-party packages needed. Any Python 3.11+ interpreter works; `environment.yml` is a snapshot of one developer's conda environment, not a hard requirement.
 
 ### 1.2 PTV & Mapbox Key Configuration
-Create a `.env` file in the project root to configure live GTFS-Realtime queries and the Mapbox 3D map:
+Create a `.env` file in the project root (Astro's `envDir` points here) to configure live GTFS-Realtime alert queries and the Mapbox 3D map:
 
 ```bash
 PTVOpenDataAPIKey=YOUR_PTV_API_KEY
 PUBLIC_MAPBOX_TOKEN=pk.your_mapbox_token_here
 ```
 
-### 1.3 Web UI (Astro + Mapbox 3D)
-The user interface is located in the [`UI/`](file:///Users/lucidmach/Motion/UI) directory, built with **Astro** and managed via **pnpm**:
+### 1.3 Web App (Astro + React + Mapbox 3D + API routes)
+The whole app - static frontend and API routes - lives in [`UI/`](file:///Users/lucidmach/Motion/UI), built with **Astro** and managed via **pnpm**:
 
 ```bash
-# Install UI dependencies
+# Install dependencies
 pnpm install
 
-# Start development server (http://localhost:3000)
+# Start development server (http://localhost:3000) - serves both the
+# static pages and the /api/* routes
 pnpm dev
 
-# Build for production
+# Build for production (outputs .vercel/output/, ready for `vercel deploy`)
 pnpm build
 ```
 
@@ -99,31 +95,23 @@ gtfs/
 
 The database builder parses the GTFS feeds, normalizes timestamps into seconds past midnight (`arrival_time_secs`, `departure_time_secs`), and creates optimized B-tree indexes.
 
-### 3.1 Build Production Database (Metro-Only)
-Motion is a Melbourne-metro app, and the deployed Render instance runs on the
-free tier (512MB RAM), so `build_gtfs_db.sh` only ingests the metro feeds -
-Metro Train (2), Metro Tram (3), Metro Bus (4, filtered to `route_type=3` to
-drop the regional town-bus routes bundled into the same zip), and SkyBus
-(11):
+### 3.1 Build Database (Metro Train + Tram + SkyBus, no bus network)
+Motion only serves Metro Train (2), Metro Tram (3), and SkyBus (11) - the
+metro bus network is intentionally excluded (not needed for now):
 
-```bash
-./build_gtfs_db.sh
-```
-
-which runs the equivalent of:
 ```bash
 python gtfs_db_builder/gtfs_db_builder.py \
   ./gtfs/2/google_transit.zip \
   ./gtfs/3/google_transit.zip \
-  ./gtfs/4/google_transit.zip \
-  ./gtfs/11/google_transit.zip \
-  --filter ./gtfs/4/google_transit.zip:3
+  ./gtfs/11/google_transit.zip
 ```
 
-To include the regional feeds too (Regional Train `1`, Regional Coach `5`,
-Regional Bus `6`, Interstate `10`), pass all of them explicitly - but note
-this multiplies the database size and undoes the memory-footprint reasoning
-behind the metro-only default:
+To include the metro bus feed (4, filtered to `route_type=3` to drop the
+regional town-bus routes bundled into the same zip) or the regional feeds
+(Regional Train `1`, Regional Coach `5`, Regional Bus `6`, Interstate `10`),
+pass them explicitly - note this multiplies the database size, which matters
+more now than it used to since the live vehicle simulation data gets fully
+baked into static JSON shipped with the app (see §4):
 ```bash
 python gtfs_db_builder/gtfs_db_builder.py ./gtfs/*/google_transit.zip
 ```
@@ -142,73 +130,23 @@ python gtfs_db_builder/gtfs_db_builder.py
 
 ---
 
-## 4. Precomputing Transit & Transfer Spatial Graphs
+## 4. Precomputing the Static Data the App Actually Serves
 
-After populating `gtfs_schedule.db`, precompute the transit route connection edges and KDTree spatial walking transfer pairs (within 500m) to enable sub-second routing:
+After populating `gtfs_schedule.db`, bake it down into the static JSON the Astro app reads - no database is queried at runtime:
 
 ```bash
-python precompute_graph/precompute_graph.py
+python gtfs_db_builder/precompute_static_data.py
+python precompute_route_data/precompute_route_data.py
 ```
 
-This populates two tables in `gtfs_schedule.db`:
-- `transit_network_edges`: Average transit travel durations between consecutive stops.
-- `transfer_edges`: Walking transfer connections between nearby stops computed via KDTree on a unit sphere.
+- `precompute_static_data.py` writes `UI/public/data/stops.json`, `UI/public/data/routes.json` (used by stop search/nearby and disruption route-name resolution), and `UI/public/data/vehicle-sim/<weekday>.json` - one file per weekday, each the full day's bracketing stop-to-stop segments for every active train/tram trip, which `UI/src/pages/api/network/vehicles/live.ts` filters by the current time at request time. See `gtfs_db_builder/precompute_static_data.py`'s module docstring for the accepted tradeoff this implies (a GTFS timetable revision or one-off calendar exception won't be reflected until this script is re-run).
+- `precompute_route_data.py` writes the per-route shape/stop files under `UI/public/data/transit/routes/<mode>/<route>/`, used by the TransitDock route picker.
+
+Re-run both whenever `gtfs_schedule.db` is rebuilt.
 
 ---
 
-## 5. Usage & Querying Routes
-
-Use [`ptv_realtime/ptv_realtime.py`](file:///Users/lucidmach/Motion/ptv_realtime/ptv_realtime.py) to calculate recommended departures and itineraries:
-
-### 5.1 Query with Target Arrival Time & Safety Buffer
-```bash
-python ptv_realtime/ptv_realtime.py \
-  --start "Richmond" \
-  --destination "Footscray" \
-  --arrival-time "2026-08-20 09:15" \
-  --buffer 10
-```
-
-### 5.2 Query with Unix Epoch Arrival Timestamp
-```bash
-python ptv_realtime/ptv_realtime.py \
-  --start "Richmond" \
-  --destination "Footscray" \
-  --arrival-timestamp 1787219700 \
-  --buffer 10
-```
-
-### 5.3 Simulate Disruption with Replacement Bus Preference
-```bash
-python ptv_realtime/ptv_realtime.py \
-  --start "Richmond" \
-  --destination "Footscray" \
-  --arrival-time "09:15" \
-  --disrupt-route "Sandringham"
-```
-
-### 5.4 Simulate Disruption with Rail Detour (No Replacement Bus)
-```bash
-python ptv_realtime/ptv_realtime.py \
-  --start "Richmond" \
-  --destination "Footscray" \
-  --arrival-time "09:15" \
-  --disrupt-route "Sandringham" \
-  --no-replacement-bus
-```
-
-### 5.5 Offline Query (Skip Live GTFS-R API Calls)
-```bash
-python ptv_realtime/ptv_realtime.py \
-  --start "Alan Finkel Building" \
-  --destination "The Spot Building" \
-  --arrival-time "10:00" \
-  --no-live-alerts
-```
-
----
-
-## 6. Interactive 3D Web UI & Search Engine
+## 5. Interactive 3D Web UI & Search Engine
 
 The frontend located in [`UI/`](file:///Users/lucidmach/Motion/UI) provides an interactive 3D map interface:
 
@@ -219,63 +157,63 @@ The frontend located in [`UI/`](file:///Users/lucidmach/Motion/UI) provides an i
 
 ---
 
-## 7. Running the Test Suite
+## 6. Running the Test Suite
 
-[`run_tests.sh`](file:///Users/lucidmach/Motion/run_tests.sh) runs the full suite - dependency checks, GTFS database checks, every unit test file (`directional_routing`, `ptv_realtime`, `tests/test_api.py`), and the end-to-end CLI scenarios - in one pass:
+Run the Python unit tests for the offline data-prep tooling:
 
 ```bash
-./run_tests.sh
+python -m pytest directional_routing/ server/services/
 ```
 
-To run just the FastAPI backend suite on its own:
+Frontend production build and test suite (covers the Astro API routes too - `astro build` type-checks and bundles them, `astro check` runs a full TypeScript pass):
 ```bash
-python -m unittest tests/test_api.py
-```
-
-```bash
-# Frontend Astro/React production build
 cd UI && pnpm build
+cd UI && pnpm test
+cd UI && npx astro check
 ```
 
 This verifies:
-1. Python dependencies (`sqlite3`, `fastapi`, `networkx`, `geopy`, `scipy`).
-2. GTFS SQLite database tables, stops, routes, and transfer edges.
-3. Directional routing, PTV realtime parsing, and the FastAPI backend's HTTP surface.
-4. Geometry, bearing calculations, and arrival timestamp parsing.
-5. End-to-end multi-modal routing scenarios with live disruptions and detours.
+1. GTFS zip parsing, route-shape extraction, and the shared geo utilities (haversine, bearing, mode names).
+2. The frontend build, including every `UI/src/pages/api/*.ts` route.
+3. `UI/src/lib/` - stop search ranking, live vehicle position simulation (progress/dwelling state, track-shape snapping, the overnight-trip-past-midnight case), GTFS-Realtime protobuf decoding (against a fixture built with Python's real `gtfs_realtime_pb2`, not hand-crafted bytes), disruption alert parsing/time-window filtering, route-list building, Nominatim throttling/caching, and the core geo/geometry math - each colocated as `*.test.ts` next to the module it covers.
+4. Existing component tests (TransitDock).
 
 ---
 
-## 8. Project Structure
+## 7. Project Structure
 
 ```
 .
-├── directional_routing/        # Spatial graph traversal & directional A* engine
+├── directional_routing/        # Shared geo utilities (DB_NAME, haversine, bearing, mode names)
 │   ├── directional_routing.py
 │   ├── directional_routing.spec.md
 │   └── test_directional_routing.py
 ├── gtfs/                       # Raw GTFS schedule archives (gitignored)
 │   ├── 1..11/google_transit.zip
-├── gtfs_db_builder/            # Relational SQLite ingestion pipeline
+├── gtfs_db_builder/            # Offline: SQLite ingestion + static-JSON precompute
 │   ├── gtfs_db_builder.py
+│   ├── precompute_static_data.py   # Bakes stops.json/routes.json/vehicle-sim/*.json
 │   └── gtfs_db_builder.spec.md
-├── precompute_graph/           # KDTree spatial & transit edge precomputation
-│   ├── precompute_graph.py
-│   └── precompute_graph.spec.md
-├── server/                     # FastAPI backend server
-│   ├── main.py
-│   ├── models/schemas.py       # Pydantic schemas (StopSearchResult, RoutePlan)
-│   └── routes/stops.py         # Search & nearby endpoints with OSM Nominatim
-├── tests/                      # Pytest suite
-│   └── test_api.py
-├── UI/                         # Astro 5 + React 19 + Mapbox 3D Geolocation Frontend
-│   ├── src/components/         # HeaderHUD, SearchBar, MapboxMap, TokenModal
-│   ├── src/scripts/map/        # MotionMapController, WebGL Search Marker, Region Resolver
-│   ├── src/services/api.ts     # Client API with live OSM Nominatim & offline fallbacks
-│   └── ARCHITECTURE.md         # UI Architecture & Event Bus Specification
-├── CHANGELOG.md                # Project version history & UI changelog
-├── environment.yml             # Conda environment definition
-├── gtfs_schedule.db            # SQLite database (gitignored)
-├── run_tests.sh                # End-to-end test runner script
-└── README.md                   # Project documentation
+├── precompute_route_data/      # Offline: per-route shape/stop JSON precompute
+│   └── precompute_route_data.py
+├── server/                     # Offline support library for the precompute scripts
+│   └── services/
+│       ├── network_service.py      # GTFS zip -> metro/tram lines & stations GeoJSON
+│       └── route_shape_service.py  # Per-mode route lists + per-route shape/stop lookup
+├── UI/                          # Astro 5 + React 19 + Mapbox 3D app - static pages + API routes
+│   ├── public/data/             # Precomputed static JSON the app actually serves at runtime
+│   │   ├── stops.json, routes.json, vehicle-sim/<weekday>.json
+│   │   └── transit/              # Metro/tram line GeoJSON, per-route shape/stop files
+│   ├── src/components/           # HeaderHUD, SearchBar, TransitDock, MapboxMap, TokenModal
+│   ├── src/lib/                  # Ported backend logic: geo math, vehicle sim, geocoding search,
+│   │                              # GTFS-Realtime protobuf decode, static-data loading/caching
+│   ├── src/pages/api/            # Live API routes: stops search/nearby, vehicles/live,
+│   │                              # disruptions/live, health, status
+│   ├── src/scripts/map/          # MotionMapController, WebGL Search Marker, Region Resolver
+│   ├── src/services/api.ts       # Client API - same-origin now, no separate backend URL
+│   └── ARCHITECTURE.md           # UI Architecture & Event Bus Specification
+├── CHANGELOG.md                 # Project version history & UI changelog
+├── environment.yml              # One developer's conda environment snapshot (not required)
+├── gtfs_schedule.db              # SQLite database (gitignored, dev-time only, never deployed)
+└── README.md                    # Project documentation
 ```

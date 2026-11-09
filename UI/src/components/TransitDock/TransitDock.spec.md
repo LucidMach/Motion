@@ -57,4 +57,3 @@ Multi-modal Victorian transit explorer, full-length slide-in sidebar, and in-map
 | `motion:cmd:clear-route-highlight` | `void` | Dismissing the active route in the route item's inline dropdown or clicking the route again. |
 | `motion:cmd:track-vehicle` | `{ tripId, coords, bearing }` | Clicking a vehicle badge to engage cinematic 3D chase camera tracking. |
 | `motion:cmd:fly-to` | `FlyToEventDetail` | Flying camera to nearest train, route stops, or inspected vehicle. |
-| `motion:cmd:navigate-to` | `NavigateToEventDetail` | User clicks the navigate arrow on a stop in the timeline. |

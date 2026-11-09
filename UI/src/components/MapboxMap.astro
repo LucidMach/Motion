@@ -74,17 +74,6 @@ const { initialToken = import.meta.env.PUBLIC_MAPBOX_TOKEN || "" } =
       mapController?.clearSearchTarget();
     });
 
-    window.addEventListener("motion:cmd:plot-route", (e: Event) => {
-      const detail = (e as CustomEvent<{ route: import('../services/api').RouteResponse }>).detail;
-      if (detail?.route) {
-        mapController?.plotRoute(detail.route);
-      }
-    });
-
-    window.addEventListener("motion:cmd:clear-route", () => {
-      mapController?.clearRoute();
-    });
-
     window.addEventListener("motion:cmd:highlight-route", (e: Event) => {
       const detail = (e as CustomEvent<import('../types/events').HighlightRouteEventDetail>).detail;
       if (detail?.geojson) {

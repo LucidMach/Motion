@@ -9,8 +9,8 @@ const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', feature
 /**
  * Owns the single "picked route" overlay drawn from the TransitDock's route
  * picker - a neon halo + solid line over every LineString feature in a route's
- * shape, with camera framing to fit. Unlike RouteLayerManager (a calculated
- * multi-leg itinerary), this always renders one flat accent color for one route.
+ * shape, with camera framing to fit. Always renders one flat accent color for
+ * one route.
  */
 function boostRouteColor(color: string): string {
   if (!color) return '#0072CE';
@@ -24,8 +24,8 @@ function boostRouteColor(color: string): string {
 /**
  * Owns the single "picked route" overlay drawn from the TransitDock's route
  * picker - a neon halo + solid line over every LineString feature in a route's
- * shape, with camera framing to fit. Unlike RouteLayerManager (a calculated
- * multi-leg itinerary), this always renders one flat accent color for one route.
+ * shape, with camera framing to fit. Always renders one flat accent color for
+ * one route.
  */
 export class RouteHighlightLayer {
   private hasRoute = false;

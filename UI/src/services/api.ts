@@ -1,152 +1,4 @@
-// API client service for Motion FastAPI backend
-
-export interface RouteLeg {
-  type: 'WALK' | 'TRANSIT' | 'TRANSFER' | 'REPLACEMENT_BUS' | string;
-  mode: string;
-  route?: string;
-  color?: string;
-  from_stop?: string;
-  to_stop?: string;
-  start_time: string;
-  end_time: string;
-  duration_mins: number;
-  distance_km?: number;
-  instruction: string;
-  trip_id?: string;
-  is_replacement?: boolean;
-  coordinates?: [number, number][]; // [[lon, lat], ...]
-}
-
-export const TRAM_ROUTE_COLORS: Record<string, string> = {
-  '1': '#B5BD00',
-  '3': '#8DC8E8',
-  '5': '#D50032',
-  '6': '#01426A',
-  '11': '#6ECEB2',
-  '12': '#007E92',
-  '16': '#FBD872',
-  '19': '#8A1B61',
-  '30': '#534F96',
-  '35': '#6B3529',
-  '48': '#333434',
-  '57': '#00C1D5',
-  '58': '#969696',
-  '59': '#00653A',
-  '64': '#00AB8E',
-  '67': '#956C58',
-  '70': '#F59BBB',
-  '72': '#9ABEAA',
-  '75': '#00A9E0',
-  '78': '#A0A0D6',
-  '82': '#D2D755',
-  '86': '#FFB500',
-  '96': '#C6007E',
-  '109': '#E87722',
-};
-
-export function getTramRouteColor(route?: string): string {
-  if (!route) return '#78BE20';
-  const clean = route.trim();
-  if (TRAM_ROUTE_COLORS[clean]) return TRAM_ROUTE_COLORS[clean];
-  const match = clean.match(/\b(109|96|86|82|78|75|72|70|67|64|59|58|57|48|35|30|19|16|12|11|6|5|3|1)\b/);
-  if (match && TRAM_ROUTE_COLORS[match[1]]) {
-    return TRAM_ROUTE_COLORS[match[1]];
-  }
-  return '#78BE20';
-}
-
-export function getLegColor(leg: RouteLeg): string {
-  if (leg.color) return leg.color;
-
-  const mode = (leg.mode || leg.type || '').toLowerCase();
-  const route = (leg.route || '').toLowerCase();
-
-  if (leg.is_replacement || leg.type === 'REPLACEMENT_BUS' || mode.includes('replacement')) {
-    return '#FF8200'; // Orange for Rail Replacement Buses
-  }
-
-  if (mode.includes('walk')) {
-    return '#9CA3AF'; // Grey
-  }
-
-  if (mode.includes('bus')) {
-    return '#FF8200'; // Orange for Buses
-  }
-
-  if (mode.includes('tram')) {
-    return getTramRouteColor(route);
-  }
-
-  if (mode.includes('train') || mode.includes('rail')) {
-    if (
-      route.includes('belgrave') ||
-      route.includes('lilydale') ||
-      route.includes('alamein') ||
-      route.includes('glen waverley')
-    ) {
-      return '#152C6B'; // Burnley Navy
-    }
-    if (route.includes('cranbourne') || route.includes('pakenham')) {
-      return '#0072CE'; // Cranbourne & Pakenham (City Loop Blue)
-    }
-    if (
-      route.includes('frankston') ||
-      route.includes('werribee') ||
-      route.includes('williamstown') ||
-      route.includes('stony point')
-    ) {
-      return '#028430'; // Cross-City Green
-    }
-    if (route.includes('sandringham')) {
-      return '#F178AF'; // Sandringham Pink
-    }
-    if (route.includes('craigieburn') || route.includes('upfield') || route.includes('sunbury')) {
-      return '#FFBE00'; // Northern Gold
-    }
-    if (route.includes('mernda') || route.includes('hurstbridge')) {
-      return '#BE1014'; // Clifton Hill Red
-    }
-    return '#0072CE'; // Default Metro Blue
-  }
-
-  return '#38BDF8';
-}
-
-export interface RouteResponse {
-  status: 'Success' | 'Error';
-  message?: string;
-  origin?: string;
-  origin_coords?: [number, number]; // [lat, lon]
-  destination?: string;
-  destination_coords?: [number, number]; // [lat, lon]
-  target_arrival_time?: string;
-  target_arrival_epoch?: number;
-  latest_departure_time?: string;
-  recommended_departure_time?: string;
-  total_travel_time_mins?: number;
-  safety_buffer_mins: number;
-  realtime_delay_mins: number;
-  transfers_count: number;
-  modes_summary?: string;
-  replacement_buses_used: boolean;
-  computation_time_secs?: number;
-  legs: RouteLeg[];
-  route_nodes: string[];
-  disruptions_detected: any[];
-}
-
-export interface RouteQueryParams {
-  origin: string;
-  destination: string;
-  arrival_time?: string;
-  arrival_timestamp?: number;
-  buffer_minutes?: number;
-  disruptions?: any[];
-  cancelled_routes?: string[];
-  cancelled_trips?: string[];
-  prefer_replacement_bus?: boolean;
-  fetch_live_alerts?: boolean;
-}
+// API client service for Motion's own Astro API routes (UI/src/pages/api/)
 
 export interface StopSearchResult {
   stop_id: string;
@@ -203,48 +55,9 @@ export interface LiveVehicle {
   is_stopped?: boolean;
 }
 
-export interface SystemStatus {
-  status: string;
-  server_online: boolean;
-  uptime_seconds: number;
-  kdtree_in_memory: boolean;
-  kdtree_nodes_count: number;
-  db_path: string;
-  db_exists: boolean;
-  db_loaded: boolean;
-  stops_count: number;
-  routes_count: number;
-  transit_edges_count: number;
-  transfer_edges_count: number;
-  ptv_api_configured: boolean;
-  checks?: {
-    '1_server_up'?: { status: string; message: string; uptime_seconds?: number };
-    '2_kdtree_in_memory'?: { status: string; message: string; total_nodes?: number; kdtree_ready?: boolean; load_time_ms?: number };
-    '3_precomputed_database_loaded'?: { status: string; message: string; db_exists?: boolean; stops_count?: number; routes_count?: number; transit_edges_count?: number; transfer_edges_count?: number };
-    '4_ptv_realtime_api'?: { status: string; message: string; configured?: boolean };
-    '5_mapbox_token'?: { status: string; message: string; configured?: boolean };
-  };
-}
-
-export interface HealthCheckResponse {
-  status: string;
-  service: string;
-  uptime_seconds: number;
-  cold_starting: boolean;
-  kdtree_in_memory: boolean;
-  db_loaded: boolean;
-}
-
-export const getApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && (window as any).__MOTION_API_URL__) {
-    return (window as any).__MOTION_API_URL__;
-  }
-  // If running locally in browser (localhost / 127.0.0.1) without an explicit remote override:
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://127.0.0.1:8000';
-  }
-  return import.meta.env.PUBLIC_API_URL || 'https://motionapi.onrender.com';
-};
+// The API routes live in this same Astro app now (UI/src/pages/api/) - no
+// separate backend origin to resolve.
+export const getApiBaseUrl = (): string => '';
 
 class MotionApiClient {
   get baseUrl(): string {
@@ -288,14 +101,6 @@ class MotionApiClient {
     }
   }
 
-  async getHealth(): Promise<HealthCheckResponse> {
-    return this.request<HealthCheckResponse>('/api/health');
-  }
-
-  async getStatus(): Promise<SystemStatus> {
-    return this.request<SystemStatus>('/api/status');
-  }
-
   async searchStops(query: string, limit: number = 10): Promise<StopSearchResult[]> {
     const trimmed = query.trim();
     if (!trimmed) return [];
@@ -314,18 +119,6 @@ class MotionApiClient {
     return this.request<StopSearchResult[]>(
       `/api/stops/nearby?lat=${lat}&lon=${lon}&radius_km=${radiusKm}&limit=${limit}`
     );
-  }
-
-  async getMetroLinesGeoJSON(): Promise<GeoJSON.FeatureCollection> {
-    return this.request<GeoJSON.FeatureCollection>('/api/network/metro/lines');
-  }
-
-  async getMetroStationsGeoJSON(): Promise<GeoJSON.FeatureCollection> {
-    return this.request<GeoJSON.FeatureCollection>('/api/network/metro/stations');
-  }
-
-  async getRoutes(): Promise<RouteMetadata[]> {
-    return this.request<RouteMetadata[]>('/api/network/routes');
   }
 
   async getLiveTrains(): Promise<GeoJSON.FeatureCollection> {
@@ -354,18 +147,6 @@ class MotionApiClient {
 
   async getLiveDisruptions(windowMins: number = 60): Promise<any[]> {
     return this.request<any[]>(`/api/disruptions/live?window_mins=${windowMins}`);
-  }
-
-  async calculateRoute(params: RouteQueryParams): Promise<RouteResponse> {
-    return this.request<RouteResponse>('/api/route', {
-      method: 'POST',
-      body: JSON.stringify({
-        buffer_minutes: 5,
-        prefer_replacement_bus: true,
-        fetch_live_alerts: true,
-        ...params,
-      }),
-    });
   }
 }
 

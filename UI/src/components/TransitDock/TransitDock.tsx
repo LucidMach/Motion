@@ -106,15 +106,6 @@ export default function TransitDock() {
     return () => window.removeEventListener('motion:map-empty-click', onMapEmptyClick);
   }, [inspectedVehicle, isExplorerOpen, handleCloseExplorer]);
 
-  // Listen for navigate-to command: clear highlighted route corridor so navigation takes precedence
-  useEffect(() => {
-    const onNavigateTo = () => {
-      handleClearRoute();
-    };
-    window.addEventListener('motion:cmd:navigate-to', onNavigateTo);
-    return () => window.removeEventListener('motion:cmd:navigate-to', onNavigateTo);
-  }, [handleClearRoute]);
-
   // Listen for open-settings-modal command
   useEffect(() => {
     const onOpenSettings = () => {
@@ -340,9 +331,6 @@ export default function TransitDock() {
 
       const color = route.color || MODE_CONFIG[mode].color;
 
-      // Pre-emptively clear any active navigation itinerary
-      window.dispatchEvent(new CustomEvent('motion:cmd:clear-route'));
-
       // Immediately fetch route shape and dispatch map highlight without blocking on stops
       motionApi
         .getRouteShape(mode, route.route_short_name)
@@ -491,24 +479,6 @@ export default function TransitDock() {
             pitch: 60,
             title: stop.stop_name,
             subtitle: `${selectedRoute?.route.route_short_name || 'Transit'} Stop #${stop.stop_sequence}`
-          }
-        })
-      );
-    },
-    [selectedRoute]
-  );
-
-  // Navigate to stop
-  const handleNavigateToStop = useCallback(
-    (stop: RouteStop) => {
-      window.dispatchEvent(
-        new CustomEvent('motion:cmd:navigate-to', {
-          detail: {
-            stop_id: stop.stop_id,
-            stop_name: stop.stop_name,
-            stop_lat: stop.stop_lat,
-            stop_lon: stop.stop_lon,
-            mode: selectedRoute?.mode === 'train' ? 'Metro Train' : selectedRoute?.mode === 'tram' ? 'Yarra Tram' : 'Bus'
           }
         })
       );
@@ -683,7 +653,6 @@ export default function TransitDock() {
             : undefined
         }
         onFlyToStop={handleFlyToStop}
-        onNavigateToStop={handleNavigateToStop}
         onClearRoute={handleClearRoute}
         onClose={handleCloseExplorer}
       />

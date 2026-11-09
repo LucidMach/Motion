@@ -1,6 +1,6 @@
 # `SearchBar` Component Spec
 
-Glassmorphic transit and landmark search bar positioned at the bottom center of the viewport. Allows searching across Victorian transit stations, stops, buildings, university faculties, and landmarks using live dynamic OpenStreetMap Nominatim geocoding and local GTFS schedule data. Displays matched destinations with transit mode badges, street details, focused single-option view, multi-tier ranking, and interactive **Navigate** actions.
+Glassmorphic transit and landmark search bar positioned at the bottom center of the viewport. Allows searching across Victorian transit stations, stops, buildings, university faculties, and landmarks using live dynamic OpenStreetMap Nominatim geocoding and local GTFS schedule data. Displays matched destinations with transit mode badges, street details, a focused single-option view, and multi-tier ranking, flying the 3D camera to whichever destination is selected or focused.
 
 ---
 
@@ -11,7 +11,7 @@ src/components/SearchBar/
 ├── SearchBar.tsx           # React island root (query state, keyboard coordination, events)
 ├── SearchInput.tsx         # Bottom glassmorphic input pill with search & contextual Esc/Enter badges
 ├── SearchResultsPanel.tsx  # Floating matches panel docked directly above input with focus view
-├── SearchResultItem.tsx    # Match card with mode icons, street info, auto-scroll & Navigate button
+├── SearchResultItem.tsx    # Match card with mode icons, street info & auto-scroll
 └── SearchBar.spec.md       # This specification
 ```
 
@@ -29,7 +29,7 @@ src/components/SearchBar/
   - `isOpen: boolean` — Visibility of the floating results panel.
   - `selectedIndex: number` — Currently highlighted item index in the results list (`0` to `results.length - 1`, or `-1` if unselected).
   - `focusedResult: StopSearchResult | null` — Single selected match when in focused option view.
-  - `submitActionType: 'search' | 'select' | 'navigate'` — Computed action mode driving the input pill's Enter badge and button label.
+  - `submitActionType: 'search' | 'select' | 'close'` — Computed action mode driving the input pill's Enter badge and button label.
 
 ---
 
@@ -57,18 +57,12 @@ Within each tier, results are scored and sorted by:
 
 ## 4. Event Contracts
 
-### Listens For
-- `motion:cmd:clear-route` (`CustomEvent<void>`):
-  - Received when active route navigation is closed or dismissed, automatically clearing search text, focus, and 3D target pins.
-
 ### Dispatches
 - `motion:cmd:fly-to` (`CustomEvent<FlyToEventDetail>`):
-  - Emitted when an option is selected or navigated with `coords: [lon, lat]`, `zoom: 17.0`, `pitch: 62`, `title`, and `subtitle`.
+  - Emitted when an option is selected or focused with `coords: [lon, lat]`, `zoom: 17.0`, `pitch: 62`, `title`, and `subtitle`.
   - Animates the Mapbox 3D camera and renders the native WebGL target dot at the destination coordinates.
 - `motion:cmd:clear-search-target` (`CustomEvent<void>`):
   - Emitted when the search bar is cleared (or on final `Esc`), immediately unmounting and removing the 3D target dot from the map.
-- `motion:cmd:navigate-to` (`CustomEvent<NavigateToEventDetail>`):
-  - Emitted when the **Navigate** button is clicked on a match or triggered via `Enter` in focused view, passing `stop_id`, `stop_name`, `stop_lat`, `stop_lon`, and `mode` for the routing engine.
 
 ---
 
@@ -79,7 +73,7 @@ Within each tier, results are scored and sorted by:
 | **`Enter` ↵** | Unfocused anywhere on screen | Focuses the search input and highlights text to start typing |
 | **`Enter` ↵** | Input focused (no results open / query modified) | Executes search query (`Search ↵`) |
 | **`Enter` ↵** | Results list open (query unmodified) | Selects highlighted option (or top match) into focused view and flies 3D camera (`Select ↵`) |
-| **`Enter` ↵** | Focused option view (query unmodified) | Triggers **Navigate** action to destination (`Navigate ↵`) |
+| **`Enter` ↵** | Focused option view (query unmodified) | Dismisses the results panel, keeping the camera on the focused destination (`Close ↵`) |
 | **`Typing`** | After getting search results or focusing a stop | Clears `focusedResult`, resets `selectedIndex`, transitions button back to `Search ↵` |
 | **`↓` (Down Arrow)** | Focused option active | Advances to the next matched destination and flies camera |
 | **`↑` (Up Arrow)** | Focused option active | Returns to the previous matched destination and flies camera |

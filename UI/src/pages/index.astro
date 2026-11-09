@@ -6,8 +6,6 @@ import HeaderHUD from '../components/HeaderHUD/HeaderHUD';
 import TransitDock from '../components/TransitDock/TransitDock';
 import TokenModal from '../components/TokenModal/TokenModal';
 import SearchBar from '../components/SearchBar/SearchBar';
-import NavigationPanel from '../components/NavigationPanel/NavigationPanel';
-import HealthCheckGate from '../components/HealthCheckGate/HealthCheckGate';
 
 const pageTitle = "Motion • 3D Victorian Transit & Live Geolocation";
 const pageDescription = "High-performance 3D transit routing and live GPS geolocation navigator with Mapbox 3D Engine.";
@@ -93,14 +91,8 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
       <!-- Bottom Search Bar & Match Results -->
       <SearchBar client:load />
 
-      <!-- Active Transit Route Navigation HUD -->
-      <NavigationPanel client:load />
-
       <!-- Token Configuration Modal (Triggers on missing token) -->
       <TokenModal client:load />
-
-      <!-- Backend Health Check & Cold-Start Gateway -->
-      <HealthCheckGate client:load />
     </main>
   </body>
 </html>

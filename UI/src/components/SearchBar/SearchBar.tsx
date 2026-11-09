@@ -69,34 +69,10 @@ export default function SearchBar() {
     [results]
   );
 
-  // Trigger Navigate action
-  const handleNavigate = useCallback(
-    (result: StopSearchResult, e?: React.MouseEvent | MouseEvent | React.KeyboardEvent | KeyboardEvent) => {
-      if (e && 'stopPropagation' in e) {
-        e.stopPropagation();
-      }
-
-      // Focus result and fly camera
-      handleSelect(result);
-      setIsOpen(false);
-
-      // Dispatch navigate command event for routing engine
-      window.dispatchEvent(
-        new CustomEvent('motion:cmd:navigate-to', {
-          detail: {
-            stop_id: result.stop_id,
-            stop_name: result.stop_name,
-            stop_lat: result.stop_lat,
-            stop_lon: result.stop_lon,
-            mode: result.mode,
-          },
-        })
-      );
-
-      console.info(`[Motion Search] Navigate triggered for target: ${result.stop_name} (${result.stop_id})`);
-    },
-    [handleSelect]
-  );
+  // Dismiss the results panel, keeping the focused result's camera fly-to in place
+  const handleConfirmFocused = useCallback(() => {
+    setIsOpen(false);
+  }, []);
 
   // Next & previous option cycling (Right/Left arrows)
   const handleNextOption = useCallback(() => {
@@ -132,17 +108,6 @@ export default function SearchBar() {
       handleClear();
     }
   }, [isOpen, focusedResult, handleClear]);
-
-  // Listen for route clear event to synchronize search bar state
-  useEffect(() => {
-    const handleRouteCleared = () => {
-      handleClear();
-    };
-    window.addEventListener('motion:cmd:clear-route', handleRouteCleared);
-    return () => {
-      window.removeEventListener('motion:cmd:clear-route', handleRouteCleared);
-    };
-  }, [handleClear]);
 
   // Execute search across GTFS stops, landmarks, and OpenStreetMap
   const executeSearch = useCallback(async () => {
@@ -190,9 +155,9 @@ export default function SearchBar() {
       return;
     }
 
-    // 3. If an option is already focused for this query, hitting Enter triggers navigation
+    // 3. If an option is already focused for this query, hitting Enter dismisses the panel
     if (isOpen && focusedResult && !isLoading) {
-      handleNavigate(focusedResult);
+      handleConfirmFocused();
       return;
     }
 
@@ -207,7 +172,7 @@ export default function SearchBar() {
     lastSearchedQuery,
     selectedIndex,
     handleSelect,
-    handleNavigate,
+    handleConfirmFocused,
     executeSearch,
   ]);
 
@@ -251,10 +216,10 @@ export default function SearchBar() {
           return;
         }
 
-        // If in single focused result view, Enter triggers navigate
+        // If in single focused result view, Enter dismisses the panel
         if (isOpen && focusedResult && !isLoading) {
           e.preventDefault();
-          handleNavigate(focusedResult, e);
+          handleConfirmFocused();
           return;
         }
 
@@ -298,7 +263,7 @@ export default function SearchBar() {
     handleNextOption,
     handlePrevOption,
     handleSelect,
-    handleNavigate,
+    handleConfirmFocused,
     executeSearch,
     handleEscape,
   ]);
@@ -308,9 +273,9 @@ export default function SearchBar() {
   };
 
   const isNewQuery = query.trim().toLowerCase() !== lastSearchedQuery.trim().toLowerCase();
-  let submitActionType: 'search' | 'select' | 'navigate' = 'search';
+  let submitActionType: 'search' | 'select' | 'close' = 'search';
   if (isOpen && focusedResult && !isNewQuery) {
-    submitActionType = 'navigate';
+    submitActionType = 'close';
   } else if (isOpen && !focusedResult && results.length > 0 && !isNewQuery) {
     submitActionType = 'select';
   } else {
@@ -333,7 +298,6 @@ export default function SearchBar() {
         selectedIndex={selectedIndex}
         focusedResult={focusedResult}
         onSelect={handleSelect}
-        onNavigate={handleNavigate}
         onBackToResults={handleBackToResults}
         onNextOption={handleNextOption}
         onPrevOption={handlePrevOption}

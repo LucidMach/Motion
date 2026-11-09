@@ -52,24 +52,6 @@ export interface TrackVehicleEventDetail {
   bearing?: number;
 }
 
-export interface NavigateToEventDetail {
-  stop_id: string;
-  stop_name: string;
-  stop_lat: number;
-  stop_lon: number;
-  mode?: string;
-  origin?: string;
-  origin_coords?: [number, number]; // [lon, lat]
-}
-
-export interface PlotRouteEventDetail {
-  route: import('../services/api').RouteResponse;
-}
-
-export interface ClearRouteEventDetail {
-  source?: string;
-}
-
 export interface HighlightRouteEventDetail {
   geojson: GeoJSON.FeatureCollection;
   color: string;

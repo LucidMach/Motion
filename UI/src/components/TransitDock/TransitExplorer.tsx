@@ -127,7 +127,6 @@ interface TransitExplorerProps {
   onTrackVehicle?: (vehicle: LiveVehicle) => void;
   onFlyToVehicle?: () => void;
   onFlyToStop: (stop: RouteStop) => void;
-  onNavigateToStop: (stop: RouteStop) => void;
   onClearRoute: () => void;
   onClose: () => void;
 }
@@ -153,7 +152,6 @@ export default function TransitExplorer({
   onTrackVehicle,
   onFlyToVehicle,
   onFlyToStop,
-  onNavigateToStop,
   onClearRoute,
   onClose
 }: TransitExplorerProps) {
@@ -767,19 +765,6 @@ export default function TransitExplorer({
                                         >
                                           {stop.stop_name}
                                         </span>
-                                      </button>
-
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          onNavigateToStop(stop);
-                                        }}
-                                        title={`Navigate to ${stop.stop_name}`}
-                                        className="ml-1 shrink-0 text-secondary opacity-30 hover:opacity-100 hover:text-accent-cyan transition-all p-1"
-                                      >
-                                        <svg viewBox="0 0 24 24" width={11} height={11} fill="none" stroke="currentColor" strokeWidth={2}>
-                                          <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                                        </svg>
                                       </button>
                                     </div>
                                   </div>

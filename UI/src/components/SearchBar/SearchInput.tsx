@@ -9,7 +9,7 @@ interface SearchInputProps {
   escapeActionLabel?: 'Back' | 'Close' | 'Clear';
   isLoading: boolean;
   isOpen: boolean;
-  submitActionType?: 'search' | 'select' | 'navigate';
+  submitActionType?: 'search' | 'select' | 'close';
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -26,10 +26,10 @@ export default function SearchInput({
   inputRef,
 }: SearchInputProps) {
   const submitActionLabel =
-    submitActionType === 'navigate' ? 'Navigate' : submitActionType === 'select' ? 'Select' : 'Search';
+    submitActionType === 'close' ? 'Close' : submitActionType === 'select' ? 'Select' : 'Search';
   const submitActionTooltip =
-    submitActionType === 'navigate'
-      ? 'Hit Enter to navigate (↵)'
+    submitActionType === 'close'
+      ? 'Hit Enter to close (↵)'
       : submitActionType === 'select'
         ? 'Hit Enter to select option (↵)'
         : 'Hit Enter to search (↵)';
@@ -159,7 +159,7 @@ export default function SearchInput({
           </button>
         )}
 
-        {/* Enter key badge & Action Button (Search / Select / Navigate) */}
+        {/* Enter key badge & Action Button (Search / Select / Close) */}
         <button
           type="button"
           onClick={onSubmit}

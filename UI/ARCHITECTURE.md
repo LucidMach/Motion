@@ -31,7 +31,6 @@ graph TD
     Modal -.->|motion:cmd:update-token| Controller
     Search -.->|motion:cmd:fly-to| Controller
     Search -.->|motion:cmd:clear-search-target| Controller
-    Search -.->|motion:cmd:navigate-to| App
 ```
 
 ## 3. Design system tokens
@@ -115,7 +114,6 @@ interface LocationTelemetry {
 | `motion:cmd:fly-user` | none | Flies camera to the user's current GPS position |
 | `motion:cmd:fly-to` | `{ coords: [lon, lat], zoom?, pitch?, title?, subtitle? }` | Flies camera to target coordinates & places native WebGL target dot |
 | `motion:cmd:clear-search-target` | none | Immediately unmounts & removes the WebGL 3D target dot pin from the map |
-| `motion:cmd:navigate-to` | `{ stop_id, stop_name, stop_lat, stop_lon, mode? }` | Dispatches destination details to initiate navigation routing |
 | `motion:cmd:toggle-3d` | none | Toggles between 3D oblique and 2D nadir perspective |
 | `motion:cmd:set-3d` | `{ is3D: boolean }` | Explicitly switches perspective mode |
 | `motion:cmd:update-token` | `{ token: string }` | Updates and saves the Mapbox access token |
