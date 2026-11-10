@@ -25,11 +25,13 @@ export default function GpsLocationCard({ locationName, accuracyText, onRecenter
         <svg
           className="h-4.5 w-4.5 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.12] max-[768px]:h-4 max-[768px]:w-4"
           viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill="currentColor"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-5.91 11c.424-2.507 2.403-4.486 4.91-4.91v-2.021c-3.617.452-6.479 3.314-6.931 6.931h2.021zm6.91-4.91c2.507.423 4.486 2.402 4.91 4.91h2.021c-.452-3.617-3.314-6.479-6.931-6.931v2.021zm4.91 6.91c-.424 2.507-2.403 4.486-4.91 4.91v2.021c3.617-.452 6.479-3.314 6.931-6.931h-2.021zm-6.91 4.91c-2.507-.424-4.486-2.403-4.91-4.91h-2.021c.452 3.617 3.313 6.479 6.931 6.931v-2.021zm1-7.91c-1.104 0-2 .896-2 2s.896 2 2 2 2-.896 2-2-.896-2-2-2z" />
+          <polygon points="12 2 19 21 12 17 5 21 12 2" />
         </svg>
       </div>
     </button>

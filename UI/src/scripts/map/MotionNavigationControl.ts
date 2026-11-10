@@ -1,18 +1,23 @@
 import mapboxgl from 'mapbox-gl';
 import type { PerspectiveEventDetail } from '../../types/events';
 import { perspectiveButtonClasses, perspectiveButtonHtml } from './perspectiveButton';
+import { DaylightControlButton } from './DaylightControlButton';
 
-// Bottom-right dock: zoom in/out + the 2D/3D perspective toggle, in one glass control group.
+// Bottom-right dock: zoom in/out, the 2D/3D perspective toggle, and the
+// daylight time control, in one glass control group.
 export class MotionNavigationControl implements mapboxgl.IControl {
   private map?: mapboxgl.Map;
   private container?: HTMLElement;
   private btnPerspective?: HTMLButtonElement;
+  private daylight?: DaylightControlButton;
   private is3D = true;
 
   onAdd(map: mapboxgl.Map): HTMLElement {
     this.map = map;
     this.container = document.createElement('div');
     this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group motion-navigation-dock';
+
+    this.daylight = new DaylightControlButton(this.container);
 
     this.container.appendChild(this.buildZoomButton('Zoom In', 'Zoom In', () => this.map?.zoomIn({ duration: 300 }), true));
     this.container.appendChild(this.buildZoomButton('Zoom Out', 'Zoom Out', () => this.map?.zoomOut({ duration: 300 }), false));
@@ -68,6 +73,7 @@ export class MotionNavigationControl implements mapboxgl.IControl {
 
   onRemove(): void {
     window.removeEventListener('motion:3d-state', this.on3DStateChange);
+    this.daylight?.destroy();
     this.container?.parentNode?.removeChild(this.container);
     this.map = undefined;
   }

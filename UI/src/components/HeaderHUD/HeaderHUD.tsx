@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import BrandGroup from './BrandGroup';
-import DaylightSlider from './DaylightSlider';
 import GpsLocationCard from './GpsLocationCard';
 import type { LocationTelemetry, RegionChangeEventDetail, StatusEventDetail } from '../../types/events';
 
@@ -65,10 +64,6 @@ export default function HeaderHUD() {
     >
       <div className="flex shrink-0 items-center">
         <BrandGroup regionLabel={regionLabel} regionUpdated={regionUpdated} />
-      </div>
-
-      <div className="flex flex-1 items-center justify-center px-1 sm:px-2">
-        <DaylightSlider />
       </div>
 
       <div className="flex shrink-0 items-center gap-2">

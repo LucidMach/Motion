@@ -42,6 +42,11 @@
   /* Transition Durations */
   --duration-250: 250ms;
 
+  /* Mobile bottom offset shared by the zoom/perspective/daylight control dock
+     and the transit dock rail, so their bases always line up (see global.css
+     .mapboxgl-ctrl-bottom-right media rule and TransitDock.tsx). */
+  --spacing-mobile-dock-offset: 86px;
+
   /* Custom keyframe animations */
   --animate-float-slight: float-slight 3s ease-in-out infinite alternate;
   --animate-ripple: ripple 2s infinite ease-out;
@@ -214,12 +219,21 @@ html, body {
   align-items: center !important;
 }
 
+/* Desktop/tablet: vertically center the zoom/perspective/daylight dock so it
+   lines up with the Transit Dock rail's centered position on the left edge. */
+.mapboxgl-ctrl-bottom-right {
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+}
+
 /* On mobile the floating search bar sits almost full-width across the bottom,
-   so the zoom/perspective dock must sit above it instead of at its default
-   bottom-right corner margin. */
+   so the zoom/perspective dock must sit above it instead of staying centered. */
 @media (max-width: 768px) {
   .mapboxgl-ctrl-bottom-right {
-    bottom: 86px !important;
+    top: auto !important;
+    bottom: var(--spacing-mobile-dock-offset) !important;
+    transform: none !important;
   }
 }
 
@@ -307,6 +321,121 @@ html, body {
   line-height: 1;
   user-select: none;
   pointer-events: none;
+}
+
+/* Daylight Time Control: a glass button in the zoom/perspective dock that
+   expands into a one-line popover (time, Live toggle, slider). Live sync is
+   shown as a border glow on the trigger button rather than a dot badge. */
+.motion-daylight-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.motion-ctrl-btn.motion-daylight-btn {
+  font-size: 16px;
+}
+
+.motion-ctrl-btn.motion-daylight-btn.is-live {
+  border: 1.5px solid rgba(16, 185, 129, 0.55) !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.22);
+}
+
+.motion-daylight-emoji {
+  line-height: 1;
+}
+
+.motion-daylight-popover {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  margin-right: 12px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 250px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-subtle);
+  border-radius: 9999px;
+  background: var(--color-surface-elevated);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-glass);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(6px) scale(0.94);
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.motion-daylight-popover.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+.motion-daylight-time {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(16, 24, 46, 0.9);
+  border-radius: 9999px;
+  padding: 3px 9px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.motion-daylight-live-btn {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-secondary);
+  border-radius: 9999px;
+  padding: 3px 8px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.motion-daylight-live-btn.is-live {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.motion-daylight-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+}
+
+.motion-daylight-live-btn.is-live .motion-daylight-live-dot {
+  background: #34d399;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.motion-daylight-slider-wrap {
+  flex: 1 1 auto;
+  min-width: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.motion-daylight-slider-wrap .diurnal-slider {
+  width: 100%;
 }
 
 .mapboxgl-ctrl-icon {

@@ -552,7 +552,7 @@ export default function TransitDock() {
       {/* Floating Left Dock & Detached Settings Stack */}
       <div
         id="transit-dock-container"
-        className={`pointer-events-auto fixed left-5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-3 max-[768px]:left-3 transition-all duration-200 ${
+        className={`pointer-events-auto fixed left-5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-3 max-[768px]:left-3 max-[768px]:top-auto max-[768px]:bottom-[var(--spacing-mobile-dock-offset)] max-[768px]:translate-y-0 transition-all duration-200 ${
           isExplorerOpen ? 'opacity-0 pointer-events-none -translate-x-3' : 'opacity-100 translate-x-0'
         }`}
       >
