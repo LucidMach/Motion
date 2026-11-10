@@ -101,7 +101,7 @@ export const MODE_CONFIG: Record<
   }
 };
 
-const MODES: TransitMode[] = ['train', 'tram', 'bus'];
+const MODES: TransitMode[] = ['train', 'tram'];
 
 interface TransitExplorerProps {
   isOpen: boolean;

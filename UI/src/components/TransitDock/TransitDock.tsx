@@ -16,7 +16,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-const MODES: TransitMode[] = ['train', 'tram', 'bus'];
+const MODES: TransitMode[] = ['train', 'tram'];
 
 // Below this width, the Transit Explorer and Vehicle Panel asides each span
 // nearly the full viewport, so they must not be shown open at the same time.

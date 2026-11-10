@@ -98,12 +98,12 @@ describe('TransitDock', () => {
     vi.mocked(motionApi.getLiveVehicles).mockResolvedValue(mockVehiclesFC);
   });
 
-  it('renders mode buttons for Train, Tram, and Bus in the floating dock', async () => {
+  it('renders mode buttons for Train and Tram in the floating dock', async () => {
     render(<TransitDock />);
 
     expect(await screen.findByRole('button', { name: /explore trains/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /explore trams/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /explore buses/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /explore buses/i })).not.toBeInTheDocument();
   });
 
   it('opens Transit Explorer when a dock button is clicked and closes on second click', async () => {
