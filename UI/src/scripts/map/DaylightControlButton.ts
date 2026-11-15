@@ -17,8 +17,8 @@ function solarEmoji(isNight: boolean, lightPreset: string): string {
 }
 
 // Daylight time-of-day control, added into MotionNavigationControl's dock
-// alongside zoom/perspective: a single glass button that expands into a
-// one-line popover (time badge, Live toggle, slider). Live sync reads as a
+// alongside zoom/perspective: a single glass button that expands the dock
+// vertically (time, vertical slider, Live toggle). Live sync reads as a
 // border glow on the trigger button rather than a dot badge.
 export class DaylightControlButton {
   private wrap: HTMLDivElement;
@@ -27,7 +27,6 @@ export class DaylightControlButton {
   private slider: HTMLInputElement;
   private timeLabel: HTMLSpanElement;
   private emojiLabel: HTMLSpanElement;
-  private popoverEmojiLabel: HTMLSpanElement;
   private liveBtn: HTMLButtonElement;
 
   private timeMinutes: number;
@@ -67,9 +66,7 @@ export class DaylightControlButton {
 
     const timeBadge = document.createElement('div');
     timeBadge.className = 'motion-daylight-time';
-    this.popoverEmojiLabel = document.createElement('span');
     this.timeLabel = document.createElement('span');
-    timeBadge.appendChild(this.popoverEmojiLabel);
     timeBadge.appendChild(this.timeLabel);
 
     this.liveBtn = document.createElement('button');
@@ -121,8 +118,8 @@ export class DaylightControlButton {
     sliderWrap.appendChild(this.slider);
 
     this.popover.appendChild(timeBadge);
-    this.popover.appendChild(this.liveBtn);
     this.popover.appendChild(sliderWrap);
+    this.popover.appendChild(this.liveBtn);
 
     this.wrap.appendChild(this.button);
     this.wrap.appendChild(this.popover);
@@ -235,7 +232,6 @@ export class DaylightControlButton {
     const emoji = solarEmoji(solar.isNight, solar.lightPreset);
     const formatted = formatMinutesToTime(this.timeMinutes);
     this.emojiLabel.textContent = emoji;
-    this.popoverEmojiLabel.textContent = emoji;
     this.timeLabel.textContent = formatted;
     this.slider.value = String(this.timeMinutes);
     this.slider.setAttribute('aria-valuenow', String(this.timeMinutes));
