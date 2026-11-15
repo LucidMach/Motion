@@ -10,7 +10,7 @@ The 3D Mapbox GL JS container and lifecycle coordinator. Stays an Astro componen
 
 ## DOM structure
 
-- `<div id="map">`: full-viewport canvas container (`absolute inset-0 h-screen w-screen`).
+- `<div id="map">`: full-viewport canvas container (`absolute inset-0 h-dvh w-screen`).
 
 ## Controller coordination
 

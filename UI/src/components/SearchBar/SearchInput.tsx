@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface SearchInputProps {
   query: string;
@@ -33,6 +33,13 @@ export default function SearchInput({
       : submitActionType === 'select'
         ? 'Hit Enter to select option (↵)'
         : 'Hit Enter to search (↵)';
+
+  // Touch devices have no ↵/↑/↓ keys to hint at, and the 16px input font
+  // (needed to stop iOS zooming on focus) leaves less room, so keep it short.
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -97,12 +104,18 @@ export default function SearchInput({
       <input
         ref={inputRef}
         type="text"
+        inputMode="search"
+        enterKeyHint="search"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
         value={query}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Search station, stop, or landmark (↵ search, ↑/↓ switch)..."
+        placeholder={isTouch ? 'Search station, stop, or landmark' : 'Search station, stop, or landmark (↵ search, ↑/↓ switch)...'}
         aria-label="Search Victorian transit stops and landmarks"
-        className="mx-3 flex-1 bg-transparent font-sans text-[0.92rem] font-medium text-primary placeholder-muted outline-none selection:bg-accent-cyan/30 selection:text-white max-[640px]:text-[0.84rem]"
+        className="mx-3 flex-1 bg-transparent font-sans text-[0.92rem] font-medium min-w-0 text-primary placeholder-muted outline-none selection:bg-accent-cyan/30 selection:text-white max-[640px]:text-base"
       />
 
       {/* Right Controls */}

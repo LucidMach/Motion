@@ -286,7 +286,7 @@ export default function SearchBar() {
     <div
       ref={containerRef}
       aria-label="Transit Stop & Location Search"
-      className="pointer-events-auto fixed bottom-5 left-1/2 z-20 w-[92%] max-w-xl -translate-x-1/2 max-[768px]:bottom-3.5 max-[768px]:w-[94%]"
+      className="pointer-events-auto fixed bottom-[calc(1.25rem+var(--safe-bottom))] left-1/2 z-20 w-[92%] max-w-xl -translate-x-1/2 max-[768px]:bottom-[calc(0.875rem+var(--safe-bottom))] max-[768px]:w-[min(94%,calc(100%-var(--safe-left)-var(--safe-right)-1.5rem))]"
     >
       {/* Floating Results Panel */}
       <SearchResultsPanel

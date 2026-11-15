@@ -60,7 +60,7 @@ export default function HeaderHUD() {
   return (
     <header
       aria-label="Navigation & Region Status Bar"
-      className="pointer-events-auto absolute left-5 right-5 top-5 z-10 flex h-16 items-center justify-between gap-2.5 rounded-full border border-subtle bg-surface p-2.5 shadow-glass backdrop-blur-lg transition-colors hover:border-subtle max-[768px]:left-3 max-[768px]:right-3 max-[768px]:top-3 max-[768px]:h-14 max-[768px]:px-3"
+      className="pointer-events-auto absolute left-[calc(1.25rem+var(--safe-left))] right-[calc(1.25rem+var(--safe-right))] top-[calc(1.25rem+var(--safe-top))] z-10 flex h-16 items-center justify-between gap-2.5 rounded-full border border-subtle bg-surface p-2.5 shadow-glass backdrop-blur-lg transition-colors hover:border-subtle max-[768px]:left-[calc(0.75rem+var(--safe-left))] max-[768px]:right-[calc(0.75rem+var(--safe-right))] max-[768px]:top-[calc(0.75rem+var(--safe-top))] max-[768px]:h-14 max-[768px]:px-3"
     >
       <div className="flex shrink-0 items-center">
         <BrandGroup regionLabel={regionLabel} regionUpdated={regionUpdated} />

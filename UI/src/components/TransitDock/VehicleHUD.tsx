@@ -28,7 +28,7 @@ export default function VehicleHUD({
       id="vehicle-inspector-hud"
       role="region"
       aria-label="Vehicle Telemetry Inspector"
-      className="pointer-events-auto fixed bottom-24 right-5 z-20 flex w-80 flex-col overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 p-4 shadow-glass backdrop-blur-2xl transition-all duration-300 max-[768px]:bottom-24 max-[768px]:right-3 max-[768px]:left-3 max-[768px]:w-auto"
+      className="pointer-events-auto fixed bottom-[calc(6rem+var(--safe-bottom))] right-5 z-20 flex w-80 flex-col overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 p-4 shadow-glass backdrop-blur-2xl transition-all duration-300 max-[768px]:right-3 max-[768px]:left-3 max-[768px]:w-auto"
       style={{
         boxShadow: `0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px ${vehicleColor}44`
       }}

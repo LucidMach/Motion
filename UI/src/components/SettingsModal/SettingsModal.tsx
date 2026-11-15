@@ -84,7 +84,7 @@ export default function SettingsModal() {
         isOpen ? 'visible opacity-100' : 'invisible pointer-events-none opacity-0'
       }`}
     >
-      <div className="flex max-h-[90vh] w-[92%] max-w-160 animate-modal-in flex-col gap-5 overflow-hidden rounded-4xl border border-glow bg-surface-elevated p-7 shadow-[0_24px_60px_rgba(0,0,0,0.7),0_0_35px_rgba(56,189,248,0.18)] max-[768px]:rounded-2xl max-[768px]:p-5">
+      <div className="flex max-h-[90dvh] w-[92%] max-w-160 animate-modal-in flex-col gap-5 overflow-hidden rounded-4xl border border-glow bg-surface-elevated p-7 shadow-[0_24px_60px_rgba(0,0,0,0.7),0_0_35px_rgba(56,189,248,0.18)] max-[768px]:rounded-2xl max-[768px]:p-5">
         <SettingsHeader activeTab={activeTab} onTabChange={setActiveTab} onClose={() => setIsOpen(false)} />
 
         {/* Tab Content Container */}

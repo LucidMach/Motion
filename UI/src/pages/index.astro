@@ -15,8 +15,15 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#05070d" />
+    <!-- iOS home-screen app: full-bleed map under a translucent status bar
+         (the HUD clears it via env(safe-area-inset-top)). -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Motion" />
+    <meta name="format-detection" content="telephone=no" />
     <meta name="description" content={pageDescription} />
     
     <!-- Open Graph / Social Meta Tags -->
@@ -77,10 +84,24 @@ const pageDescription = "High-performance 3D transit routing and live GPS geoloc
         root.style.setProperty('--color-subtle', p.subtle || 'rgba(148, 163, 184, 0.12)');
         root.setAttribute('data-theme', 'monochrome');
       } catch (e) {}
+
+      // iOS Safari pans the page to keep a focused input above the keyboard,
+      // and sometimes leaves it scrolled after the keyboard closes, so the
+      // fixed UI ends up shifted with a gap at the bottom. Snap back.
+      document.addEventListener('focusout', function () {
+        setTimeout(function () {
+          var a = document.activeElement;
+          if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'TEXTAREA')) window.scrollTo(0, 0);
+        }, 50);
+      });
+
+      // Safari ignores user-scalable=no; block page pinch-zoom (the map
+      // handles its own pinch gestures via touch events).
+      document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
     </script>
   </head>
   <body>
-    <main id="app-container" class="relative h-screen w-screen overflow-hidden bg-deep">
+    <main id="app-container" class="relative h-dvh w-screen overflow-hidden bg-deep">
       <!-- 3D Mapbox Map Engine -->
       <MapboxMap initialToken={import.meta.env.PUBLIC_MAPBOX_TOKEN} />
 

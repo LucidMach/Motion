@@ -45,7 +45,7 @@
   /* Mobile bottom offset shared by the zoom/perspective/daylight control dock
      and the transit dock rail, so their bases always line up (see global.css
      .mapboxgl-ctrl-bottom-right media rule and TransitDock.tsx). */
-  --spacing-mobile-dock-offset: 86px;
+  --spacing-mobile-dock-offset: calc(86px + env(safe-area-inset-bottom, 0px));
 
   /* Custom keyframe animations */
   --animate-float-slight: float-slight 3s ease-in-out infinite alternate;
@@ -74,10 +74,27 @@
   }
 }
 
+/* iOS safe-area insets (non-zero with viewport-fit=cover: notch/Dynamic Island
+   in landscape, status bar + home indicator when launched from the home screen). */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
 html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  /* Stop iOS rubber-band bounce and pull-to-refresh from dragging the whole app. */
+  overscroll-behavior: none;
+  /* No grey flash on tap, no long-press callout on the map chrome, and no
+     font inflation when rotating to landscape. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background-color: var(--color-deep);
   color: var(--color-primary);
   font-family: var(--font-sans);
@@ -222,6 +239,7 @@ html, body {
 /* Desktop/tablet: vertically center the zoom/perspective/daylight dock so it
    lines up with the Transit Dock rail's centered position on the left edge. */
 .mapboxgl-ctrl-bottom-right {
+  right: var(--safe-right) !important;
   top: 50% !important;
   bottom: auto !important;
   transform: translateY(-50%) !important;
@@ -235,6 +253,13 @@ html, body {
     bottom: var(--spacing-mobile-dock-offset) !important;
     transform: none !important;
   }
+}
+
+/* Buttons: drop the 300ms double-tap-zoom wait on iOS. */
+button,
+[role='button'],
+a {
+  touch-action: manipulation;
 }
 
 /* Base button styles applied to ALL dock buttons */

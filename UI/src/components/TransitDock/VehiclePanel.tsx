@@ -32,7 +32,7 @@ export default function VehiclePanel({
       id="vehicle-panel"
       role="dialog"
       aria-label="Vehicle Inspector"
-      className={`pointer-events-auto fixed top-24 bottom-5 right-5 z-50 flex w-[320px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 shadow-glass backdrop-blur-2xl transition-all duration-300 ease-out max-[768px]:inset-x-0 max-[768px]:top-auto max-[768px]:bottom-0 max-[768px]:h-[61.8dvh] max-[768px]:w-full max-[768px]:max-w-full max-[768px]:rounded-b-none max-[768px]:rounded-t-3xl ${
+      className={`pointer-events-auto fixed top-24 bottom-5 right-5 z-50 flex w-[320px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-3xl border border-subtle bg-surface-elevated/95 shadow-glass backdrop-blur-2xl transition-all duration-300 ease-out max-[768px]:inset-x-0 max-[768px]:top-auto max-[768px]:bottom-0 max-[768px]:h-[61.8dvh] max-[768px]:w-full max-[768px]:max-w-full max-[768px]:rounded-b-none max-[768px]:rounded-t-3xl max-[768px]:pb-[var(--safe-bottom)] ${
         isOpen
           ? 'translate-x-0 opacity-100 pointer-events-auto max-[768px]:translate-x-0 max-[768px]:translate-y-0'
           : 'translate-x-full opacity-0 pointer-events-none max-[768px]:translate-x-0 max-[768px]:translate-y-full'

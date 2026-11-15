@@ -135,6 +135,10 @@ export function createMotionMap(containerId: string, hooks: MapLifecycleHooks): 
   const currentMapStyle = getThemeSettings().mapStyle;
   const initialStyleUrl = MAPBOX_STYLES[currentMapStyle]?.url || 'mapbox://styles/mapbox/standard';
 
+  // Phones (iPhones especially) already render at 3x density, where MSAA on
+  // the 3D scene costs a lot of GPU/battery for edges the eye can't resolve.
+  const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
   const map = new mapboxgl.Map({
     container: containerId,
     style: initialStyleUrl,
@@ -142,7 +146,7 @@ export function createMotionMap(containerId: string, hooks: MapLifecycleHooks): 
     zoom: 15.5,
     pitch: 58,
     bearing: -17.6,
-    antialias: true,
+    antialias: !isTouchDevice,
     attributionControl: false,
     boxZoom: false
   });
